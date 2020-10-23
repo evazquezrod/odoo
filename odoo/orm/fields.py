@@ -1401,13 +1401,7 @@ class Field(typing.Generic[T]):
         :param records:
         :param value: a value in any format
         """
-        # discard the records that are not modified
         cache_value = self.convert_to_cache(value, records)
-        records = self._filter_not_equal(records, cache_value)
-        if not records:
-            return
-
-        # update the cache
         self._update_cache(records, cache_value, dirty=True)
 
     ############################################################################
@@ -1467,10 +1461,12 @@ class Field(typing.Generic[T]):
         field_cache = self._get_cache(records.env)
         return (id_ for id_ in records._ids if id_ not in field_cache)
 
-    def _filter_not_equal(self, records: ModelType, cache_value: typing.Any) -> ModelType:
+    def _filter_not_equal(self, records: ModelType, value: typing.Any) -> ModelType:
         """ Return the subset of ``records`` for which the value of ``self`` is
-        either not in cache, or different from ``cache_value``.
+        either not in cache, or different from ``value``.  ``value`` may come
+        from an assignment, or have the format of method :meth:`BaseModel.write`.
         """
+        cache_value = self.convert_to_cache(value, records)
         field_cache = self._get_cache(records.env)
         return records.browse(
             record_id
@@ -1705,7 +1701,9 @@ class Field(typing.Generic[T]):
         if prot_ids:
             # records being computed: no business logic, no recomputation
             prot_records = records.__class__(records.env, tuple(prot_ids), records._prefetch_ids)
-            self.write(prot_records, value)
+            prot_records = self._filter_not_equal(prot_records, value)
+            if prot_records:
+                self.write(prot_records, value)
 
         if real_ids:
             # real records: full business logic
@@ -1727,6 +1725,10 @@ class Field(typing.Generic[T]):
                 else:
                     # discard recomputation of self on records
                     records.env.remove_to_compute(self, new_records)
+
+            new_records = self._filter_not_equal(new_records, value)
+            if not new_records:
+                return
 
             with records.env.protecting(records.pool.field_computed.get(self) or [self], new_records):
                 if records.pool.is_modifying_relations(self):

@@ -4118,10 +4118,18 @@ class BaseModel(metaclass=MetaModel):
             for computed_field in self.pool.field_computed.get(field) or (field,)
         )
 
-        # determine what to update
+        # determine what to update, ignoring idempotent updates
+        fields_to_update = []
+        ids_to_update = set()
         determine_inverses = defaultdict(list)      # {inverse: fields}
         fnames_modifying_relations = []
+
         for field, value in field_values.items():
+            records = field._filter_not_equal(self, value)
+            if not records:
+                continue
+            fields_to_update.append(field)
+            ids_to_update.update(records._ids)
             if field.inverse:
                 if field.type in ('one2many', 'many2many'):
                     # The written value is a list of commands that must applied
@@ -4134,6 +4142,14 @@ class BaseModel(metaclass=MetaModel):
                 determine_inverses[field.inverse].append(field)
             if self.pool.is_modifying_relations(field):
                 fnames_modifying_relations.append(field.name)
+
+        if not ids_to_update:
+            self.modified(vals)
+            return True
+
+        # from now on, we ignore records that don't change at all
+        ids = tuple(id_ for id_ in self._ids if id_ in ids_to_update)
+        records = self.__class__(self.env, ids, self._prefetch_ids)
 
         # protect fields being written against recomputation
         with env.protecting(fields_to_protect, self):
@@ -4161,8 +4177,8 @@ class BaseModel(metaclass=MetaModel):
             # Monetary fields need their corresponding currency field in cache
             # for rounding values. X2many fields must be written last, because
             # they flush other fields when deleting lines.
-            for field in sorted(field_values, key=lambda f: f.write_sequence):
-                field.write(self, field_values[field])
+            for field in sorted(fields_to_update, key=lambda f: f.write_sequence):
+                field.write(records, field_values[field])
 
             # determine records depending on new values
             #
@@ -4179,13 +4195,14 @@ class BaseModel(metaclass=MetaModel):
             # (`test_01_website_reset_password_tour`)
             self.modified(vals)
 
-            if self._parent_store and self._parent_name in vals:
-                self.flush_model([self._parent_name])
+            updated_fnames = [field.name for field in fields_to_update]
+            if self._parent_store and self._parent_name in updated_fnames:
+                records.flush_model([self._parent_name])
 
             # validate non-inversed fields first
-            real_recs = self.filtered('id')
+            real_recs = records.filtered('id')
             inverse_fnames = [f.name for fs in determine_inverses.values() for f in fs]
-            real_recs._validate_fields(vals, inverse_fnames)
+            real_recs._validate_fields(updated_fnames, inverse_fnames)
 
             for fields_ in determine_inverses.values():
                 # write again on non-stored fields that have been invalidated from cache
@@ -4211,7 +4228,7 @@ class BaseModel(metaclass=MetaModel):
             real_recs._validate_fields(inverse_fnames)
 
         if self._check_company_auto:
-            self._check_company(list(vals))
+            records._check_company(list(vals))
         return True
 
     def _write(self, vals: ValuesType) -> None:

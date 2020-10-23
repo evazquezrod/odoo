@@ -253,8 +253,18 @@ class Properties(Field):
 
         return res_ids_per_model
 
+    def create(self, record_values):
+        # the field is up-to-date already; only update the definitions
+        for record, value in record_values:
+            self._update_definition(record, value)
+
     def write(self, records, value):
-        """Check if the properties definition has been changed.
+        # update the field and its definitions
+        value = self._update_definition(records, value)
+        super().write(records, value)
+
+    def _update_definition(self, records: BaseModel, value: typing.Any) -> typing.Any:
+        """Update the properties definition if necessary.
 
         To avoid extra SQL queries used to detect definition change, we add a
         flag in the properties list. Parent update is done only when this flag
@@ -264,19 +274,8 @@ class Properties(Field):
         list to be able to put the delete flag in it. Otherwise we have no way
         to know that a property has been removed.
         """
-        if isinstance(value, str):
-            value = json.loads(value)
-
-        if isinstance(value, Property):
-            value = value._values
-
-        if isinstance(value, dict):
-            # don't need to write on the container definition
-            return super().write(records, value)
-
-        definition_changed = any(
-            definition.get('definition_changed')
-            or definition.get('definition_deleted')
+        definition_changed = is_list_of(value, dict) and any(
+            definition.get('definition_changed') or definition.get('definition_deleted')
             for definition in (value or [])
         )
         if definition_changed:
@@ -297,7 +296,17 @@ class Properties(Field):
 
                 _logger.info('Properties field: User #%i changed definition of %r', records.env.user.id, container)
 
-        return super().write(records, value)
+        return value
+
+    def _filter_not_equal(self, records, value):
+        # overridden to force self.write() if some definition has changed
+        if is_list_of(value, dict) and any(
+            definition.get('definition_changed') or definition.get('definition_deleted')
+            for definition in (value or [])
+        ):
+            return records
+
+        return super()._filter_not_equal(records, value)
 
     def _compute(self, records):
         """Add the default properties value when the container is changed."""

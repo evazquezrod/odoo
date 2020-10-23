@@ -286,9 +286,6 @@ class BaseString(Field[str | typing.Literal[False]]):
             super().write(records, value)
             return
         cache_value = self.convert_to_cache(value, records)
-        records = self._filter_not_equal(records, cache_value)
-        if not records:
-            return
         field_cache = self._get_cache(records.env)
         dirty_ids = records.env._field_dirty.get(self, ())
 

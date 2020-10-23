@@ -182,15 +182,12 @@ class Binary(Field):
             super().write(records, value)
             return
 
-        # update the cache, and discard the records that are not modified
-        cache_value = self.convert_to_cache(value, records)
-        records = self._filter_not_equal(records, cache_value)
-        if not records:
-            return
         if self.store:
             # determine records that are known to be not null
             not_null = self._filter_not_equal(records, None)
 
+        # update the cache
+        cache_value = self.convert_to_cache(value, records)
         self._update_cache(records, cache_value)
 
         # retrieve the attachments that store the values, and adapt them
