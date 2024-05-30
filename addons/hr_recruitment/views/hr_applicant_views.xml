@@ -197,6 +197,8 @@
                                 </div>
                             </group>
                             <group string="Sourcing">
+                                <field name="utm_reference" string="Reference" options="{'hide_model': True}"
+                                    invisible="not utm_reference" readonly="True"/>
                                 <field name="source_id" placeholder="Select where the applicant comes from"/>
                                 <field name="medium_id" placeholder="Select the way applicant found the offer"/>
                             </group>
