@@ -11,7 +11,7 @@ from odoo.exceptions import ValidationError
 class ChatbotScript(models.Model):
     _name = 'chatbot.script'
     _description = 'Chatbot Script'
-    _inherit = ['image.mixin', 'utm.source.mixin']
+    _inherit = ['image.mixin']
     _rec_name = 'title'
     _order = 'title, id'
 

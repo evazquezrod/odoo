@@ -19,6 +19,11 @@ class CrmChatbotCase(chatbot_common.CrmChatbotCase):
         self.assertEqual(created_lead.team_id, self.sale_team)
         self.assertEqual(created_lead.type, 'opportunity')
 
+        # UTMs
+        self.assertEqual(created_lead.utm_reference, self.chatbot_script)
+        self.assertEqual(created_lead.source_id, self.env.ref("im_livechat.utm_source_chatbot"))
+        self.assertFalse(bool(created_lead.campaign_id))
+
     def test_chatbot_create_lead_and_forward_public_user(self):
         """Test create_lead_and_forward properly creates a lead, assigns it to an available sales
         team member, and forwards the discussion to that member."""
@@ -94,6 +99,11 @@ class CrmChatbotCase(chatbot_common.CrmChatbotCase):
 
         self.assertEqual(created_lead.team_id, self.sale_team_with_lead)
         self.assertEqual(created_lead.type, 'lead')
+
+        # UTMs
+        self.assertEqual(created_lead.utm_reference, self.chatbot_script)
+        self.assertEqual(created_lead.source_id, self.env.ref("im_livechat.utm_source_chatbot"))
+        self.assertFalse(bool(created_lead.campaign_id))
 
     def test_chatbot_create_lead_company(self):
         self.user_portal.write({"company_ids": self.company_2, "company_id": self.company_2})
