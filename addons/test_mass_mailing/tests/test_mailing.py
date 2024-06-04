@@ -22,7 +22,6 @@ class TestMassMailing(TestMassMailCommon):
             })
 
         mailing = self.env['mailing.mailing'].create({
-            'name': 'TestName',
             'subject': 'TestSubject',
             'body_html': 'Hello <t t-out="object.name" />',
             'reply_to_mode': 'new',
@@ -199,7 +198,6 @@ class TestMassMailing(TestMassMailCommon):
                     'mailing_domain': [('id', 'in', test_records.ids)],
                     'mailing_model_id': self.env['ir.model']._get_id(dst_model),
                     'mailing_type': 'mail',
-                    'name': 'SourceName',
                     'preview': 'Hi ${object.name} :)',
                     'reply_to_mode': 'update',
                     'subject': 'MailingSubject',
@@ -365,7 +363,6 @@ class TestMassMailing(TestMassMailCommon):
         subject = 'MassMailingTestUTM'
 
         mailing = self.env['mailing.mailing'].create({
-            'name': 'UTMTest',
             'subject': subject,
             'body_html': '<p>Hello <t t-out="object.name"/></p>',
             'reply_to_mode': 'new',
@@ -513,7 +510,6 @@ class TestMassMailing(TestMassMailCommon):
         mailing = self.env['mailing.mailing'].create({
             'mailing_domain': [('name', 'ilike', 'test_duplicates %')],
             'mailing_model_id': self.env.ref('test_mass_mailing.model_mailing_test_partner').id,
-            'name': 'test duplicates',
             'subject': 'test duplicates',
         })
 
@@ -546,7 +542,6 @@ class TestMassMailing(TestMassMailCommon):
             'body_html': '<p>Marketing stuff for ${object.name}</p>',
             'mailing_domain': [('id', 'in', test_records.ids)],
             'mailing_model_id': self.env['ir.model']._get_id('mailing.test.partner.unstored'),
-            'name': 'test',
             'subject': 'Blacklisted',
         })
 
@@ -608,7 +603,6 @@ class TestMassMailing(TestMassMailCommon):
 
         # create mass mailing record
         mailing = self.env['mailing.mailing'].create({
-            'name': 'SourceName',
             'subject': 'MailingSubject',
             'body_html': '<p>Hello <t t-out="object.name"/></p>',
             'mailing_model_id': self.env['ir.model']._get('mailing.list').id,
