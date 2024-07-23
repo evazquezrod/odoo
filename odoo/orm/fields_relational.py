@@ -752,11 +752,7 @@ class _RelationalMulti(_Relational[M], typing.Generic[M]):
         if isinstance(value, Domain):
             domain = value & field_domain
             comodel = comodel.with_context(**self.context)
-            if self.auto_join:
-                # bypass access rules for auto-join
-                query = comodel._where_calc(domain)
-            else:
-                query = comodel._search(domain)
+            query = comodel._search(domain, no_record_rules=self.auto_join)
             assert isinstance(query, Query)
             return query
         if isinstance(value, Query):

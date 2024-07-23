@@ -101,7 +101,7 @@ class ProductTemplate(models.Model):
         limit_count = config.get_limited_product_count()
         pos_limited_loading = self.env.context.get('pos_limited_loading', True)
         if limit_count and pos_limited_loading:
-            query = self._where_calc(self._load_pos_data_domain(data))
+            query = self._search(self._load_pos_data_domain(data), no_record_rules=True)
             sql = SQL(
                 """
                     WITH pm AS (

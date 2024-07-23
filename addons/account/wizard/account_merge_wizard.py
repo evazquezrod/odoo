@@ -251,7 +251,7 @@ class AccountMergeWizardLine(models.TransientModel):
     @api.depends('account_id')
     def _compute_account_has_hashed_entries(self):
         # optimization to avoid having to re-check which accounts have hashed entries
-        query = self.env['account.move.line']._where_calc([
+        query = self.env['account.move.line'].sudo()._search([
             ('account_id', 'in', self.account_id.ids),
             ('move_id.inalterable_hash', '!=', False),
         ])

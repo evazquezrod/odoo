@@ -4876,35 +4876,6 @@ class BaseModel(metaclass=MetaModel):
 
         return original_self.concat(*(data['record'] for data in data_list))
 
-    @api.model
-    def _where_calc(self, domain: DomainType, active_test: bool = True) -> Query:
-        """Compute the WHERE clause for the `_search` method without applying any security rule.
-
-        :param domain: the domain to compute
-        :param active_test: whether the default filtering of records with
-            ``active`` field set to ``False`` should be applied.
-        :return: the query expressing the given domain as provided in domain
-        """
-        domain = Domain(domain)
-
-        # if the object has an active field ('active', 'x_active'), filter out all
-        # inactive records unless they were explicitly asked for
-        if (
-            self._active_name
-            and active_test
-            and self.env.context.get('active_test', True)
-            and not any(leaf.field_expr == self._active_name for leaf in domain.iter_conditions())
-        ):
-            domain &= Domain(self._active_name, '=', True)
-
-        domain = domain.optimize(self, full=True)
-        if domain.is_false():
-            return self.browse()._as_query()
-        query = Query(self.env, self._table, self._table_sql)
-        if not domain.is_true():
-            query.add_where(domain._to_sql(self, self._table, query))
-        return query
-
     def _check_qorder(self, word: str) -> None:
         if not regex_order.match(word):
             raise UserError(_(
@@ -5026,6 +4997,8 @@ class BaseModel(metaclass=MetaModel):
         offset: int = 0,
         limit: int | None = None,
         order: str | None = None,
+        *,
+        no_record_rules: bool = False,
     ) -> Query:
         """
         Private implementation of search() method.
@@ -5040,26 +5013,38 @@ class BaseModel(metaclass=MetaModel):
         default the returned query object is not actually executed, and it can
         be injected as a value in a domain in order to generate sub-queries.
         """
-        self.browse().check_access('read')
+        # XXX use no_record_rules iso sudo
+        # XXX active_test=False => dummy (active)
+        check_rules = not (self.env.su or no_record_rules)
+        if check_rules:
+            self.browse().check_access('read')
 
-        # deletegate to _where_calc
-        query = self._where_calc(domain)
-        if query.is_empty():
-            return query
-
-        # security access domain
-        if self.env.su:
-            sec_domain = Domain.TRUE
-        else:
-            sec_domain = self.env['ir.rule']._compute_domain(self._name, 'read')
-            sec_domain = sec_domain.optimize(self.sudo(), full=True)
+        domain = Domain(domain)
+        # inactive records unless they were explicitly asked for
+        if (
+            self._active_name
+            and self.env.context.get('active_test', True)
+            and not any(leaf.field_expr == self._active_name for leaf in domain.iter_conditions())
+        ):
+            domain &= Domain(self._active_name, '=', True)
 
         # build the query
-        if sec_domain.is_false() or (not limit and limit is not None and limit is not False):
+        domain = domain.optimize(self, full=True)
+        if domain.is_false():
             return self.browse()._as_query()
-        if not sec_domain.is_true():
-            query.add_where(sec_domain._to_sql(self.sudo(), self._table, query))
+        query = Query(self.env, self._table, self._table_sql)
+        query.add_where(domain._to_sql(self, self._table, query))
 
+        # security access domain
+        if check_rules:
+            sec_domain = self.env['ir.rule']._compute_domain(self._name, 'read')
+            sec_domain = sec_domain.optimize(self.sudo(), full=True)
+            if sec_domain.is_false():
+                return self.browse()._as_query()
+            if not sec_domain.is_true():
+                query.add_where(sec_domain._to_sql(self.sudo(), self._table, query))
+
+        # add order and limits
         if order:
             query.order = self._order_to_sql(order, query)
         if limit is not None:

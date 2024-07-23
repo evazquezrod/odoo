@@ -979,7 +979,7 @@ class CalendarEvent(models.Model):
 
     def _get_default_privacy_domain(self):
         # Sub query user settings from calendars that are not private ('public' and 'confidential').
-        public_calendars_settings = self.env['res.users.settings'].sudo()._where_calc([('calendar_default_privacy', '!=', 'private')]).select('user_id')
+        public_calendars_settings = self.env['res.users.settings']._search([('calendar_default_privacy', '!=', 'private')], no_record_rules=True).select('user_id')
         # display public, confidential events and events with default privacy when owner's default privacy is not private
         return [
             '|',

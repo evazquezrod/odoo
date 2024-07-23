@@ -6,23 +6,23 @@ from odoo.fields import Domain
 bypass_token = object()
 DOMAINS = {
     'res.company':
-        lambda rec, operator, value: [('id', 'in', rec.env['account.move.line']._where_calc([
+        lambda rec, operator, value: [('id', 'in', rec.env['account.move.line'].with_context(active_test=False)._search([
             ('company_id.restrictive_audit_trail', operator, value),
-        ], active_test=False).subselect('company_id'))],
+        ], no_record_rules=True).subselect('company_id'))],
     'account.move':
         lambda rec, operator, value: [('company_id.restrictive_audit_trail', operator, value)],
     'account.account':
         lambda rec, operator, value: [('used', operator, value), ('company_ids.restrictive_audit_trail', operator, value)],
     'account.tax':
-        lambda rec, operator, value: [('id', 'in', rec.env['account.move.line']._where_calc([
+        lambda rec, operator, value: [('id', 'in', rec.env['account.move.line']._with_context(active_test=False)._search([
             ('tax_line_id', '!=', False),
             ('company_id.restrictive_audit_trail', operator, value),
-        ], active_test=False).subselect('tax_line_id'))],
+        ], no_record_rules=True).subselect('tax_line_id'))],
     'res.partner':
-        lambda rec, operator, value: [('id', 'in', rec.env['account.move.line']._where_calc([
+        lambda rec, operator, value: [('id', 'in', rec.env['account.move.line']._with_context(active_test=False)._search([
             ('partner_id', '!=', False),
             ('company_id.restrictive_audit_trail', operator, value),
-        ], active_test=False).subselect('partner_id'))],
+        ], no_record_rules=True).subselect('partner_id'))],
     }
 
 
