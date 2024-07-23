@@ -60,8 +60,8 @@ class ProjectProject(models.Model):
             return NotImplemented
 
         Company = self.env['res.company']
-        sql = Company._where_calc(
-            [('internal_project_id', '!=', False)], active_test=False
+        sql = Company.sudo().with_context(active_test=False)._search(
+            [('internal_project_id', '!=', False)]
         ).subselect("internal_project_id")
         return [('id', operator, sql)]
 

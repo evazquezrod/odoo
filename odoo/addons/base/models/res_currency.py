@@ -120,9 +120,7 @@ class ResCurrency(models.Model):
     def _get_rates(self, company, date):
         if not self.ids:
             return {}
-        currency_query = self.env['res.currency']._where_calc([
-            ('id', 'in', self.ids),
-        ], active_test=False)
+        currency_query = self._as_query(ordered=False)
         currency_id = self.env['res.currency']._field_to_sql(currency_query.table, 'id')
         rate_query = self.env['res.currency.rate']._search([
             ('name', '<=', date),

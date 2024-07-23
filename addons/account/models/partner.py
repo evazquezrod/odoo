@@ -356,10 +356,10 @@ class ResPartner(models.Model):
             self.debit = False
             self.credit = False
             return
-        query = self.env['account.move.line']._where_calc([
+        query = self.env['account.move.line']._search([
             ('parent_state', '=', 'posted'),
             ('company_id', 'child_of', self.env.company.root_id.id)
-        ])
+        ], no_record_rules=True)
         self.env['account.move.line'].flush_model(
             ['account_id', 'amount_residual', 'company_id', 'parent_state', 'partner_id', 'reconciled']
         )
