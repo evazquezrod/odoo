@@ -708,7 +708,7 @@ class MailThread(models.AbstractModel):
         # its creation, but could refer to wrong parent message id,
         # leading to a traceback in case the related message_id
         # doesn't exist
-        cleaned_self = self.with_context(clean_context(self._context))._fallback_lang()
+        cleaned_self = self.with_context(clean_context(self._context))._fallback_lang().sudo()
         try:
             templates = self._track_template(changes)
         except MissingError:
@@ -2283,7 +2283,7 @@ class MailThread(models.AbstractModel):
         if 'record_alias_domain_id' not in msg_values:
             msg_values['record_alias_domain_id'] = self.sudo()._mail_get_alias_domains(default_company=self.env.company)[self.id].id
         if 'record_company_id' not in msg_values:
-            msg_values['record_company_id'] = self._mail_get_companies(default=self.env.company)[self.id].id
+            msg_values['record_company_id'] = self.sudo()._mail_get_companies(default=self.env.company)[self.id].id
         if 'reply_to' not in msg_values:
             msg_values['reply_to'] = self._notify_get_reply_to(default=email_from, author_id=author_id)[self.id]
 
@@ -3287,7 +3287,7 @@ class MailThread(models.AbstractModel):
                 [
                     ("res_model", "=", message.model),
                     ("res_id", "=", message.res_id),
-                    ("partner_id", "in", users.partner_id.ids),
+                    ("partner_id", "in", users.sudo().partner_id.ids),
                 ]
             )
             for user in users:
@@ -3555,7 +3555,7 @@ class MailThread(models.AbstractModel):
         :return: dictionary of values used when rendering notification layout;
         """
         msg_vals = msg_vals or {}
-
+        message_sudo = message.sudo()  # need access to values
         lang = force_email_lang if force_email_lang else self.env.lang
         record_wlang = self.with_context(lang=lang)
 
@@ -3583,8 +3583,8 @@ class MailThread(models.AbstractModel):
 
         # record, model
         if not model_description:
-            model_description = record_wlang._get_model_description(msg_vals['model'] if 'model' in msg_vals else message.model)
-        record_name = msg_vals['record_name'] if 'record_name' in msg_vals else message.record_name
+            model_description = record_wlang._get_model_description(msg_vals['model'] if 'model' in msg_vals else message_sudo.model)
+        record_name = msg_vals['record_name'] if 'record_name' in msg_vals else message_sudo.record_name
 
         # tracking: in case of missing value, perform search (skip only if sure we don't have any)
         check_tracking = msg_vals.get('tracking_value_ids', True) if msg_vals else bool(self)
@@ -3603,14 +3603,14 @@ class MailThread(models.AbstractModel):
                 ) for fmt_vals in tracking_values._tracking_value_format()
             ]
 
-        subtype_id = msg_vals['subtype_id'] if 'subtype_id' in msg_vals else message.subtype_id.id
+        subtype_id = msg_vals['subtype_id'] if 'subtype_id' in msg_vals else message_sudo.subtype_id.id
         is_discussion = subtype_id == self.env['ir.model.data']._xmlid_to_res_id('mail.mt_comment')
 
         return {
             # message
             'is_discussion': is_discussion,
             'message': message,
-            'subtype': message.subtype_id,
+            'subtype': message_sudo.subtype_id,
             'tracking_values': tracking,
             # record
             'model_description': model_description,
@@ -4731,13 +4731,8 @@ class MailThread(models.AbstractModel):
             res = {}
             if request_list:
                 res["hasReadAccess"] = True
-                res["hasWriteAccess"] = False
+                res["hasWriteAccess"] = thread.has_access("write")
                 res["canPostOnReadonly"] = self._mail_post_access == "read"
-                try:
-                    thread.check_access("write")
-                    res["hasWriteAccess"] = True
-                except AccessError:
-                    pass
             if (
                 request_list
                 and "activities" in request_list

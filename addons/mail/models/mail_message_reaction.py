@@ -34,12 +34,12 @@ class MailMessageReaction(models.Model):
                 "content": content,
                 "count": len(reactions),
                 "sequence": min(reactions.ids),
-                "personas": Store.Many(reactions.guest_id)._get_id()
+                "personas": Store.Many(reactions.guest_id, sudo=True)._get_id()
                 + Store.Many(reactions.partner_id)._get_id(),
                 "message": message_id.id,
             }
             store.add_model_values("MessageReactions", data)
 
     def _persona_to_store(self, store: Store):
-        store.add(self.guest_id, ["avatar_128", "name"])
+        store.add(self.guest_id.sudo(), ["avatar_128", "name"])
         store.add(self.partner_id, ["avatar_128", "name"])

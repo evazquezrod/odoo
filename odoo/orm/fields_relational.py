@@ -44,7 +44,10 @@ class _Relational(Field[M], typing.Generic[M]):
         if records is None or len(records._ids) <= 1:
             return super().__get__(records, owner)
 
-        records._check_field_access(self, 'read')
+        env = records.env
+        if not env.su:
+            records._check_field_access(self, 'read')
+            records.check_access('read')
 
         # multi-record case
         if self.compute and self.store:
@@ -398,7 +401,7 @@ class Many2one(_Relational[M]):
             return
         corecord = self.convert_to_record(value, records)
         for invf in records.pool.field_inverses[self]:
-            valid_records = records.filtered_domain(invf.get_comodel_domain(corecord))
+            valid_records = records._filtered_access('read').filtered_domain(invf.get_comodel_domain(corecord))
             if not valid_records:
                 continue
             ids0 = invf._get_cache(corecord.env).get(corecord.id)
@@ -574,7 +577,7 @@ class _RelationalMulti(_Relational[M], typing.Generic[M]):
         # use registry to avoid creating a recordset for the model
         prefetch_ids = PrefetchX2many(record, self)
         Comodel = record.pool[self.comodel_name]
-        corecords = Comodel(record.env, value, prefetch_ids)
+        corecords = Comodel(record.env, value, prefetch_ids)._filtered_access('read')
         if (
             Comodel._active_name
             and self.context.get('active_test', record.env.context.get('active_test', True))
@@ -587,7 +590,7 @@ class _RelationalMulti(_Relational[M], typing.Generic[M]):
         prefetch_ids = PrefetchX2many(records, self)
         Comodel = records.pool[self.comodel_name]
         ids = tuple(unique(id_ for ids in values for id_ in ids))
-        corecords = Comodel(records.env, ids, prefetch_ids)
+        corecords = Comodel(records.env, ids, prefetch_ids)._filtered_access('read')
         if (
             Comodel._active_name
             and self.context.get('active_test', records.env.context.get('active_test', True))
@@ -1336,7 +1339,7 @@ class Many2many(_RelationalMulti[M]):
                 self.read(records.browse(missing_ids))
 
         # determine new relation {x: ys}
-        old_relation = {record.id: set(record[self.name]._ids) for record in records}
+        old_relation = {record.id: set() if create else set(record[self.name]._ids) for record in records.sudo()}
         new_relation = {x: set(ys) for x, ys in old_relation.items()}
 
         # operations on new relation

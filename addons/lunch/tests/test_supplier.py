@@ -34,9 +34,8 @@ class TestSupplier(TestsCommon):
 # Do NOT modify this cron, modify the related record instead.
 env['lunch.supplier'].browse([{self.supplier_kothai.id}])._send_auto_email()""")
 
-        cron_id = self.supplier_kothai.cron_id.id
         self.supplier_kothai.unlink()
-        self.assertFalse(self.env['ir.cron'].sudo().search([('id', '=', cron_id)]))
+        self.assertFalse(self.env['ir.cron'].sudo().search([('id', '=', cron_ny.id)]))
 
     @common.users('cle-lunch-manager')
     def test_compute_available_today(self):
@@ -168,7 +167,8 @@ env['lunch.supplier'].browse([{self.supplier_kothai.id}])._send_auto_email()""")
 
     @common.users('cle-lunch-manager')
     def test_cron_sync_create(self):
-        cron_ny = self.supplier_kothai.cron_id  # I am at New-York
+        # I am at New-York
+        cron_ny = self.supplier_kothai.cron_id.sudo()
         self.assertTrue(cron_ny.active)
         self.assertEqual(cron_ny.name, "Lunch: send automatic email to Kothai")
         self.assertEqual(
@@ -178,7 +178,7 @@ env['lunch.supplier'].browse([{self.supplier_kothai.id}])._send_auto_email()""")
 
     @common.users('cle-lunch-manager')
     def test_cron_sync_active(self):
-        cron_ny = self.supplier_kothai.cron_id
+        cron_ny = self.supplier_kothai.cron_id.sudo()
 
         self.supplier_kothai.active = False
         self.assertFalse(cron_ny.active)
@@ -192,15 +192,15 @@ env['lunch.supplier'].browse([{self.supplier_kothai.id}])._send_auto_email()""")
 
     @common.users('cle-lunch-manager')
     def test_cron_sync_nextcall(self):
-        cron_ny = self.supplier_kothai.cron_id
+        cron_ny = self.supplier_kothai.cron_id.sudo()
         old_nextcall = cron_ny.nextcall
 
         self.supplier_kothai.automatic_email_time -= 5
         self.assertEqual(cron_ny.nextcall, old_nextcall - timedelta(hours=5) + timedelta(days=1))
 
         # Simulate cron execution
-        cron_ny.sudo().lastcall = old_nextcall - timedelta(hours=5)
-        cron_ny.sudo().nextcall += timedelta(days=1)
+        cron_ny.lastcall = old_nextcall - timedelta(hours=5)
+        cron_ny.nextcall += timedelta(days=1)
 
         self.supplier_kothai.automatic_email_time += 7
         self.assertEqual(cron_ny.nextcall, old_nextcall + timedelta(days=1, hours=2))

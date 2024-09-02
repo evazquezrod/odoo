@@ -1553,8 +1553,12 @@ class Field(typing.Generic[T]):
                 record.ensure_one()
                 assert False, "unreachable"
             # null record -> return the null value for this field
+            record.check_access('read')
             value = self.convert_to_cache(False, record, validate=False)
             return self.convert_to_record(value, record)
+
+        if not env.su and not env._access_read[record._name].get(record.id):
+            record.check_access('read')
 
         if self.compute and self.store:
             # process pending computations
@@ -1693,6 +1697,10 @@ class Field(typing.Generic[T]):
 
     def __set__(self, records: BaseModel, value) -> None:
         """ set the value of field ``self`` on ``records`` """
+        # access check:
+        # - protected: should be already checked, usually called for computed fields
+        # - new_ids: just check access to model
+        # - other_ids: access is checked in Model.write()
         protected_ids = []
         new_ids = []
         other_ids = []
@@ -1711,6 +1719,7 @@ class Field(typing.Generic[T]):
 
         if new_ids:
             # new records: no business logic
+            records.browse().check_access('write')
             new_records = records.__class__(records.env, tuple(new_ids), records._prefetch_ids)
             with records.env.protecting(records.pool.field_computed.get(self, [self]), new_records):
                 if self.relational:
@@ -1778,9 +1787,22 @@ class Field(typing.Generic[T]):
 
     def compute_value(self, records: BaseModel) -> None:
         """ Invoke the compute method on ``records``; the results are in cache. """
-        env = records.env
         if self.compute_sudo:
             records = records.sudo()
+        elif self.store and 'write_uid' in records._fields:
+            # XXX transaction.default_env should solve the need for this
+            # in case we have a stored field computed without sudo
+            # run the computation with the user that last updated the record
+            # (often used in TransientModel)
+            env = records.env
+            user_records = records.sudo().grouped('write_uid')
+            if len(user_records) > 1:
+                # compute each group separately
+                for records in user_records.values():
+                    self.compute_value(records.sudo(env.su))
+                return
+            records = records.with_user(next(iter(user_records))).sudo(env.su)
+        env = records.env
         fields = records.pool.field_computed[self]
 
         # Just in case the compute method does not assign a value, we already

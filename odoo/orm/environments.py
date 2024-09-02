@@ -604,6 +604,26 @@ class Transaction:
         self.field_dirty.clear()
         self.tocompute.clear()
 
+    def clear_access_cache(self, model_name: str = '') -> None:
+        """ Clear the access cache for record rule checks. """
+        if model_name:
+            self.access_read.pop(model_name, None)
+            self.access_write.pop(model_name, None)
+        else:
+            self.access_read.clear()
+            self.access_write.clear()
+
+    def _add_to_access_cache(self, record: BaseModel, operation: typing.Literal['read', 'write'] = 'read') -> None:
+        """ Patch the cache so that the user has access to a record."""
+        if operation == 'read':
+            cache = self.access_read
+        elif operation == 'write':
+            cache = self.access_write
+        else:
+            return
+        context = record.env['ir.rule']._get_user_context_values()
+        cache[record._name][context].update(dict.fromkeys(record._ids, True))
+
     def reset(self) -> None:
         """ Reset the transaction.  This clears the transaction, and reassigns
             the registry on all its environments.  This operation is strongly
