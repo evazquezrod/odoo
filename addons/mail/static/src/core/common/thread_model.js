@@ -156,6 +156,8 @@ export class Thread extends Record {
         }
         return this.message_needaction_counter;
     }
+    /** @type {Boolean} */
+    inPortal = false;
     isDisplayed = fields.Attr(false, {
         compute() {
             return this.computeIsDisplayed();
@@ -503,6 +505,7 @@ export class Thread extends Record {
                 around,
                 before,
             },
+            ...this.rpcParams,
         });
     }
 
@@ -632,10 +635,6 @@ export class Thread extends Record {
         if (this.model === "mail.box" && this.id === "history") {
             return `/mail/history/messages`;
         }
-        return this.fetchRouteChatter;
-    }
-
-    get fetchRouteChatter() {
         return "/mail/thread/messages";
     }
 
