@@ -32,6 +32,7 @@ import {
     setActiveProperties,
     setVisibilityDependency,
     getParsedDataFor,
+    rerenderField,
 } from "./utils";
 import { SyncCache } from "@html_builder/utils/sync_cache";
 import { _t } from "@web/core/l10n/translation";
@@ -194,6 +195,8 @@ export class FormOptionPlugin extends Plugin {
             },
         ],
         so_content_addition_selector: [".s_website_form"],
+        on_snippet_dropped_handlers: this.onSnippetDropped.bind(this),
+        on_cloned_handlers: this.onCloned.bind(this),
     };
     setup() {
         this.modelsCache = new SyncCache(this._fetchModels.bind(this));
@@ -370,11 +373,14 @@ export class FormOptionPlugin extends Plugin {
         if (formInfo) {
             const formatInfo = getDefaultFormat(el);
             formInfo.formFields.forEach((field) => {
-                field.formatInfo = formatInfo;
+                // Create a shallow copy of field to prevent unintended
+                // mutations to the original field stored in the registry
+                const _field = { ...field };
+                _field.formatInfo = formatInfo;
                 const locationEl = el.querySelector(
                     ".s_website_form_submit, .s_website_form_recaptcha"
                 );
-                locationEl.insertAdjacentElement("beforebegin", renderField(field));
+                locationEl.insertAdjacentElement("beforebegin", renderField(_field));
             });
         }
     }
@@ -706,7 +712,8 @@ export class FormOptionPlugin extends Plugin {
                 newRecordId: isFieldCustom(fieldEl) ? getNewRecordId(fieldEl) : "",
             });
         }
-        return {
+
+        this.activeFormData = {
             fields,
             existingFields,
             conditionInputs,
@@ -714,6 +721,45 @@ export class FormOptionPlugin extends Plugin {
             valueList,
             conditionValueList,
         };
+        return this.activeFormData;
+    }
+    /**
+     * Handler called when a snippet is dropped into the editor.
+     *
+     * Re-renders all the fields inside the dropped snippet to ensure each
+     * field gets a unique ID.
+     */
+    async onSnippetDropped({ snippetEl }) {
+        const fieldElsToRerender = snippetEl.querySelectorAll(
+            "[data-name='Field']:not(.s_website_form_dnone)"
+        );
+        if (fieldElsToRerender.length === 0) {
+            return;
+        }
+        const { fields } = await this.loadFieldOptionData(fieldElsToRerender[0]);
+        for (const fieldEl of fieldElsToRerender) {
+            rerenderField(fieldEl, fields);
+        }
+    }
+    /**
+     * Handler called when an element is cloned in the editor.
+     *
+     * Re-renders all the fields of the cloned element to ensure each field gets
+     * a unique ID.
+     */
+    onCloned({ cloneEl }) {
+        const fieldElsToRerender = [];
+        if (cloneEl.matches("[data-name='Field']:not(.s_website_form_dnone)")) {
+            // Handle case where the cloned element is a field itself
+            fieldElsToRerender.push(cloneEl);
+        } else {
+            fieldElsToRerender.push(
+                ...cloneEl.querySelectorAll("[data-name='Field']:not(.s_website_form_dnone)")
+            );
+        }
+        for (const fieldEl of fieldElsToRerender) {
+            rerenderField(fieldEl, this.activeFormData.fields);
+        }
     }
 }
 

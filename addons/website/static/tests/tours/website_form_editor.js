@@ -167,6 +167,96 @@ registerWebsitePreviewTour("website_form_editor_tour", {
     {
         trigger: ":iframe .s_website_form_field",
     },
+    // Fields in two form snippet should have unique IDs
+    {
+        content: "Drop another form snippet",
+        trigger: ".o_block_tab:not(.o_we_ongoing_insertion) .o_snippet[name='Form'].o_draggable .o_snippet_thumbnail",
+        run: "drag_and_drop :iframe #wrap",
+    },
+    {
+        content: "Check if there are two form snippets on the page",
+        trigger: ":iframe .s_website_form:nth-of-type(2) .s_website_form_field",
+    },
+    {
+        content: "Check that the first field of both the form snippets have different IDs",
+        trigger: ":iframe .s_website_form:nth-of-type(1) input[name='name']",
+        run: function() {
+            const firstFieldForm1El = this.anchor;
+            const firstFieldForm2El = firstFieldForm1El.ownerDocument.querySelector(
+                ".s_website_form:nth-of-type(2) input[name='name']"
+            );
+            if (firstFieldForm1El.id === firstFieldForm2El.id) {
+                console.error("The first fields of two different form snippet have the same ID");
+            }
+        },
+    },
+    {
+        content: "Click on the form snippet",
+        trigger: ":iframe .s_website_form",
+        run: "click",
+    },
+    {
+        content: "Remove the form snippet",
+        trigger: "[data-container-title='Form'] .options-container-header .oe_snippet_remove",
+        run: "click",
+    },
+    // Cloning a form should generate new IDs for the cloned form fields
+    {
+        content: "Click on the form",
+        trigger: ":iframe .s_website_form",
+        run: "click",
+    },
+    {
+        content: "Clone the form",
+        trigger: "[data-container-title='Form'] .options-container-header .oe_snippet_clone",
+        run: "click",
+    },
+    {
+        content: "Check if the form is cloned",
+        trigger: ":iframe .s_website_form:nth-of-type(2)",
+    },
+    {
+        content: "Check if the first field of original and cloned form snippets have different IDs",
+        trigger: ":iframe .s_website_form:nth-of-type(1) input[name='name']",
+        run: function() {
+            const firstFieldOriginalFormEl = this.anchor;
+            const firstFieldClonedFormEl = firstFieldOriginalFormEl.ownerDocument.querySelector(
+                ".s_website_form:nth-of-type(2) input[name='name']"
+            );
+            if (firstFieldOriginalFormEl.id === firstFieldClonedFormEl.id) {
+                console.error("The first fields of original and cloned form snippet have the same ID");
+            }
+        },
+    },
+    // Cloning a field should generate new ID for the cloned field
+    {
+        content: "Click on the name field",
+        trigger: ":iframe .s_website_form:nth-of-type(1) input[name='name']",
+        run: "click",
+    },
+    {
+        content: "Clone the name field",
+        trigger: "[data-container-title='Field'] .options-container-header .oe_snippet_clone",
+        run: "click",
+    },
+    {
+        content: "Check if both, original and cloned name fields have unique IDs",
+        trigger: ":iframe .s_website_form input[name='name']",
+        run: function() {
+            const originalFormFieldEl = this.anchor;
+            const clonedFormFieldEl = originalFormFieldEl.ownerDocument.querySelectorAll(
+                ".s_website_form input[name='name']"
+            )[1];
+            if (originalFormFieldEl.id === clonedFormFieldEl.id) {
+                console.error("Original and cloned fields have the same ID");
+            }
+        }
+    },
+    {
+        content: "Delete the extra form.",
+        trigger: "[data-container-title='Form'] .options-container-header .oe_snippet_remove",
+        run: "click",
+    },
     {
         content: "Select form by clicking on an input field",
         trigger: ':iframe section.s_website_form input',
