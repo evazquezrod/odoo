@@ -3286,6 +3286,45 @@ class AccountMove(models.Model):
             if changed('commercial_partner_id'):
                 move.line_ids.partner_id = after[move]['commercial_partner_id']
 
+    def _get_sync_stack(self, invoice_container, tax_container, misc_container):
+        return [
+            (
+                10,
+                self._sync_dynamic_line(
+                    existing_key_fname='term_key',
+                    needed_vals_fname='needed_terms',
+                    needed_dirty_fname='needed_terms_dirty',
+                    line_type='payment_term',
+                    container=invoice_container,
+                ),
+            ),
+            (20, self._sync_unbalanced_lines(misc_container)),
+            (30, self._sync_rounding_lines(invoice_container)),
+            (
+                40,
+                self._sync_dynamic_line(
+                    existing_key_fname='discount_allocation_key',
+                    needed_vals_fname='line_ids.discount_allocation_needed',
+                    needed_dirty_fname='line_ids.discount_allocation_dirty',
+                    line_type='discount',
+                    container=invoice_container,
+                ),
+            ),
+            (50, self._sync_tax_lines(tax_container)),
+            (60, self._sync_non_deductible_base_lines(invoice_container)),
+            (
+                70,
+                self._sync_dynamic_line(
+                    existing_key_fname='epd_key',
+                    needed_vals_fname='line_ids.epd_needed',
+                    needed_dirty_fname='line_ids.epd_dirty',
+                    line_type='epd',
+                    container=invoice_container,
+                ),
+            ),
+            (80, self._sync_invoice(invoice_container)),
+        ]
+
     @contextmanager
     def _sync_dynamic_lines(self, container):
         with self._disable_recursion(container, 'skip_invoice_sync') as disabled:
@@ -3301,32 +3340,11 @@ class AccountMove(models.Model):
             tax_container, invoice_container, misc_container = ({} for __ in range(3))
             update_containers()
             with ExitStack() as stack:
-                stack.enter_context(self._sync_dynamic_line(
-                    existing_key_fname='term_key',
-                    needed_vals_fname='needed_terms',
-                    needed_dirty_fname='needed_terms_dirty',
-                    line_type='payment_term',
-                    container=invoice_container,
-                ))
-                stack.enter_context(self._sync_unbalanced_lines(misc_container))
-                stack.enter_context(self._sync_rounding_lines(invoice_container))
-                stack.enter_context(self._sync_dynamic_line(
-                    existing_key_fname='discount_allocation_key',
-                    needed_vals_fname='line_ids.discount_allocation_needed',
-                    needed_dirty_fname='line_ids.discount_allocation_dirty',
-                    line_type='discount',
-                    container=invoice_container,
-                ))
-                stack.enter_context(self._sync_tax_lines(tax_container))
-                stack.enter_context(self._sync_non_deductible_base_lines(invoice_container))
-                stack.enter_context(self._sync_dynamic_line(
-                    existing_key_fname='epd_key',
-                    needed_vals_fname='line_ids.epd_needed',
-                    needed_dirty_fname='line_ids.epd_dirty',
-                    line_type='epd',
-                    container=invoice_container,
-                ))
-                stack.enter_context(self._sync_invoice(invoice_container))
+                tuple_prestack = self._get_sync_stack(invoice_container, tax_container, misc_container)
+                tuple_prestack.sort()
+                for _seq, contextmgr in tuple_prestack:
+                    stack.enter_context(contextmgr)
+
                 line_container = {'records': self.line_ids}
                 with self.line_ids._sync_invoice(line_container):
                     yield
