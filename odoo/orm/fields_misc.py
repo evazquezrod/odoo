@@ -39,7 +39,8 @@ class Boolean(Field[bool]):
             return super()._condition_to_sql(field_expr, operator, value, model, alias, query)
 
         # get field and check access
-        sql_field = model._field_to_sql(alias, field_expr, query)
+        # XXX check not property
+        sql_field = self.to_sql(model, alias, query)
 
         # express all conditions as (field_expr, 'in', possible_values)
         possible_values = (

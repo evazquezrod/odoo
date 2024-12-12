@@ -1319,7 +1319,11 @@ class Field(typing.Generic[T]):
         return sql_expr
 
     def _condition_to_sql(self, field_expr: str, operator: str, value, model: BaseModel, alias: str, query: Query) -> SQL:
-        sql_field = model._field_to_sql(alias, field_expr, query)
+        field_name, property_name = parse_field_expr(field_expr)
+        assert field_name == self.name, f"_condition_to_sql called with invalid field_expr {field_expr}"
+        sql_field = self.to_sql(model, alias, query)
+        if property_name:
+            sql_field = self.property_to_sql(sql_field, property_name, model, alias, query)
 
         if field_expr == self.name:
             def _value_to_column(v):

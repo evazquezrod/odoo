@@ -459,9 +459,8 @@ class Many2one(_Relational):
             # for other operators than 'any', just generate condition based on column type
             return super().condition_to_sql(field_expr, operator, value, model, alias, query)
 
-        fname = field_expr
         comodel = model.env[self.comodel_name]
-        sql_field = model._field_to_sql(alias, fname, query)
+        sql_field = model._field_to_sql(alias, field_expr, query)
         can_be_null = self not in model.env.registry.not_null_fields
 
         if not isinstance(value, Domain):

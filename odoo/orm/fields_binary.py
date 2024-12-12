@@ -234,7 +234,7 @@ class Binary(Field):
         assert operator in ('in', 'not in') and set(value) == {False}, "Should have been done in Domain optimization"
         return SQL(
             "%s%s(SELECT res_id FROM ir_attachment WHERE res_model = %s AND res_field = %s)",
-            model._field_to_sql(alias, 'id', query),
+            model._fields['id'].to_sql(self, alias, query),
             SQL_OPERATORS['not in' if operator in ('in', '=') else 'in'],
             model._name,
             self.name,

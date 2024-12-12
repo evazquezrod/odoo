@@ -1706,7 +1706,7 @@ class BaseModel(metaclass=MetaModel):
         if func == 'recordset' and not (field.relational or fname == 'id'):
             raise ValueError(f"Aggregate method {func!r} can be only used on relational field (or id) (for {aggregate_spec!r}).")
 
-        sql_field = self._field_to_sql(self._table, fname, query)
+        sql_field = field.to_sql(self, self._table, query)
         return READ_GROUP_AGGREGATE[func](self._table, sql_field)
 
     def _read_group_groupby(self, groupby_spec: str, query: Query) -> SQL:
@@ -1762,7 +1762,7 @@ class BaseModel(metaclass=MetaModel):
             return SQL.identifier(rel_alias, field.column2)
 
         else:
-            sql_expr = self._field_to_sql(self._table, fname, query)
+            sql_expr = field.to_sql(self, self._table, query)
 
         if field.type in ('datetime', 'date') or (field.type == 'properties' and granularity):
             if not granularity:
@@ -2555,6 +2555,7 @@ class BaseModel(metaclass=MetaModel):
 
         return rows_dict
 
+    @typing.final
     def _field_to_sql(self, alias: str, field_expr: str, query: (Query | None) = None) -> SQL:
         """ Return an :class:`SQL` object that represents the value of the given
         field from the given table alias, in the context of the given query.
@@ -2577,7 +2578,7 @@ class BaseModel(metaclass=MetaModel):
         fname = field.name
         definition = self.get_property_definition(f"{fname}.{property_name}")
         property_type = definition.get('type')
-        sql_property = self._field_to_sql(self._table, f'{fname}.{property_name}', query)
+        sql_property = field.property_to_sql(field.to_sql(self, self._table, query), property_name, self, self._table, query)
 
         # JOIN on the JSON array
         if property_type in ('tags', 'many2many'):
@@ -3528,7 +3529,7 @@ class BaseModel(metaclass=MetaModel):
                 if field.type == 'binary' and (
                         context.get('bin_size') or context.get('bin_size_' + field.name)):
                     # PG 9.2 introduces conflicting pg_size_pretty(numeric) -> need ::cast
-                    sql = self._field_to_sql(self._table, field.name, query)
+                    sql = field.to_sql(self, self._table, query)
                     sql = SQL("pg_size_pretty(length(%s)::bigint)", sql)
                 else:
                     sql = self._field_to_sql(self._table, field.name, query)
@@ -4963,12 +4964,13 @@ class BaseModel(metaclass=MetaModel):
             # figure out the applicable order_by for the m2o
             # special case: ordering by "x_id.id" doesn't recurse on x_id's comodel
             comodel = self.env[field.comodel_name]
+            sql_field = field.to_sql(self, alias, query)
             if property_name == 'id':
                 coorder = 'id'
-                sql_field = self._field_to_sql(alias, fname, query)
             else:
                 coorder = comodel._order
-                sql_field = self._field_to_sql(alias, field_name, query)
+                if property_name:
+                    sql_field = field.property_to_sql(sql_field, property_name, self, alias, query)
 
             if coorder == 'id':
                 if query.groupby:
@@ -4998,7 +5000,9 @@ class BaseModel(metaclass=MetaModel):
                 terms.append(term)
             return SQL(", ").join(terms)
 
-        sql_field = self._field_to_sql(alias, field_name, query)
+        sql_field = field.to_sql(self, alias, query)
+        if property_name:
+            sql_field = field.property_to_sql(sql_field, property_name, self, alias, query)
         if field.type == 'boolean':
             sql_field = SQL("COALESCE(%s, FALSE)", sql_field)
         if query.groupby:
