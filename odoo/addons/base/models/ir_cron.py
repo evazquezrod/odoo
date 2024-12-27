@@ -85,7 +85,7 @@ class IrCron(models.Model):
                                       ('months', 'Months')], string='Interval Unit', default='months', required=True)
     nextcall = fields.Datetime(string='Next Execution Date', required=True, default=fields.Datetime.now, help="Next planned execution date for this job.")
     lastcall = fields.Datetime(string='Last Execution Date', help="Previous time the cron ran successfully, provided to the job through the context on the `lastcall` key")
-    priority = fields.Integer(default=5, aggregator=None, help='The priority of the job, as an integer: 0 means higher priority, 10 means lower priority.')
+    priority = fields.Integer(string='Priority (deprecated)', default=5, aggregator=None, help='The priority of the job, as an integer: 0 means higher priority, 10 means lower priority.')
     failure_count = fields.Integer(default=0, help="The number of consecutive failures of this job. It is automatically reset on success.")
     first_failure_date = fields.Datetime(string='First Failure Date', help="The first time the cron failed. It is automatically reset on success.")
 
@@ -283,7 +283,7 @@ class IrCron(models.Model):
             SELECT *
             FROM ir_cron
             WHERE %s
-            ORDER BY failure_count, priority, id
+            ORDER BY failure_count, stat_mean_duration, id
         """, IrCron._get_ready_sql_condition(cr)))
         return cr.dictfetchall()
 
@@ -447,6 +447,9 @@ class IrCron(models.Model):
         """
         Execute the job's server action multiple times until it
         completes. The completion status is returned.
+        The the current cursor must own a lock on the cron record.
+        The execution happens in a separate cursor and environment where
+        the user is the one of defined in the cron job.
 
         It is considered completed when either:
 
@@ -484,7 +487,7 @@ class IrCron(models.Model):
                 cron, progress = cron._add_progress(timed_out_counter=timed_out_counter)
                 job_cr.commit()
 
-                start_time = time.time()
+                start_time = time.monotonic()
                 try:
                     # signaling check and commit is done inside `_callback`
                     cron._callback(job['cron_name'], job['ir_actions_server_id'])
@@ -513,7 +516,7 @@ class IrCron(models.Model):
                     done, remaining = progress.done, progress.remaining
                     loop_count += 1
                     progress.timed_out_counter = 0
-                    progress.duration = (time.time() - start_time)
+                    progress.duration = (time.monotonic() - start_time)
                     timed_out_counter = 0
                     job_cr.commit()  # ensure we have no leftovers
                     _logger.debug('Job %r (%s) processed %s records, %s records remaining',
