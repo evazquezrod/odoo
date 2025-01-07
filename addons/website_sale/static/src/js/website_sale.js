@@ -109,7 +109,7 @@ export const WebsiteSale = publicWidget.Widget.extend({
      */
     _onClickAdd: async function (ev) {
         ev.preventDefault();
-        var def = () => {
+        return () => {
             this._updateRootProduct((ev.currentTarget).closest('form'));
             const isBuyNow = ev.currentTarget.classList.contains('o_we_buy_now');
             const isConfigured = ev.currentTarget.parentElement.id === 'add_to_cart_wrap';
@@ -118,12 +118,6 @@ export const WebsiteSale = publicWidget.Widget.extend({
                 isConfigured: isConfigured,
             });
         };
-        if ($('.js_add_cart_variants').children().length) {
-            return this._getCombinationInfo(ev).then(() => {
-                return !(ev.target).closest('.js_product').classList.contains('.css_not_available') ? def() : Promise.resolve();
-            });
-        }
-        return def();
     },
     /**
      * Event handler to increase or decrease quantity from the product page.

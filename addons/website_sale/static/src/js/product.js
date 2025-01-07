@@ -606,9 +606,10 @@ publicWidget.registry.WebsiteSaleProduct = publicWidget.Widget.extend(VariantMix
      * @param {$.Element} $container
      */
     triggerVariantChange: function ($container) {
+        const self = this;
         $container.find('ul[data-attribute_exclusions]').trigger('change');
         $container.find('input.js_variant_change:checked, select.js_variant_change').each(function () {
-            VariantMixin.handleCustomValues($(this));
+            self.handleCustomValues($(this));
         });
     },
 
