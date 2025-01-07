@@ -1,13 +1,13 @@
 import { rpc, RPCError } from "@web/core/network/rpc";
 import publicWidget from "@web/legacy/js/public/public_widget";
-import VariantMixin from "@website_sale/js/sale_variant_mixin";
+import VariantMixin from "@website_sale/js/variant_mixin";
 import wSaleUtils from "@website_sale/js/website_sale_utils";
 
 // VariantMixin events are overridden on purpose here
 // to avoid registering them more than once since they are already registered
 // in website_sale.js
 // TODO VFE extend WebsiteSale class instead ?
-publicWidget.registry.ProductWishlist = publicWidget.Widget.extend(VariantMixin, {
+publicWidget.registry.ProductWishlist = publicWidget.Widget.extend({
     selector: '.oe_website_sale',
     events: {
         'click .o_wsale_my_wish': '_onClickMyWish',
@@ -87,7 +87,7 @@ publicWidget.registry.ProductWishlist = publicWidget.Widget.extend(VariantMixin,
         }
         $el.prop("disabled", true).addClass('disabled');
         //TODO VFE isn't it already available, do we need to use selectOrCreateProduct here ?
-        var productReady = this.selectOrCreateProduct(
+        var productReady = VariantMixin.selectOrCreateProduct(
             $el.closest('form'),
             productID,
             templateId,
@@ -220,6 +220,7 @@ publicWidget.registry.ProductWishlist = publicWidget.Widget.extend(VariantMixin,
     _onClickAddWish: function (ev) {
         this._addNewProducts($(ev.currentTarget));
     },
+    // TODO VFE move to product.js
     /**
      * @private
      * @param {Event} ev

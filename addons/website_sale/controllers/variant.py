@@ -39,8 +39,6 @@ class WebsiteSaleVariantController(Controller):
             return combination_info
 
         if request.website.product_page_image_width != 'none' and not request.env.context.get('website_sale_no_images', False):
-            product_or_template = product or product_template
-            combination_info['display_image'] = bool(product_or_template.image_128)
             combination_info['carousel'] = request.env['ir.ui.view']._render_template(
                 'website_sale.shop_product_images',
                 values={

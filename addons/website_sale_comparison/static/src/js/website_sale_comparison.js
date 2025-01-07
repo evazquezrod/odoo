@@ -4,14 +4,11 @@ import { rpc } from "@web/core/network/rpc";
 import { Mutex } from "@web/core/utils/concurrency";
 import { renderToString } from "@web/core/utils/render";
 import publicWidget from "@web/legacy/js/public/public_widget";
-import VariantMixin from "@website_sale/js/sale_variant_mixin";
+import VariantMixin from "@website_sale/js/variant_mixin";
 import website_sale_utils from "@website_sale/js/website_sale_utils";
 
 
-// VariantMixin events are overridden on purpose here
-// to avoid registering them more than once since they are already registered
-// in website_sale.js
-var ProductComparison = publicWidget.Widget.extend(VariantMixin, {
+var ProductComparison = publicWidget.Widget.extend({
     template: 'product_comparison_template',
     events: {
         'click .o_product_panel_header': '_onClickPanelHeader',
@@ -99,7 +96,7 @@ var ProductComparison = publicWidget.Widget.extend(VariantMixin, {
 
             let $form = $elem.closest('form');
             $form = $form.length ? $form : $('#product_details > form');
-            this.selectOrCreateProduct(
+            VariantMixin.selectOrCreateProduct(
                 $form,
                 productId,
                 $form.find('.product_template_id').val(),

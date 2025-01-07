@@ -2,10 +2,9 @@ import { hasTouch, isBrowserFirefox } from "@web/core/browser/feature_detection"
 import { rpc } from "@web/core/network/rpc";
 import publicWidget from "@web/legacy/js/public/public_widget";
 import "@website/libs/zoomodoo/zoomodoo";
-import VariantMixin from "@website_sale/js/sale_variant_mixin";
 
 
-export const WebsiteSale = publicWidget.Widget.extend(VariantMixin, {
+export const WebsiteSale = publicWidget.Widget.extend({
     selector: '.oe_website_sale',
     events: Object.assign({}, {
         'click a.js_add_cart_json': '_onChangeQuantity', // product & cart page, maybe others
@@ -212,17 +211,6 @@ export const WebsiteSale = publicWidget.Widget.extend(VariantMixin, {
             var search = $this.find('input.search-query');
             window.location = oldurl + '&' + search.attr('name') + '=' + encodeURIComponent(search.val());
         }
-    },
-    /**
-     * Toggles the add to cart button depending on the possibility of the
-     * current combination.
-     *
-     * @override
-     */
-    _toggleDisable: function ($parent, isCombinationPossible) {
-        VariantMixin._toggleDisable.apply(this, arguments);
-        $parent.find("#add_to_cart").toggleClass('disabled', !isCombinationPossible);
-        $parent.find(".o_we_buy_now").toggleClass('disabled', !isCombinationPossible);
     },
     /**
      * Prevent multiclicks on confirm button when the form is submitted

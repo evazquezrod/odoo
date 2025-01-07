@@ -1,9 +1,9 @@
 import { WebsiteSale } from '@website_sale/js/website_sale';
 import { rpc } from "@web/core/network/rpc";
 import { isEmail } from '@web/core/utils/strings';
-import VariantMixin from "@website_sale/js/sale_variant_mixin";
 
 WebsiteSale.include({
+    // TODO VFE move to product.js
     events: Object.assign({}, WebsiteSale.prototype.events, {
         'click #product_stock_notification_message': '_onClickProductStockNotificationMessage',
         'click #product_stock_notification_form_submit_button': '_onClickSubmitProductStockNotificationForm',
@@ -57,18 +57,12 @@ WebsiteSale.include({
     },
 
     /**
-     * Adds the stock checking to the regular _onChangeCombination method
-     * @override
-     */
-    _onChangeCombination: function () {
-        this._super.apply(this, arguments);
-        VariantMixin._onChangeCombinationStock.apply(this, arguments);
-    },
-    /**
      * Recomputes the combination after adding a product to the cart
      * @override
      */
     _onClickAdd(ev) {
+        // TODO VCR
+        // TODO VFE send event to product.js so that it reloads the availability messages (only if we stay on product page)
         return this._super.apply(this, arguments).then(() => {
             if ($('div.availability_messages').length) {
                 this._getCombinationInfo(ev);
