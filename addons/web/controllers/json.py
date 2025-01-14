@@ -125,31 +125,31 @@ class WebJsonController(http.Controller):
     # /json/2: REST-like API, RPC and dynamic documentation
     # =====================================================
 
-    @http.route('/json/2/<model>', methods=('GET',), auth='bearer', type='http', readonly=True)
+    @http.route('/json/2/<model>', methods=['GET'], auth='bearer', type='http', readonly=True)
     def web_json_2_search(self, model, domain, fields, include):
         ...
 
-    @http.route('/json/2/<model>', methods=('POST',), auth='bearer', type='http')
+    @http.route('/json/2/<model>', methods=['POST'], auth='bearer', type='http', csrf=False)
     def web_json_2_create(self, model):
         ...
 
-    @http.route('/json/2/<model>/<id:int>', methods=('GET',), auth='bearer', type='http', readonly=True)
+    @http.route('/json/2/<model>/<int:id>', methods=['GET'], auth='bearer', type='http', readonly=True)
     def web_json_2_read(self, model, id, fields, include):
         ...
 
-    @http.route('/json/2/<model>/<id:int>', methods=('PATCH',), auth='bearer', type='http')
+    @http.route('/json/2/<model>/<int:id>', methods=['PATCH'], auth='public', type='http', csrf=False)
     def web_json_2_write(self, model, id):
         ...
 
-    @http.route('/json/2/<model>/<id:int>', methods=('DELETE',), auth='bearer', type='http')
+    @http.route('/json/2/<model>/<int:id>', methods=['DELETE'], auth='bearer', type='http', csrf=False)
     def web_json_2_unlink(self, model, id):
         ...
 
-    @http.route('/json/2/<model>/rpc/<method>', methods=('POST',), auth='bearer', type='http')
+    @http.route('/json/2/<model>/rpc/<method>', methods=['POST'], auth='bearer', type='http', csrf=False)
     def web_json_2_rpc(self, model, method):
         ...
 
-    @http.route('/json/2/<model>/doc', methods=('GET',), auth='bearer', type='http', readonly=True)
+    @http.route('/json/2/<model>/doc', methods=['GET'], auth='bearer', type='http', readonly=True)
     def web_json_2_doc(self, model):
         ...
 
