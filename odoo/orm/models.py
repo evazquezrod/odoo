@@ -1588,6 +1588,176 @@ class BaseModel(metaclass=MetaModel):
 
         return defaults
 
+    def _read_grouping_sets(
+        self,
+        domain: DomainType,
+        grouping_sets: Sequence[Sequence[str]],
+        aggregates: Sequence[str] = (),
+        having: DomainType = (),
+        order: str | None = None,
+    ) -> list[list[tuple]]:
+        """ Performs multiple aggregations with different groupings in a single query.
+
+        This method uses SQL `GROUPING SETS` as a more advanced and efficient
+        alternative to calling :meth:`~._read_group` multiple times with different
+        `groupby` parameters. It allows you to get different levels of aggregated
+        data in one database round-trip.
+
+        :param domain: :ref:`A search domain <reference/orm/domains>` to filter records before grouping
+        :param grouping_sets: A list of `groupby` specifications. Each inner list
+                              is a set of fields to group by and is equivalent to the
+                              `groupby` parameter of the :meth:`~._read_group` method.
+                              For example: `[['partner_id'], ['partner_id', 'state']]`.
+        :param aggregates: list of aggregates specification.
+                Each element is `'field:agg'` (aggregate field with aggregation function `'agg'`).
+                The possible aggregation functions are the ones provided by
+                `PostgreSQL <https://www.postgresql.org/docs/current/static/functions-aggregate.html>`_,
+                `'count_distinct'` with the expected meaning and `'recordset'` to act like `'array_agg'`
+                converted into a recordset.
+        :param having: A domain where the valid "fields" are the aggregates.
+        :param order: optional ``order by`` specification, for
+                overriding the natural sort ordering of the groups,
+                see also :meth:`~.search`.
+        :return: A list of lists of tuples. The outer list's structure mirrors the
+                 input `grouping_sets`. Each inner list contains the results for one
+                 grouping specification. Each tuple within an inner list contains the
+                 values for the grouped fields, followed by the aggregate values,
+                 in the order they were specified.
+
+                 For example, given:
+                 - `grouping_sets=[['foo'], ['foo', 'bar']]`
+                 - `aggregates=['baz:sum']`
+
+                 The returned structure would be:
+                  ::
+
+                    [
+                        # Results for ['foo']
+                        [(foo1_val, baz_sum_1), (foo2_val, baz_sum_2), ...],
+                        # Results for ['foo', 'bar']
+                        [(foo1_val, bar1_val, baz_sum_3), (foo2_val, bar2_val, baz_sum_4), ...],
+                    ]
+
+        :raise AccessError: if user is not allowed to access requested information
+        """
+        self.browse().check_access('read')
+
+        assert grouping_sets, "You should have at least one grouping_sets"
+
+        query = self._search(domain)
+        result = [[] for __ in grouping_sets]
+        if query.is_empty():
+            return result
+
+        # grouping_sets: [(a, b), (a), ()]
+        # all_groupby_specs: (a, b)
+        all_groupby_specs = tuple(unique(spec for groupby in grouping_sets for spec in groupby))
+        groupby_terms: dict[str, SQL] = {
+            spec: self._read_group_groupby(spec, query) for spec in all_groupby_specs
+        }
+        if groupby_terms:
+            # grouping_select_sql: GROUPING(a, b)
+            grouping_select_sql = SQL("GROUPING(%s)", SQL(", ").join(groupby_terms.values()))
+        else:
+            # GROUPING() is not a valid syntax, use 0 since it means that grouping_sets == [[]]
+            grouping_select_sql = SQL("0")
+
+        # GROUPING SET ((a, b), (a), ())
+        grouping_set_sqls = [
+            SQL("(%s)", SQL(", ").join(groupby_terms[groupby_spec] for groupby_spec in grouping_set))
+            for grouping_set in grouping_sets
+        ]
+        query.groupby = SQL("GROUPING SETS (%s)", SQL(", ").join(grouping_set_sqls))
+        query.having = self._read_group_having(having, query)
+        query.order, extra_groupby_by_term = self._read_group_orderby(order, groupby_terms, query)
+
+        if extra_groupby_by_term:  # Recreate the grouping set because extra order
+            grouping_set_sqls = [
+                SQL(
+                    "(%s)",
+                    SQL(", ").join(itertools.chain(
+                        [groupby_terms[groupby_spec] for groupby_spec in grouping_set],
+                        *[
+                            extra_groupby_by_term[groupby_spec]
+                            for groupby_spec in grouping_set if groupby_spec in extra_groupby_by_term
+                        ],
+                    )),
+                )
+                for grouping_set in grouping_sets
+            ]
+            query.groupby = SQL("GROUPING SETS (%s)", SQL(", ").join(grouping_set_sqls))
+
+        select_terms: list[SQL] = [
+            self._read_group_select(spec, query) for spec in aggregates
+        ]
+
+        # row_values: [(GROUPING(...), a1, b1, aggregates...), (GROUPING(...), a2, b2, aggregates...), ...]
+        row_values = self.env.execute_query(
+            query.select(grouping_select_sql, *groupby_terms.values(), *select_terms))
+
+        if not row_values:  # shortcut
+            return result
+
+        # Reproduce the GROUPING logic of PostgreSQL in order to dispatch row result in the
+        # correct grouping set
+        aggregates_indexes = tuple(range(len(all_groupby_specs), len(all_groupby_specs) + len(aggregates)))
+
+        # {GROUPING(...): (grouping_sets_index, extractor_method)}
+        mask_grouping_mapping = {}
+        for result_index, groupby_specs in enumerate(grouping_sets):
+            # PostgreSQL Doc: https://www.postgresql.org/docs/17/functions-aggregate.html#Grouping-Operations
+            # GROUPING ( group_by_expression(s) ) => integer
+            # Returns a bit mask indicating which GROUP BY expressions are not included in the
+            # current grouping set. Bits are assigned with the rightmost argument corresponding to
+            # the least-significant bit; each bit is 0 if the corresponding expression is included
+            # in the grouping criteria of the grouping set generating the current result row, and 1
+            # if it is not included.
+
+            # for GROUPING SET ((a, b), (a), ())
+            # GROUPING(a, b): a and b included = 0, a included = 1, b included = 2, none included = 3
+            groupby_mask = sum(
+                1 << i for i, groupby_spec in enumerate(reversed(all_groupby_specs))
+                if groupby_spec not in groupby_specs  # 0 if included and 1 if not
+            )
+            assert groupby_mask not in mask_grouping_mapping, f"_read_grouping_sets doesn't manage duplicate groupby specs: {grouping_sets!r}"
+
+            mask_grouping_mapping[groupby_mask] = (
+                result[result_index].append,
+                itemgetter_tuple(list(itertools.chain(
+                    (all_groupby_specs.index(groupby_spec) for groupby_spec in groupby_specs),
+                    aggregates_indexes,
+                ))),
+            )
+
+        column_iterator = zip(*row_values)
+
+        # [(append_method, grouping_extractor), ...]
+        grouping_info = [
+            mask_grouping_mapping[grouping_value] for grouping_value in next(column_iterator)
+        ]
+
+        # post-process values column by column
+        # column_result: [(a1, a2, ...), (b1, b2, ...), (agg1, agg2, ...), ...]
+        column_result = []
+        for spec in all_groupby_specs:
+            column = self._read_group_postprocess_groupby(spec, next(column_iterator))
+            column_result.append(column)
+        for spec in aggregates:
+            column = self._read_group_postprocess_aggregate(spec, next(column_iterator))
+            column_result.append(column)
+        assert next(column_iterator, None) is None
+
+        # result: [
+        #   [(a1, b1, <aggregates>), (a2, b2, <aggregates>), ...],
+        #   [(a1, <aggregates>), (a2, <aggregates>), ...],
+        #   [(<aggregates>)],
+        # ]
+        all_groups = list(zip(*column_result))
+        for (append_method, extractor), row in zip(grouping_info, all_groups, strict=True):
+            append_method(extractor(row))
+
+        return result
+
     @api.model
     def _read_group(
         self,
@@ -1652,8 +1822,18 @@ class BaseModel(metaclass=MetaModel):
         if groupby_terms:
             query.groupby = SQL(", ").join(groupby_terms.values())
             query.having = self._read_group_having(list(having), query)
-            # _read_group_orderby may possibly extend query.groupby for orderby
-            query.order = self._read_group_orderby(order, groupby_terms, query)
+
+            query.order, extra_groupby_by_term = self._read_group_orderby(order, groupby_terms, query)
+            if extra_groupby_by_term:
+                query.groupby = SQL(
+                    "%s, %s",
+                    query.groupby,
+                    SQL(", ").join([
+                        extra_group
+                        for extra_groups in extra_groupby_by_term.values()
+                        for extra_group in extra_groups
+                    ]),
+                )
 
         select_terms: list[SQL] = [
             self._read_group_select(spec, query)
@@ -1828,7 +2008,7 @@ class BaseModel(metaclass=MetaModel):
         return stack[0]
 
     def _read_group_orderby(self, order: str, groupby_terms: dict[str, SQL],
-                            query: Query) -> SQL:
+                            query: Query) -> tuple[SQL, dict[str, list[SQL]]]:
         """ Return (<SQL expression>, <SQL expression>)
         corresponding to the given order and groupby terms.
 
@@ -1842,8 +2022,9 @@ class BaseModel(metaclass=MetaModel):
             order = ','.join(groupby_terms)
             traverse_many2one = False
 
+        extra_groupby_by_field = {}
         if not order:
-            return SQL()
+            return SQL(), extra_groupby_by_field
 
         orderby_terms = []
 
@@ -1874,6 +2055,10 @@ class BaseModel(metaclass=MetaModel):
             ):
                 if sql_order := self._order_to_sql(f'{term} {direction} {nulls}', query):
                     orderby_terms.append(sql_order)
+                    if query.extra_groupby:
+                        extra_groupby_by_field[term] = list(query.extra_groupby)
+                        query.extra_groupby.clear()
+
             elif granularity == 'day_of_week':
                 """
                 Day offset relative to the first day of week in the user lang
@@ -1899,7 +2084,7 @@ class BaseModel(metaclass=MetaModel):
                 sql_expr = groupby_terms[term]
                 orderby_terms.append(SQL("%s %s %s", sql_expr, sql_direction, sql_nulls))
 
-        return SQL(", ").join(orderby_terms)
+        return SQL(", ").join(orderby_terms), extra_groupby_by_field
 
     @api.model
     def _read_group_empty_value(self, spec):
@@ -5004,7 +5189,7 @@ class BaseModel(metaclass=MetaModel):
 
             if coorder == 'id':
                 if query.groupby:
-                    query.groupby = SQL('%s, %s', query.groupby, sql_field)
+                    query.extra_groupby.append(sql_field)
                 return SQL("%s %s %s", sql_field, direction, nulls)
 
             # instead of ordering by the field's raw value, use the comodel's
@@ -5033,8 +5218,9 @@ class BaseModel(metaclass=MetaModel):
         sql_field = self._field_to_sql(alias, field_name, query)
         if field.type == 'boolean':
             sql_field = SQL("COALESCE(%s, FALSE)", sql_field)
+
         if query.groupby:
-            query.groupby = SQL('%s, %s', query.groupby, sql_field)
+            query.extra_groupby.append(sql_field)
 
         return SQL("%s %s %s", sql_field, direction, nulls)
 
