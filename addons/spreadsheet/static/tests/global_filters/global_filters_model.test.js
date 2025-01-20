@@ -1344,18 +1344,13 @@ test("load data only once if filter is not active (without default value)", asyn
     const { model } = await createModelWithDataSource({
         spreadsheetData,
         mockRPC: function (route, { model, method, kwargs }) {
-            if (model === "partner" && method === "formatted_read_group") {
+            if (model === "partner" && method === "formatted_read_grouping_sets") {
                 expect.step(`${model}/${method}`);
             }
         },
     });
     await waitForDataLoaded(model);
-    expect.verifySteps([
-        "partner/formatted_read_group",
-        "partner/formatted_read_group",
-        "partner/formatted_read_group",
-        "partner/formatted_read_group",
-    ]);
+    expect.verifySteps(["partner/formatted_read_grouping_sets"]);
     expect(getCellValue(model, "A1")).toBe(131);
 });
 
@@ -1393,13 +1388,13 @@ test("load data only once if filter is active (with a default value)", async fun
     const { model } = await createModelWithDataSource({
         spreadsheetData,
         mockRPC: function (route, { model, method, kwargs }) {
-            if (model === "partner" && method === "formatted_read_group") {
+            if (model === "partner" && method === "formatted_read_grouping_sets") {
                 expect.step(`${model}/${method}`);
             }
         },
     });
     await waitForDataLoaded(model);
-    expect.verifySteps(["partner/formatted_read_group"]);
+    expect.verifySteps(["partner/formatted_read_grouping_sets"]);
     expect(getCellValue(model, "A1")).toBe("");
 });
 
@@ -1428,18 +1423,13 @@ test("don't reload data if an empty filter is added", async function () {
     const { model } = await createModelWithDataSource({
         spreadsheetData,
         mockRPC: function (route, { model, method, kwargs }) {
-            if (model === "partner" && method === "formatted_read_group") {
+            if (model === "partner" && method === "formatted_read_grouping_sets") {
                 expect.step(`${model}/${method}`);
             }
         },
     });
     await waitForDataLoaded(model);
-    expect.verifySteps([
-        "partner/formatted_read_group",
-        "partner/formatted_read_group",
-        "partner/formatted_read_group",
-        "partner/formatted_read_group",
-    ]);
+    expect.verifySteps(["partner/formatted_read_grouping_sets"]);
     expect(getCellValue(model, "A1")).toBe(131);
     addGlobalFilter(model, {
         id: "42",
@@ -1469,7 +1459,7 @@ test("don't load data if a filter is added but the data is not needed", async fu
     const { model } = await createModelWithDataSource({
         spreadsheetData,
         mockRPC: function (route, { model, method, kwargs }) {
-            if (model === "partner" && method === "formatted_read_group") {
+            if (model === "partner" && method === "formatted_read_grouping_sets") {
                 expect.step(`${model}/${method}`);
             }
         },
@@ -1491,7 +1481,7 @@ test("don't load data if a filter is added but the data is not needed", async fu
     expect(getCellValue(model, "A1")).toBe("Loading...");
     await animationFrame();
     expect(getCellValue(model, "A1")).toBe("");
-    expect.verifySteps(["partner/formatted_read_group"]);
+    expect.verifySteps(["partner/formatted_read_grouping_sets"]);
 });
 
 test("don't load data if a filter is activated but the data is not needed", async function () {
@@ -1519,7 +1509,7 @@ test("don't load data if a filter is activated but the data is not needed", asyn
     const { model } = await createModelWithDataSource({
         spreadsheetData,
         mockRPC: function (route, { model, method, kwargs }) {
-            if (model === "partner" && method === "formatted_read_group") {
+            if (model === "partner" && method === "formatted_read_grouping_sets") {
                 expect.step(`${model}/${method}`);
             }
         },
@@ -1536,7 +1526,7 @@ test("don't load data if a filter is activated but the data is not needed", asyn
     expect(getCellValue(model, "A1")).toBe("Loading...");
     await animationFrame();
     expect(getCellValue(model, "A1")).toBe("");
-    expect.verifySteps(["partner/formatted_read_group"]);
+    expect.verifySteps(["partner/formatted_read_grouping_sets"]);
 });
 
 test("Default value defines value", async function () {
