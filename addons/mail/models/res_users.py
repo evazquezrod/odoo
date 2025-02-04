@@ -14,7 +14,8 @@ class ResUsers(models.Model):
         - add a welcome message
         - add suggestion preference
     """
-    _inherit = 'res.users'
+    _name = 'res.users'
+    _inherit = ['res.users', 'mail.activity.mixin', 'mail.thread.blacklist']
 
     notification_type = fields.Selection([
         ('email', 'Handle by Emails'),
