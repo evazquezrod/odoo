@@ -1,6 +1,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 import ast
+import collections
 import logging
 import re
 from collections import defaultdict
@@ -22,6 +23,7 @@ from odoo.exceptions import AccessError, AccessDenied, ValidationError, UserErro
 from odoo.http import request
 from odoo.models import check_object_name
 from odoo.osv import expression
+from odoo.tools import frozendict
 from odoo.tools.safe_eval import safe_eval
 
 from .utils import get_action_triples
@@ -29,8 +31,11 @@ from .utils import get_action_triples
 _logger = logging.getLogger(__name__)
 
 JSONAPI_QUERY_ITEM_RE = re.compile(r'^(\w+)\[(\w+)\]$')
-JSONAPI_MIMETYPE = 'application/vnd.api+json'
+#JSONAPI_MIMETYPE = 'application/vnd.api+json'
+JSONAPI_MIMETYPE = 'application/json'
 JSONAPI_CTYPE = ('Content-Type', f'{JSONAPI_MIMETYPE}; charset=utf-8')
+
+DEFAULT_PAGE = frozendict(limit=None, offset=None)
 
 
 class JsonAPIDispatcher(http.Dispatcher):
@@ -40,33 +45,65 @@ class JsonAPIDispatcher(http.Dispatcher):
     def is_compatible_with(cls, request):
         return request.httprequest.mimetype in (JSONAPI_MIMETYPE, 'application/json')
 
-    def dispatch(self, endpoint, args):
-        self.request.params = multidict = args.copy()
+    def _parse_query(self, args):
+        multidict = args.copy()
+        _logger.warning('mutlidict %s', multidict)
+
+        # {"fields[res.partner]": "name,phone"} => {"fields": {"res.partner": "name,phone"}}
         for key in args.keys():
             if match := JSONAPI_QUERY_ITEM_RE.search(key):
                 mainkey, subkey = match.groups()
-                multidict.setdefault(mainkey, {})[subkey] = multidict.pop(key)
+                value = multidict.pop(key)
+                if mainkey not in multidict:
+                    multidict[mainkey] = {subkey: value}
+                elif not isinstance(multidict[mainkey], collections.abc.MutableMapping):
+                    raise BadRequest(f"multiple {mainkey!r} found in query")
+                elif subkey in multidict[mainkey]:
+                    raise BadRequest(f"multiple {key!r} found in query")
+                else:
+                    multidict[mainkey][subkey] = value
+        _logger.warning('mutlidict %s', multidict)
 
+        # {"domain": "[['name', '=', 'john']]"} => {"domain": [["name", "=", "john"]]}
+        if domain_str := multidict.get('domain'):
+            multidict['domain'] = ast.literal_eval(domain_str)
+
+        # {"include": "user_id.groups_id,parent_id"} => {"include": ["parent_id", "user_id", "user_id.groups_id"]}
+        if include_csv := multidict.get('include'):
+            multidict['include'] = sorted(
+                '.'.join(models[:i])
+                for path in include_csv.split(',')
+                for models in (path.split('.'),)
+                for i in range(1, len(models) + 1)
+            )
+
+        # {"fields": {"res.partner": "name,phone"}} => {"fields": {"res.partner": ["name", "phone"]}}
+        fields = multidict.pop('fields', {})
+        _logger.warning(fields)
+        multidict['fields'] = {}
+        for model_name, fields_csv in fields:
+            multidict['fields'][model_name] = fields_csv.split(',')
+
+        if page := multidict.pop('page', None):
+            multidict['page'] = {
+                'limit': int(page['limit']) if 'limit' in page else None,
+                'offset': int(page['offset']) if 'offset' in page else None,
+                'order': page.get('order'),
+            }
+
+        return multidict
+
+    def dispatch(self, endpoint, args):
+        self.request.params = self._parse_query(args)
         if self.request.db:
             result = self.request.registry['ir.http']._dispatch(endpoint)
         else:
             result = endpoint(**self.request.params)
 
-        return self.request.make_json_response(result, headers=[
-            ('Content-Type', 'application/vnd.api+json; charset=utf-8'),
-        ])
+        assert isinstance(result, collections.abc.Mapping), result
+        status = int(result['errors'][0]['status']) if 'errors' in result else 200
 
-    def _response(self, result=None, error=None):
-        ctype = ('Content-Type', 'application/vnd.api+json; charset=utf-8')
-        if error:
-            return self.request.make_json_response(
-                {'errors': [error]},
-                headers=[ctype],
-                status=int(error['status']),
-            )
-
-
-        self.request.make_json_response(result, headers=[ctype], status=200)
+        return self.request.make_json_response(result, status=status, headers=[JSONAPI_CTYPE])
 
     def handle_error(self, exc):
         if isinstance(exc, HTTPException):
@@ -120,36 +157,138 @@ class WebJsonController(http.Controller):
             HTTPStatus.TEMPORARY_REDIRECT
         )
 
-
     # =====================================================
     # /json/2: REST-like API, RPC and dynamic documentation
     # =====================================================
 
-    @http.route('/json/2/<model>', methods=['GET'], auth='bearer', type='http', readonly=True)
-    def web_json_2_search(self, model, domain, fields, include):
-        ...
+    @http.route('/json/2/<model>', methods=['GET'], auth='bearer', type='jsonapi', readonly=True)
+    def web_json_2_search(self, model, domain=(), fields=frozendict(), include=(), page=DEFAULT_PAGE, sort=None):
+        res = {}
 
-    @http.route('/json/2/<model>', methods=['POST'], auth='bearer', type='http', csrf=False)
+        def make_jsonapi_data_item(record, field_names):
+            data_item = {
+                'type': record._name,
+                'id': record.id,
+            }
+
+            attributes = {
+                field_name: record[field_name]
+                for field_name in field_names
+                if field_name != 'id'
+                if not record._fields[field_name].relational
+            }
+            if attributes:
+                data_item['attributes'] = attributes
+
+            relationships = {
+                field_name: {'data': (
+                    { 'type': field.comodel_name, 'id': record[field_name].id}
+                ) if field.type == 'many2one' else (
+                    [{'type': field.comodel_name, 'id': id_}
+                     for id_ in record[field_name].ids]
+                )}
+                for field_name in field_names
+                if (field := record._fields[field_name]).relational
+            }
+            if relationships:
+                data_item['relationships'] = relationships
+
+            return data_item
+
+        records = self.env[model].search(domain, **page, order=sort)
+        field_names = fields.get(records._name) or records._fields.keys()
+        _logger.info(field_names)
+        res['data'] = [make_jsonapi_data_item(record, field_names) for record in records]
+        return res
+
+
+        # {"include": "user_id.groups_id,parent_id"} => {"include": ["parent_id", "user_id", "user_id.groups_id"]}
+
+        model_relational_field_names = {}
+        def get_included_fields(include):
+            for model_name in include:
+                if '.' in model_name:
+                    pass # TODO
+                else:
+                    model_relational_field_names[model_name] = fields.get(model_name) or self.env[model_name]._fields.keys()
+
+        included_records = defaultdict(Orderedset())
+        fetched = defaultdict(set)
+        sparce_records = [records]
+        while sparce_records:
+            for record in sparce_records.pop():
+                if record.id in fetched[record._name]:
+                    continue
+                fetched[record._name].add(record.id)
+
+                for field_name in model_relational_field_names:
+                    value = record[field_name]
+                    sparce_records.append(value)
+                    included_records.update(value.ids)
+
+        res['includes'] = []
+        for model_name, ids in included_records.items():
+            record = self.env[model_name].browse(ids)
+            field_names = model_relational_field_names.get(model_name)
+            res['includes'][model_name].append(make_jsonapi_data_item(record, field_names))
+
+
+    # GET /articles?include=people&fields[articles]=title,body,created,updated,author&fields[people]=name,age,gender
+    """
+    {
+    "data": [{
+        "type": "articles",
+        "id": "1",
+        "attributes": {
+        "title": "JSON:API paints my bikeshed!",
+        "body": "The shortest article. Ever.",
+        "created": "2015-05-22T14:56:29.000Z",
+        "updated": "2015-05-22T14:56:28.000Z"
+        },
+        "relationships": {
+        "author": {
+            "data": {"id": "42", "type": "people"}
+        }
+        }
+    }],
+    "included": [
+        {
+        "type": "people",
+        "id": "42",
+        "attributes": {
+            "name": "John",
+            "age": 80,
+            "gender": "male"
+        }
+        }
+    ]
+    }
+    """
+
+
+        
+
+    @http.route('/json/2/<model>', methods=['POST'], auth='bearer', type='jsonapi', csrf=False)
     def web_json_2_create(self, model):
         ...
 
-    @http.route('/json/2/<model>/<int:id>', methods=['GET'], auth='bearer', type='http', readonly=True)
+    @http.route('/json/2/<model>/<int:id>', methods=['GET'], auth='bearer', type='jsonapi', readonly=True)
     def web_json_2_read(self, model, id, fields, include):
         ...
 
-    @http.route('/json/2/<model>/<int:id>', methods=['PATCH'], auth='public', type='http', csrf=False)
+    @http.route('/json/2/<model>/<int:id>', methods=['PATCH'], auth='bearer', type='jsonapi', csrf=False)
     def web_json_2_write(self, model, id):
         ...
 
-    @http.route('/json/2/<model>/<int:id>', methods=['DELETE'], auth='bearer', type='http', csrf=False)
+    @http.route('/json/2/<model>/<int:id>', methods=['DELETE'], auth='bearer', type='jsonapi', csrf=False)
     def web_json_2_unlink(self, model, id):
         ...
 
-    @http.route('/json/2/<model>/rpc/<method>', methods=['POST'], auth='bearer', type='http', csrf=False)
+    @http.route('/json/2/<model>/rpc/<method>', methods=['POST'], auth='bearer', type='jsonapi', csrf=False)
     def web_json_2_rpc(self, model, method):
         ...
 
-    @http.route('/json/2/<model>/doc', methods=['GET'], auth='bearer', type='http', readonly=True)
+    @http.route('/json/2/<model>/doc', methods=['GET'], auth='bearer', type='jsonapi', readonly=True)
     def web_json_2_doc(self, model):
         ...
 
