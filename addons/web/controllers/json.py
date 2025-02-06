@@ -211,6 +211,7 @@ class WebJsonController(http.Controller):
                     pass # TODO
                 else:
                     model_relational_field_names[model_name] = fields.get(model_name) or self.env[model_name]._fields.keys()
+        get_included_fields(include)
 
         included_records = defaultdict(Orderedset())
         fetched = defaultdict(set)
