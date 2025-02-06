@@ -285,10 +285,16 @@ class WebJsonController(http.Controller):
     def web_json_2_rpc(self, model, method):
         raise NotImplemented()
 
-    @http.route('/json/2/<model>/doc', methods=['GET'], auth='bearer', type='jsonapi', readonly=True)
+    @http.route('/json/2/<model>/doc', methods=['GET'], auth='bearer', type='http', readonly=True)
     def web_json_2_doc(self, model):
-        ...
-
+        fields = self.env[model].fields_get()
+        head = '<head><style>td,th {vertical-align: top; text-align: left;}</style></head>'
+        table_head = '<tr><th>name</th><th>type</th><th>readonly</th><th>required</th><th>searchable</th><th>string</th></tr>'
+        content = [
+            f'<tr><td>{field_name}</td><td>{info["type"]}</td><td>{info["readonly"]}</td><td>{info["required"]}</td><td>{info["searchable"]}</td><td>{info["string"]}</td></tr>'
+            for field_name, info in fields.items()
+        ]
+        return f'<html>{head}<body><h1>GET ... &fields[{model}]</h1><table>{table_head}{"".join(content)}</table></body></html>'
 
     # =====================================================
     # /json/1: download the data of webclient views as json
