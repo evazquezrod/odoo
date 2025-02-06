@@ -23,7 +23,7 @@ from odoo.exceptions import AccessError, AccessDenied, ValidationError, UserErro
 from odoo.http import request
 from odoo.models import check_object_name
 from odoo.osv import expression
-from odoo.tools import frozendict
+from odoo.tools import frozendict, OrderedSet
 from odoo.tools.safe_eval import safe_eval
 
 from .utils import get_action_triples
@@ -165,7 +165,10 @@ class WebJsonController(http.Controller):
     def web_json_2_search(self, model, domain=(), fields=frozendict(), include=(), page=DEFAULT_PAGE, sort=None):
         res = {}
 
-        def make_jsonapi_data_item(record, field_names):
+        def make_jsonapi_data_item(record):
+            field_names = fields.get(records._name) or records._fields.keys()
+            _logger.info(field_names)
+
             data_item = {
                 'type': record._name,
                 'id': record.id,
@@ -196,42 +199,28 @@ class WebJsonController(http.Controller):
             return data_item
 
         records = self.env[model].search(domain, **page, order=sort)
-        field_names = fields.get(records._name) or records._fields.keys()
-        _logger.info(field_names)
-        res['data'] = [make_jsonapi_data_item(record, field_names) for record in records]
+        res['data'] = [make_jsonapi_data_item(record) for record in records]
+
+        included_records = defaultdict(OrderedSet())
+        def get_included_ressources(records, include):
+            include_field_names = [field_name
+                for field_name in fields.get(records._name) or records._fields.keys()
+                if  records._fields[field_name].relational and
+                    any(field_name == f or f.startswith(f'{field_name}.') for f in include)]
+
+            for field_name in include_field_names:
+                sub_records = records[field_name]
+                included_records[sub_records._name].update(sub_records.ids)
+                get_included_ressources(sub_records, [f[len(field_name) + 1:] for f in include if f.startswith(f'{field_name}.')])
+        get_included_ressources(records, include)
+
+        res['includes'] = [
+            make_jsonapi_data_item(record)
+            for model_name, ids in included_records.items()
+            for record in self.env[model_name].browse(ids)
+        ]
+
         return res
-
-
-        # {"include": "user_id.groups_id,parent_id"} => {"include": ["parent_id", "user_id", "user_id.groups_id"]}
-
-        model_relational_field_names = {}
-        def get_included_fields(include):
-            for model_name in include:
-                if '.' in model_name:
-                    pass # TODO
-                else:
-                    model_relational_field_names[model_name] = fields.get(model_name) or self.env[model_name]._fields.keys()
-        get_included_fields(include)
-
-        included_records = defaultdict(Orderedset())
-        fetched = defaultdict(set)
-        sparce_records = [records]
-        while sparce_records:
-            for record in sparce_records.pop():
-                if record.id in fetched[record._name]:
-                    continue
-                fetched[record._name].add(record.id)
-
-                for field_name in model_relational_field_names:
-                    value = record[field_name]
-                    sparce_records.append(value)
-                    included_records.update(value.ids)
-
-        res['includes'] = []
-        for model_name, ids in included_records.items():
-            record = self.env[model_name].browse(ids)
-            field_names = model_relational_field_names.get(model_name)
-            res['includes'][model_name].append(make_jsonapi_data_item(record, field_names))
 
 
     # GET /articles?include=people&fields[articles]=title,body,created,updated,author&fields[people]=name,age,gender
