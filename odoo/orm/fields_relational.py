@@ -448,6 +448,15 @@ class _RelationalMulti(_Relational[M], typing.Generic[M]):
     # including inactive records.  Inactive records are filtered out by
     # convert_to_record(), depending on the context.
 
+    def setup_nonrelated(self, model):
+        super().setup_nonrelated(model)
+        if self.domain is None:
+            domain = Domain.TRUE
+            comodel = model.env[self.comodel_name]
+            if comodel._active_name:
+                domain = Domain(comodel._active_name, '=', True)._optimize(comodel)
+            self.domain = domain
+
     def _update(self, records, value):
         """ Update the cached value of ``self`` for ``records`` with ``value``. """
         records.env.cache.patch(records, self, value.id)
@@ -511,26 +520,14 @@ class _RelationalMulti(_Relational[M], typing.Generic[M]):
         # use registry to avoid creating a recordset for the model
         prefetch_ids = PrefetchX2many(record, self)
         Comodel = record.pool[self.comodel_name]
-        corecords = Comodel(record.env, value, prefetch_ids)
-        if (
-            Comodel._active_name
-            and self.context.get('active_test', record.env.context.get('active_test', True))
-        ):
-            corecords = corecords.filtered(Comodel._active_name).with_prefetch(prefetch_ids)
-        return corecords
+        return Comodel(record.env, value, prefetch_ids)
 
     def convert_to_record_multi(self, values, records):
         # return the list of ids as a recordset without duplicates
         prefetch_ids = PrefetchX2many(records, self)
         Comodel = records.pool[self.comodel_name]
         ids = tuple(unique(id_ for ids in values for id_ in ids))
-        corecords = Comodel(records.env, ids, prefetch_ids)
-        if (
-            Comodel._active_name
-            and self.context.get('active_test', records.env.context.get('active_test', True))
-        ):
-            corecords = corecords.filtered(Comodel._active_name).with_prefetch(prefetch_ids)
-        return corecords
+        return Comodel(records.env, ids, prefetch_ids)
 
     def convert_to_read(self, value, record, use_display_name=True):
         return value.ids
