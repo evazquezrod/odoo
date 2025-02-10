@@ -20,16 +20,6 @@
         }
     }
 
-    .oe_kanban_content {
-        @include media-breakpoint-up(sm) {
-            &:hover {
-                .o_field_widget.o_field_many2many_tags_avatar .o_quick_assign {
-                    visibility: visible;
-                }
-            }
-        }
-    }
-
     .o_kanban_header .o_column_progress .bg-success-done {
         --bs-bg-opacity: 1;
         background-color: rgba(25, 135, 84, var(--bs-bg-opacity)) !important;
