@@ -120,7 +120,7 @@ export class KanbanMany2ManyTagsAvatarFieldTagsList extends TagsList {
         });
     }
     get canDisplayQuickAssignAvatar() {
-        return !this.props.readonly && !(this.props.tags && this.otherTags.length);
+        return !this.props.readonly && this.props.tags.length + this.otherTags.length === 0;
     }
 }
 
