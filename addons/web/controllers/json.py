@@ -32,12 +32,16 @@ from .utils import get_action_triples
 
 _logger = logging.getLogger(__name__)
 
-JSONAPI_QUERY_ITEM_RE = re.compile(r'^(\w+)\[([\w.]+)\]$')
-#JSONAPI_MIMETYPE = 'application/vnd.api+json'
-JSONAPI_MIMETYPE = 'application/json'
-JSONAPI_CTYPE = ('Content-Type', f'{JSONAPI_MIMETYPE}; charset=utf-8')
+# The mimetype of JSON:API requests and responses, although we also
+# allow application/json
+JSONAPI_MIMETYPE = 'application/vnd.api+json'
 
-DEFAULT_PAGE = frozendict(limit=None, offset=None)
+# The default limit and offset when ?page[limit]=...&page[offset]=...
+# are missing.
+DEFAULT_PAGE = frozendict(limit=80, offset=0)
+
+# The keys that can appear a JSON;API the query string
+JSONAPI_QUERY_KEYS = frozenset(('fields', 'filter', 'include', 'page', 'sort'))
 
 
 class JsonAPIDispatcher(http.Dispatcher):
@@ -50,39 +54,50 @@ class JsonAPIDispatcher(http.Dispatcher):
     def _parse_query(self, args):
         multidict = args.copy()
 
-        # {"fields[res.partner]": "name,phone"} => {"fields": {"res.partner": "name,phone"}}
-        for key in args.keys():
-            if match := JSONAPI_QUERY_ITEM_RE.search(key):
-                mainkey, subkey = match.groups()
+        # {'fields[res.partner]': 'id,name'} => {'fields': {'res.partner': 'id,name'}}
+        for key in args:
+            if key == 'fields':
+                raise BadRequest(f"missing model name with {key!r} in query")
+            elif key == 'page':
+                raise BadRequest(f"missing offset or limit with {key!r} in query")
+            elif key.startswith(('fields[', 'page[')):
+                mainkey, _, subkey = key.removesuffix(']').partition('[')
                 value = multidict.pop(key)
                 if mainkey not in multidict:
                     multidict[mainkey] = {subkey: value}
-                elif not isinstance(multidict[mainkey], collections.abc.MutableMapping):
-                    raise BadRequest(f"multiple {mainkey!r} found in query")
                 elif subkey in multidict[mainkey]:
                     raise BadRequest(f"multiple {key!r} found in query")
                 else:
                     multidict[mainkey][subkey] = value
 
-        # {"domain": "[['name', '=', 'john']]"} => {"domain": [["name", "=", "john"]]}
-        if domain_str := multidict.get('domain'):
-            multidict['domain'] = ast.literal_eval(domain_str)
+        if unknown_keys := set(multidict) - JSONAPI_QUERY_KEYS:
+            raise BadRequest(f"unknown query keys: {unknown_keys}")
 
-        # {"include": "user_id.groups_id,parent_id"} => {"include": ["parent_id", "user_id", "user_id.groups_id"]}
+        # {"filter": "[['name', '=', 'john']]"} => {"filter": [["name", "=", "john"]]}
+        if filter_str := multidict.get('filter'):
+            try:
+                multidict['filter'] = ast.literal_eval(filter_str)
+            except ValueError:
+                raise BadRequest(f"bad {'filter'!r} query, invalid domain: {filter_str}")
+
+        # {"include": "user_id.groups_id,parent_id"} => {"include": ["user_id.groups_id", "parent_id"]}
         if include_csv := multidict.get('include'):
             multidict['include'] = include_csv.split(',')
 
         # {"fields": {"res.partner": "name,phone"}} => {"fields": {"res.partner": ["name", "phone"]}}
-        fields = multidict.pop('fields', {})
-        multidict['fields'] = {}
-        for model_name, fields_csv in fields.items():
-            multidict['fields'][model_name] = fields_csv.split(',')
+        if fields := multidict.pop('fields', None):
+            multidict['fields'] = {}
+            for model_name, fields_csv in fields.items():
+                multidict['fields'][model_name] = fields_csv.split(',')
 
         if page := multidict.pop('page', None):
-            multidict['page'] = {
-                'limit': int(page['limit']) if 'limit' in page else None,
-                'offset': int(page['offset']) if 'offset' in page else None,
-            }
+            try:
+                multidict['page'] = {
+                    'limit': int(page['limit']) if 'limit' in page else None,
+                    'offset': int(page['offset']) if 'offset' in page else None,
+                }
+            except ValueError as exc:
+                raise BadRequest(f"bad page[limit] or page[offset]: {exc.args[0]}") from exc
 
         return multidict
 
@@ -97,7 +112,11 @@ class JsonAPIDispatcher(http.Dispatcher):
         assert isinstance(result, collections.abc.Mapping), result
         status = int(result['errors'][0]['status']) if 'errors' in result else 200
 
-        return self.request.make_json_response(result, status=status, headers=[JSONAPI_CTYPE])
+        return self.request.make_json_response(result, status=status, headers=[
+            # reuse the same content-type (json or vnd.api+json) as the
+            # request, so we can pretty print it in the browser
+            ('Content-Type', f'{self.request.httprequest.mimetype}; charset=utf-8')
+        ])
 
     def handle_error(self, exc):
         if isinstance(exc, HTTPException):
@@ -134,8 +153,12 @@ class JsonAPIDispatcher(http.Dispatcher):
             }
         return self.request.make_json_response(
             {'errors': [error]},
-            headers=[JSONAPI_CTYPE],
             status=int(error['status']),
+            headers=[
+                # reuse the same content-type (json or vnd.api+json) as
+                # the request, so we can pretty print it in the browser
+                ('Content-Type', f'{self.request.httprequest.mimetype}; charset=utf-8'),
+            ],
         )
 
 
@@ -155,15 +178,61 @@ class WebJsonController(http.Controller):
     # /json/2: REST-like API, RPC and dynamic documentation
     # =====================================================
 
-    @http.route('/json/2/<model>', methods=['GET'], auth='bearer', type='jsonapi', readonly=True)
-    def web_json_2_search(self, model, domain=(), fields=frozendict(), include=(), page=DEFAULT_PAGE, sort=None):
-        records = self.env[model].search(domain, **page, order=sort)
-        return self._web_json_2_read(records, fields, include)
+    @http.route('/json/2/<model_name>', methods=['GET'], auth='bearer', type='jsonapi', readonly=True)
+    def web_json_2_search(self, model_name, filter=(), fields=frozendict(), include=(), page=DEFAULT_PAGE, sort='id'):
+        records = self.env[model_name].search(filter, **page, order=', '.join(
+            f'{field_name[1:]} desc' if field_name.startswith('-') else field_name
+            for field_name in sort.split(',')
+        ))
+        res = self._web_json_2_read(records, fields, include)
+        query = urlencode({
+            'filter': filter,
+            **{
+                f'fields[{model_name}]': ','.join(field_names)
+                for model_name, field_names
+                in fields.items()
+            },
+            'include': ','.join(include),
+            'page[limit]': page['limit'],
+            'page[offset]': page['offset'],
+            'sort': sort,
+        })
+        res['links'] = {'self': f'/json/2/{model_name}?{query}'}
+        return res
+
+    @http.route('/json/2/<model_name>/<int:id>', methods=['GET'], auth='bearer', type='jsonapi', readonly=True)
+    def web_json_2_read(self, model_name, id, fields, include):
+        try:
+            model = self.env[model_name]
+        except KeyError as exc:
+            e = f"model {model_name!r} does not exist"
+            raise NotFound(e) from exc
+        record = model.browse(int(id)).exists()
+        if not record:
+            e = f"no record in model {model_name!r} with id {id}"
+            raise NotFound(e)
+        res = self._web_json_2_read(record, fields, include)
+        query = urlencode({
+            **{
+                f'fields[{model_name}]': ','.join(field_names)
+                for model_name, field_names
+                in fields.items()
+            },
+            'include': ','.join(include),
+        })
+        res['links'] = {'self': f'/json/2/{model_name}/{id}?{query}'}
+
+    @http.route(['/json/2/<model_name>/<ind:id>/relationships/<fields:path>'])
+    def web_json_2_read_x2many
 
     def _web_json_2_read(self, records, fields=frozendict(), include=()):
         res = {}
 
-        def make_jsonapi_data_item(record, field_names):
+        def make_jsonapi_data_item(record, field_names, *, check_fields=True):
+            if check_fields and (unknown_fields := set(field_names).difference(record._fields)):
+                e = f"unknown fields for model {record._name}: {sorted(unknown_fields)}"
+                raise BadRequest(e)
+
             data_item = {
                 'type': record._name,
                 'id': record.id,
@@ -177,6 +246,41 @@ class WebJsonController(http.Controller):
             }
             if attributes:
                 data_item['attributes'] = attributes
+
+            relationships = {}
+            relationships.update({
+                field_name: {
+                    'data': {
+                        'type': field.comodel_name,
+                        'id': record[field_name].id
+                    },
+                    'links': {
+                        'related': f'/json/2/{field.comodel_name}/{record[field_name].id}'
+                    }
+                }
+                for field_name in field_names
+                if (field := record._fields[field_name]).type == 'many2one'
+            })
+            relationships.update({
+                field_name: {
+                    'data': [
+                        {
+                            'type': field.comodel_name,
+                            'id': id_
+                        }
+                        for id_ in record[field_name].ids
+                    ],
+                    'links': {
+                        'first': ...,
+                        'last': ...,
+                        'prev': ...,
+                        'next': ...,
+                    }
+                }
+                for field_name in field_names
+                if (field := record._fields[field_name]).type in ('one2many', 'many2many')
+            })
+
 
             relationships = {
                 field_name: {'data': (
@@ -261,13 +365,6 @@ class WebJsonController(http.Controller):
     @http.route('/json/2/<model>', methods=['POST'], auth='bearer', type='jsonapi', csrf=False)
     def web_json_2_create(self, model):
         raise NotImplemented()
-
-    @http.route('/json/2/<model>/<int:id>', methods=['GET'], auth='bearer', type='jsonapi', readonly=True)
-    def web_json_2_read(self, model, id, fields, include):
-        record = self.env[model].browse(id)
-        if not record.exists():
-            raise NotFound()
-        return self._web_json_2_read(record, fields, include)
 
     @http.route('/json/2/<model>/<int:id>', methods=['PATCH'], auth='bearer', type='jsonapi', csrf=False)
     def web_json_2_write(self, model, id):
