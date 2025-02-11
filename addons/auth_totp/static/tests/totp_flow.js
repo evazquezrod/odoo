@@ -332,7 +332,7 @@ registry.category("web_tour.tours").add('totp_admin_disables', {
     content: "go to Account security Tab",
     trigger: "a.nav-link:contains(Account Security)",
 }, ...closeProfileDialog({
-    content: "check that test_user user has been de-totp'd",
+    content: "Check that test_user user has been de-totp'd",
     totp_state: false,
 }),
 ]})
