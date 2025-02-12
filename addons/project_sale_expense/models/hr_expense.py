@@ -16,19 +16,25 @@ class Expense(models.Model):
                 if not self.sale_order_id:
                     continue
                 expenses_to_recompute += expense
-                prefetch_ids.update(list(expense.analytic_distribution.keys()))
+                prefetch_ids.update(self.env['analytic.mixin']._get_analytic_account_ids_from_distributions(expense.analytic_distribution))
+                prefetch_ids.update(self.env['analytic.mixin']._get_analytic_account_ids_from_distributions(expense.sale_order_id.project_id._get_analytic_distribution()))
 
             if expenses_to_recompute:
                 analytic_account_model = self.env['account.analytic.account'].with_prefetch(prefetch_ids)
                 for expense in expenses_to_recompute:
+                    expense_account_ids = self.env['analytic.mixin']._get_analytic_account_ids_from_distributions(expense.analytic_distribution)
                     project_analytic_distribution = expense.sale_order_id.project_id._get_analytic_distribution()
-                    project_analytic_distribution_accounts = self.env['account.analytic.account'].browse(list(project_analytic_distribution.keys()))
+                    project_account_ids = self.env['analytic.mixin']._get_analytic_account_ids_from_distributions(project_analytic_distribution)
 
-                    analytic_accounts = analytic_account_model.browse(list(expense.analytic_distribution.keys()))
-                    if expense.analytic_distribution:
+                    project_analytic_distribution_accounts = self.env['account.analytic.account'].browse(project_account_ids)
+                    expense_analytic_accounts = analytic_account_model.browse(expense_account_ids)
+
+                    if not any(project_account.root_plan_id in expense_analytic_accounts.root_plan_id for project_account in project_analytic_distribution_accounts):
+                        # If it possible we merge both analytic distributions
                         expense.analytic_distribution = {
-                            **expense.analytic_distribution,
-                            **project_analytic_distribution
+                            **(expense.analytic_distribution or {}),
+                            **(project_analytic_distribution or {})
                         }
                     else:
-                        expense.analytic_distribution = expense.sale_order_id.project_id._get_analytic_distribution()
+                        # If not we keep the most prioritized one
+                        expense.analytic_distribution = expense.sale_order_id.project_id._get_analytic_distribution() or expense.analytic_distribution or {}
