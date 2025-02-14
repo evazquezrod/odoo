@@ -9,8 +9,8 @@ export class AccountBatchSendingSummary extends Component {
     };
 
     setup() {
-        super.setup();
-        this.data = this.props.record.data[this.props.name];
+        super.setup()
+        this.data =  this.props.record.data[this.props.name];
     }
 }
 
