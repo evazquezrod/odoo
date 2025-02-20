@@ -160,6 +160,9 @@ class TestCase(_TestCase):
         finally:
             self._subtest = parent
 
+    def _postSetUpClass(self):
+        pass
+
     def _addError(self, result, test, exc_info):
         """
         This method is similar to feed_errors_to_result in python<=3.10

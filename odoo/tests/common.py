@@ -667,9 +667,6 @@ class BaseCase(case.TestCase, metaclass=MetaCase):
         self.addCleanup(p.stop)
         return p.start()
 
-savepoint_seq = itertools.count()
-
-
 class TransactionCase(BaseCase):
     """ Test class in which all test methods are run in a single transaction,
     but each test method is run in a sub-transaction managed by a savepoint.
@@ -715,6 +712,12 @@ class TransactionCase(BaseCase):
 
         cls.env = api.Environment(cls.cr, odoo.SUPERUSER_ID, {})
 
+    @classmethod
+    def _postSetUpClass(cls):
+        cls.env.flush_all()
+        cls._test_savepoint = cls.cr.savepoint()
+        cls.addClassCleanup(cls._test_savepoint.close) # rollback and release, just in case of. Connection will be close anyway
+
     def setUp(self):
         super().setUp()
 
@@ -741,12 +744,8 @@ class TransactionCase(BaseCase):
             self.addCleanup(_reset, callback, collections.deque(callback._funcs), dict(callback.data))
 
         # flush everything in setUpClass before introducing a savepoint
-        self.env.flush_all()
 
-        self._savepoint_id = next(savepoint_seq)
-        self.cr.execute('SAVEPOINT test_%d' % self._savepoint_id)
-        self.addCleanup(self.cr.execute, 'ROLLBACK TO SAVEPOINT test_%d' % self._savepoint_id)
-
+        self.addCleanup(self._test_savepoint.rollback)
         self.patch(self.registry['res.partner'], '_get_gravatar_image', lambda *a: False)
 
 
