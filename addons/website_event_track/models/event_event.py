@@ -9,6 +9,10 @@ class EventEvent(models.Model):
 
     track_ids = fields.One2many('event.track', 'event_id', 'Tracks')
     track_count = fields.Integer('Track Count', compute='_compute_track_count')
+    published_track_count = fields.Integer(
+        string="Published Track Count",
+        compute='_compute_published_track_count',
+    )
     website_track = fields.Boolean(
         'Tracks on Website', compute='_compute_website_track',
         readonly=False, store=True)
@@ -23,10 +27,30 @@ class EventEvent(models.Model):
         compute='_compute_tracks_tag_ids', store=True)
 
     def _compute_track_count(self):
-        data = self.env['event.track']._read_group([('stage_id.is_cancel', '!=', True)], ['event_id'], ['__count'])
+        data = self.env['event.track']._read_group(
+            domain=[('event_id', 'in', self.ids), ('stage_id.is_cancel', '!=', True)],
+            groupby=['event_id'],
+            aggregates=['__count'],
+        )
         result = {event.id: count for event, count in data}
         for event in self:
             event.track_count = result.get(event.id, 0)
+
+    def _compute_published_track_count(self):
+        published_track_count_per_event = {
+            event.id: count
+            for event,count in self.env['event.track']._read_group(
+                domain=[
+                    ('event_id', 'in', self.ids),
+                    ('stage_id.is_cancel', '!=', True),
+                    ('is_published', '=', True),
+                ],
+                groupby=['event_id'],
+                aggregates=['__count'],
+            )
+        }
+        for event in self:
+            event.published_track_count = published_track_count_per_event.get(event.id, 0)
 
     @api.depends('event_type_id', 'website_menu')
     def _compute_website_track(self):

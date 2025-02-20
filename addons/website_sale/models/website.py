@@ -590,14 +590,14 @@ class Website(models.Model):
         redirect_to_sign_in = self.account_on_checkout == 'mandatory' and self.is_public_user()
 
         steps = [(['website_sale.cart'], {
-            'name': _lt("Review Order"),
+            'name': _lt("Order"),
             'current_href': '/shop/cart',
             'main_button': _lt("Sign In") if redirect_to_sign_in else _lt("Checkout"),
             'main_button_href': f'{"/web/login?redirect=" if redirect_to_sign_in else ""}/shop/checkout?try_skip_step=true',
             'back_button':  _lt("Continue shopping"),
             'back_button_href': '/shop',
         }), (['website_sale.checkout', 'website_sale.address'], {
-            'name': _lt("Delivery"),
+            'name': _lt("Address"),
             'current_href': '/shop/checkout',
             'main_button': _lt("Confirm"),
             'main_button_href': f'{"/shop/extra_info" if is_extra_step_active else "/shop/confirm_order"}',
@@ -610,13 +610,13 @@ class Website(models.Model):
                 'current_href': '/shop/extra_info',
                 'main_button': _lt("Continue checkout"),
                 'main_button_href': '/shop/confirm_order',
-                'back_button':  _lt("Back to delivery"),
+                'back_button':  _lt("Back to Address"),
                 'back_button_href': '/shop/checkout',
             }))
         steps.append((['website_sale.payment'], {
             'name': _lt("Payment"),
             'current_href': '/shop/payment',
-            'back_button':  _lt("Back to delivery"),
+            'back_button':  _lt("Back to Address"),
             'back_button_href': '/shop/checkout',
         }))
         return steps

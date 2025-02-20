@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from collections import defaultdict
 from odoo.http import request, route
 
+from odoo.addons.portal.controllers.portal import CustomerPortal
 from odoo.addons.website_event.controllers.main import WebsiteEventController
 
 
@@ -70,8 +70,16 @@ class WebsiteEventSaleController(WebsiteEventController):
         # we have at least one registration linked to a ticket -> sale mode activate
         if any(info['event_ticket_id'] for info in registrations):
             if order_sudo.amount_total:
+                if order_sudo._is_anonymous_cart():
+                    booked_by_partner, _feedback_dict = CustomerPortal()._create_or_update_address(
+                        False,
+                        order_sudo=order_sudo,
+                        skip_required_fields_check=True,
+                        **registrations[0]
+                    )
+                    order_sudo._update_address(booked_by_partner.id, ['partner_id'])
                 request.session['sale_last_order_id'] = order_sudo.id
-                return request.redirect("/shop/checkout")
+                return request.redirect("/shop/checkout?try_skip_step=true")
             else:
                 # Free order -> auto confirmation without checkout
                 order_sudo.action_confirm()  # tde notsure: email sending ?

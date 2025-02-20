@@ -1145,7 +1145,7 @@ a.no-decoration {
 
     .o_wsale_accordion {
         .accordion-button{
-            background-color: unset;
+            background-color: white;
         }
 
         .o_wsale_scrollable_table {
@@ -1208,6 +1208,10 @@ a.no-decoration {
         background-image: escape-svg($accordion-button-icon);
     }
 
+    .accordion-button:not(.collapsed) {
+        box-shadow: none;
+    }
+
     #product_accordion, #wsale_products_attributes_collapse h6, #o_wsale_price_range_option h6 {
         --accordion-active-bg: inherit;
         --accordion-active-color: var(--accordion-btn-color);
@@ -1221,10 +1225,6 @@ a.no-decoration {
             &:not(:last-child) {
                 border-bottom: 0;
             }
-        }
-
-        .accordion-button:not(.collapsed) {
-            box-shadow: none;
         }
 
         // Necessary to display the first accordion entry as opened before the
