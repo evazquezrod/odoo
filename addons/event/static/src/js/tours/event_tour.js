@@ -1,23 +1,23 @@
 import { _t } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
+import { simpleTags } from "@web/core/utils/html";
 import { stepUtils } from "@web_tour/tour_service/tour_utils";
 
 import EventAdditionalTourSteps from "@event/js/tours/event_steps";
 
-import { markup } from "@odoo/owl";
 
 registry.category("web_tour.tours").add('event_tour', {
     url: '/odoo',
     steps: () => [stepUtils.showAppsMenuItem(), {
     isActive: ["enterprise"],
     trigger: '.o_app[data-menu-xmlid="event.event_main_menu"]',
-    content: markup(_t("Ready to <b>organize events</b> in a few minutes? Let's get started!")),
+    content: _t("Ready to %(b_open)sorganize events%(b_close)s in a few minutes? Let's get started!", simpleTags),
     tooltipPosition: 'bottom',
     run: "click",
 }, {
     isActive: ["community"],
     trigger: '.o_app[data-menu-xmlid="event.event_main_menu"]',
-    content: markup(_t("Ready to <b>organize events</b> in a few minutes? Let's get started!")),
+    content: _t("Ready to %(b_open)sorganize events%(b_close)s in a few minutes? Let's get started!", simpleTags),
     run: "click",
 },
 {
@@ -25,12 +25,12 @@ registry.category("web_tour.tours").add('event_tour', {
 },
 {
     trigger: '.o-kanban-button-new',
-    content: markup(_t("Let's create your first <b>event</b>.")),
+    content: _t("Let's create your first %(b_open)sevent%(b_close)s.", simpleTags),
     tooltipPosition: 'bottom',
     run: "click",
 }, {
     trigger: '.o_event_form_view div[name="name"] textarea',
-    content: markup(_t("This is the <b>name</b> your guests will see when registering.")),
+    content: _t("This is the %(b_open)sname%(b_close)s your guests will see when registering.", simpleTags),
     run: "edit Odoo Experience 2020",
 }, {
     trigger: '.o_event_form_view div[name="date_begin"]',
@@ -44,7 +44,7 @@ registry.category("web_tour.tours").add('event_tour', {
     },
 }, {
     trigger: '.o_event_form_view input[data-field="date_begin"]',
-    content: markup(_t("Open date range picker.<br/>Pick a Start and End date for your event.")),
+    content: _t("Open date range picker.%(br)sPick a Start and End date for your event.", simpleTags),
     run: "click",
 }, {
     content: _t("Apply change."),
@@ -52,7 +52,7 @@ registry.category("web_tour.tours").add('event_tour', {
     run: "click",
 }, {
     trigger: '.o_event_form_view div[name="event_ticket_ids"] .o_field_x2many_list_row_add a',
-    content: markup(_t("Ticket types allow you to distinguish your attendees. Let's <b>create</b> a new one.")),
+    content: _t("Ticket types allow you to distinguish your attendees. Let's %(b_open)screate%(b_close)s a new one.", simpleTags),
     run: "click",
 }, stepUtils.autoExpandMoreButtons(),
 ...new EventAdditionalTourSteps()._get_website_event_steps(), {
@@ -66,7 +66,7 @@ registry.category("web_tour.tours").add('event_tour', {
 },
 {
     trigger: 'ol.breadcrumb li.breadcrumb-item:first',
-    content: markup(_t("Use the <b>breadcrumbs</b> to go back to your kanban overview.")),
+    content: _t("Use the %(b_open)sbreadcrumbs%(b_close)s to go back to your kanban overview.", simpleTags),
     tooltipPosition: 'bottom',
     run: 'click',
 }].filter(Boolean)});

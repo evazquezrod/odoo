@@ -1,8 +1,7 @@
 import { _t } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
+import { simpleTags } from "@web/core/utils/html";
 import { stepUtils } from "@web_tour/tour_service/tour_utils";
-
-import { markup } from "@odoo/owl";
 
 export const accountTourSteps = {
     goToAccountMenu(description="Open Invoicing Menu") {
@@ -25,12 +24,12 @@ export const accountTourSteps = {
 registry.category("web_tour.tours").add('account_tour', {
     url: "/odoo",
     steps: () => [
-    ...accountTourSteps.goToAccountMenu(markup(_t('Send invoices to your customers in no time with the <b>Invoicing app</b>.'))),
+    ...accountTourSteps.goToAccountMenu(_t('Send invoices to your customers in no time with the %(b_open)sInvoicing app%(b_close)s.', simpleTags)),
     ...accountTourSteps.onboarding(),
     ...accountTourSteps.newInvoice(),
     {
         trigger: "div[name=partner_id] .o_input_dropdown",
-        content: markup(_t("Write a customer name to <b>create one</b> or <b>see suggestions</b>.")),
+        content: _t("Write a customer name to %(b_open)screate one%(b_close)s or %(b_open)ssee suggestions%(b_close)s.", simpleTags),
         tooltipPosition: "right",
         run: "click",
     },
@@ -48,7 +47,7 @@ registry.category("web_tour.tours").add('account_tour', {
     {
         isActive: ["auto"],
         trigger: ".modal-content button.btn-primary",
-        content: markup(_t("Once everything is set, you are good to continue. You will be able to edit this later in the <b>Customers</b> menu.")),
+        content: _t("Once everything is set, you are good to continue. You will be able to edit this later in the %(b_open)sCustomers%(b_close)s menu.", simpleTags),
         run: "click",
     },
     {
@@ -135,7 +134,7 @@ registry.category("web_tour.tours").add('account_tour', {
     {
         isActive: ["auto"],
         trigger: ".o_field_widget[name=email] input, input[name=email]",
-        content: markup(_t("Write here <b>your own email address</b> to test the flow.")),
+        content: _t("Write here %(b_open)syour own email address%(b_close)s to test the flow.", simpleTags),
         run: "edit customer@example.com",
     },
     {

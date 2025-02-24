@@ -1,5 +1,6 @@
-import { markup } from "@odoo/owl";
+import { _t } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
+import { simpleTags } from "@web/core/utils/html";
 import { stepUtils } from "@web_tour/tour_service/tour_utils";
 
 registry.category("web_tour.tours").add('project_todo_main_functions', {
@@ -165,7 +166,7 @@ registry.category("web_tour.tours").add('project_todo_main_functions', {
     run: "click",
 }, {
     trigger: ".o_project_task_form_view .breadcrumb-item:last-child",
-    content: markup("Let's go back to the <b>kanban view</b> to have an overview of tasks linked to project chosen."),
+    content: _t("Let's go back to the %(b_open)skanban view%(b_close)s to have an overview of tasks linked to project chosen.", simpleTags),
     run: "click",
 }, {
     trigger: ".o_kanban_view",

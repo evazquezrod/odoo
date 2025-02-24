@@ -1,8 +1,8 @@
     import { registry } from "@web/core/registry";
     import { stepUtils } from "@web_tour/tour_service/tour_utils";
     import { _t } from "@web/core/l10n/translation";
+import { simpleTags } from "@web/core/utils/html";
 
-    import { markup } from "@odoo/owl";
 
     registry.category("web_tour.tours").add('mass_mailing_tour', {
         url: '/odoo',
@@ -23,12 +23,12 @@
     },
     {
         trigger: '.o_list_button_add',
-        content: markup(_t("Start by creating your first <b>Mailing</b>.")),
+        content: _t("Start by creating your first %(b_open)sMailing%(b_close)s.", simpleTags),
         tooltipPosition: 'bottom',
         run: "click",
     }, {
         trigger: 'div[name="subject"]',
-        content: markup(_t('Pick the <b>email subject</b>.')),
+        content: _t('Pick the %(b_open)semail subject%(b_close)s.', simpleTags),
         tooltipPosition: 'bottom',
         run: 'click',
     }, {
@@ -42,13 +42,13 @@
     }, {
         isActive: ["enterprise"],
         trigger: 'div[name="body_arch"] :iframe #newsletter',
-        content: markup(_t('Choose this <b>theme</b>.')),
+        content: _t('Choose this %(b_open)stheme%(b_close)s.', simpleTags),
         tooltipPosition: 'left',
         run: 'click',
     }, {
         isActive: ["community"],
         trigger: 'div[name="body_arch"] :iframe #default',
-        content: markup(_t('Choose this <b>theme</b>.')),
+        content: _t('Choose this %(b_open)stheme%(b_close)s.', simpleTags),
         tooltipPosition: 'right',
         run: 'click',
     }, {
@@ -90,7 +90,7 @@
         run: "click",
     }, {
         trigger: '.o_back_button',
-        content: markup(_t("By using the <b>Breadcrumb</b>, you can navigate back to the overview.")),
+        content: _t("By using the %(b_open)sBreadcrumb%(b_close)s, you can navigate back to the overview.", simpleTags),
         tooltipPosition: 'bottom',
         run: 'click',
     }]

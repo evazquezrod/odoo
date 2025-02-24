@@ -5,6 +5,7 @@ import { Dialog } from "@web/core/dialog/dialog";
 import { rpc } from "@web/core/network/rpc";
 import { user } from "@web/core/user";
 import { useChildRef } from "@web/core/utils/hooks";
+import { simpleTags } from "@web/core/utils/html";
 import weUtils from "@web_editor/js/common/utils";
 import options from "@web_editor/js/editor/snippets.options";
 import { NavbarLinkPopoverWidget } from "@website/js/widgets/link_popover_widget";
@@ -34,7 +35,7 @@ import {
 } from "@website/js/text_processing";
 import { throttleForAnimation } from "@web/core/utils/timing";
 
-import { Component, markup, useEffect, useRef, useState } from "@odoo/owl";
+import { Component, useEffect, useRef, useState } from "@odoo/owl";
 
 const InputUserValueWidget = options.userValueWidgetsRegistry['we-input'];
 const SelectUserValueWidget = options.userValueWidgetsRegistry['we-select'];
@@ -3115,7 +3116,10 @@ options.registry.anchor = options.Class.extend({
         buttonEl.addEventListener("click", async (ev) => {
             const anchorLink = this._getAnchorLink();
             await browser.navigator.clipboard.writeText(anchorLink);
-            const message = markup(_t("Anchor copied to clipboard<br>Link: %s", anchorLink));
+            const message = _t("Anchor copied to clipboard%(br)sLink: %(link)s", {
+                ...simpleTags,
+                link: anchorLink,
+            });
             this.notification.add(message, {
                 type: "success",
                 buttons: [{name: _t("Edit"), onClick: () => this._openAnchorDialog(buttonEl), primary: true}],

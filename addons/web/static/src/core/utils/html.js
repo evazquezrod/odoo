@@ -159,3 +159,17 @@ export function setElementContent(element, content) {
         element.textContent = content;
     }
 }
+
+export const simpleTags = {
+    b_open: htmlMarkup`<b>`,
+    b_close: htmlMarkup`</b>`,
+    br: htmlMarkup`<br/>`,
+    div_open: htmlMarkup`<div>`,
+    div_close: htmlMarkup`</div>`,
+    em_open: htmlMarkup`<em>`,
+    em_close: htmlMarkup`</em>`,
+    i_open: htmlMarkup`<i>`,
+    i_close: htmlMarkup`</i>`,
+    strong_open: htmlMarkup`<strong>`,
+    strong_close: htmlMarkup`</strong>`,
+};

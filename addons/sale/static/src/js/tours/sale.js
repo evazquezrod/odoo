@@ -1,6 +1,6 @@
-import { markup } from "@odoo/owl";
 import { _t } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
+import { simpleTags } from "@web/core/utils/html";
 import { stepUtils } from "@web_tour/tour_service/tour_utils";
 
 registry.category("web_tour.tours").add("sale_tour", {
@@ -87,7 +87,10 @@ registry.category("web_tour.tours").add("sale_tour", {
         },
         ...stepUtils.statusbarButtonsSteps(
             "Send by Email",
-            markup(_t("<b>Send the quote</b> to yourself and check what the customer will receive.")),
+            _t(
+                "%(b_open)sSend the quote%(b_close)s to yourself and check what the customer will receive.",
+                simpleTags
+            )
         ),
         {
             isActive: ["body:not(:has(.modal-footer button.o_mail_send))"],

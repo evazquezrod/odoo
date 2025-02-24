@@ -1,8 +1,9 @@
+import { _t } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
+import { simpleTags } from "@web/core/utils/html";
 import { stepUtils } from "@web_tour/tour_service/tour_utils";
 import tourUtils from "@sale/js/tours/tour_utils";
 
-import { markup } from "@odoo/owl";
 import { queryText } from "@odoo/hoot-dom";
 
 registry.category("web_tour.tours").add('sale_timesheet_tour', {
@@ -66,7 +67,7 @@ registry.category("web_tour.tours").add('sale_timesheet_tour', {
     run: "click",
 }, {
     trigger: 'div[name="partner_id"] input',
-    content: markup('Select the customer of your Sales Order <i>(e.g. Brandon Freeman)</i>. Since we have a Sales Order for this customer with a prepaid service product which the remaining hours to deliver is greater than 0, the Sales Order Item in the task should be contain the Sales Order Item containing this prepaid service product.'),
+    content: _t('Select the customer of your Sales Order %(i_open)s(e.g. Brandon Freeman)%(i_close)s. Since we have a Sales Order for this customer with a prepaid service product which the remaining hours to deliver is greater than 0, the Sales Order Item in the task should be contain the Sales Order Item containing this prepaid service product.', simpleTags),
     run: "edit Brandon Freeman",
 }, {
     trigger: 'div[name="partner_id"] ul > li:first-child > a:contains(Freeman)',
@@ -160,7 +161,7 @@ registry.category("web_tour.tours").add('sale_timesheet_tour', {
     }
 }, {
     trigger: 'div[name="partner_id"] input',
-    content: markup('Add the customer for this project to select an SO and SOL for this customer <i>(e.g. Brandon Freeman)</i>.'),
+    content: _t('Add the customer for this project to select an SO and SOL for this customer %(i_open)s(e.g. Brandon Freeman)%(i_close)s.', simpleTags),
     run: "edit Brandon Freeman",
 }, {
     trigger: 'div[name="partner_id"] ul > li:first-child > a:contains(Freeman)',
@@ -222,7 +223,7 @@ registry.category("web_tour.tours").add('sale_timesheet_tour', {
     // timer: 300,
 }, {
     trigger: 'div[name="partner_id"] input',
-    content: markup('Add the customer for this project to select an SO and SOL for this customer <i>(e.g. Brandon Freeman)</i>.'),
+    content: _t('Add the customer for this project to select an SO and SOL for this customer %(i_open)s(e.g. Brandon Freeman)%(i_close)s.', simpleTags),
     run: "edit Brandon Freeman",
 }, {
     trigger: 'div[name="partner_id"] ul > li:first-child > a:contains(Freeman)',

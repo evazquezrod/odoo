@@ -1,21 +1,20 @@
 import { _t } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
+import { simpleTags } from "@web/core/utils/html";
 import { stepUtils } from "@web_tour/tour_service/tour_utils";
-
-import { markup } from "@odoo/owl";
 
 registry.category("web_tour.tours").add('hr_expense_tour' , {
     url: "/odoo",
     steps: () => [stepUtils.showAppsMenuItem(), {
     isActive: ["community"],
     trigger: '.o_app[data-menu-xmlid="hr_expense.menu_hr_expense_root"]',
-    content: markup(_t("<b>Wasting time recording your receipts?</b> Let’s try a better way.")),
+    content: _t("%(b_open)sWasting time recording your receipts?%(b_close)s Let’s try a better way.", simpleTags),
     tooltipPosition: 'right',
     run: "click",
 }, {
     isActive: ["enterprise"],
     trigger: '.o_app[data-menu-xmlid="hr_expense.menu_hr_expense_root"]',
-    content: markup(_t("<b>Wasting time recording your receipts?</b> Let’s try a better way.")),
+    content: _t("%(b_open)sWasting time recording your receipts?%(b_close)s Let’s try a better way.", simpleTags),
     tooltipPosition: 'bottom',
     run: "click",
 },
@@ -55,11 +54,11 @@ registry.category("web_tour.tours").add('hr_expense_tour' , {
 },
 {
     trigger: '.o_form_status_indicator_dirty .o_form_button_save',
-    content: markup(_t("Ready? You can save it manually or discard modifications from here. You don't <em>need to save</em> - Odoo will save eveyrthing for you when you navigate.")),
+    content: _t("Ready? You can save it manually or discard modifications from here. You don't %(em_open)sneed to save%(em_close)s - Odoo will save eveyrthing for you when you navigate.", simpleTags),
     tooltipPosition: 'bottom',
     run: "click",
 }, ...stepUtils.statusbarButtonsSteps(_t("Attach Receipt"), _t("Attach a receipt - usually an image or a PDF file.")),
-...stepUtils.statusbarButtonsSteps(_t("Submit to Manager"), markup(_t('Once your <b>Expense</b> is ready, you can submit it to your manager and wait for approval.'))),
+...stepUtils.statusbarButtonsSteps(_t("Submit to Manager"), _t('Once your %(b_open)sExpense%(b_close)s is ready, you can submit it to your manager and wait for approval.', simpleTags)),
 {
     isActive: ["mobile"],
     trigger: ".o_hr_expense_form_view_view",

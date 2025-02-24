@@ -1,20 +1,20 @@
 import { _t } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
+import { simpleTags } from "@web/core/utils/html";
 import { stepUtils } from "@web_tour/tour_service/tour_utils";
-import { markup } from "@odoo/owl";
 
 registry.category("web_tour.tours").add('hr_recruitment_tour',{
     url: "/odoo",
     steps: () => [stepUtils.showAppsMenuItem(), {
     isActive: ["community"],
     trigger: '.o_app[data-menu-xmlid="hr_recruitment.menu_hr_recruitment_root"]',
-    content: markup(_t("Let's have a look at how to <b>improve</b> your <b>hiring process</b>.")),
+    content: _t("Let's have a look at how to %(b_open)simprove%(b_close)s your %(b_open)shiring process%(b_close)s.", simpleTags),
     tooltipPosition: 'right',
     run: "click",
 }, {
     isActive: ["enterprise"],
     trigger: '.o_app[data-menu-xmlid="hr_recruitment.menu_hr_recruitment_root"]',
-    content: markup(_t("Let's have a look at how to <b>improve</b> your <b>hiring process</b>.")),
+    content: _t("Let's have a look at how to %(b_open)simprove%(b_close)s your %(b_open)shiring process%(b_close)s.", simpleTags),
     tooltipPosition: 'bottom',
     run: "click",
 }, {
@@ -65,7 +65,7 @@ registry.category("web_tour.tours").add('hr_recruitment_tour',{
 },
 {
     trigger: "button.oe_kanban_action",
-    content: markup(_t("<b>Did you apply by sending an email?</b> Check incoming applications.")),
+    content: _t("%(b_open)sDid you apply by sending an email?%(b_close)s Check incoming applications.", simpleTags),
     tooltipPosition: "bottom",
     run: "click",
 },
@@ -74,7 +74,7 @@ registry.category("web_tour.tours").add('hr_recruitment_tour',{
 },
 {
     trigger: ".o_kanban_record",
-    content: markup(_t("<b>Drag this card</b>, to qualify him for a first interview.")),
+    content: _t("%(b_open)sDrag this card%(b_close)s, to qualify him for a first interview.", simpleTags),
     tooltipPosition: "bottom",
     run: "drag_and_drop(.o_kanban_group:eq(1))",
 },
@@ -83,7 +83,7 @@ registry.category("web_tour.tours").add('hr_recruitment_tour',{
 },
 {
     trigger: ".o_kanban_record",
-    content: markup(_t("<b>Click to view</b> the application.")),
+    content: _t("%(b_open)sClick to view%(b_close)s the application.", simpleTags),
     tooltipPosition: "bottom",
     run: "click",
 },
@@ -92,7 +92,7 @@ registry.category("web_tour.tours").add('hr_recruitment_tour',{
 },
 {
     trigger: "button:contains(Send message)",
-    content: markup(_t("<div><b>Try to send an email</b> to the applicant.</div><div><i>Tips: All emails sent or received are saved in the history here</i>")),
+    content: _t("%(div_open)s%(b_open)sTry to send an email%(b_close)s to the applicant.%(div_close)s%(div_open)s%(i_open)sTips: All emails sent or received are saved in the history here%(i_close)s%(div_close)s", simpleTags),
     tooltipPosition: "bottom",
     run: "click",
 },

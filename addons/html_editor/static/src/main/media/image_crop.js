@@ -7,15 +7,9 @@ import {
 } from "@html_editor/utils/image_processing";
 import { IMAGE_SHAPES } from "./image_plugin";
 import { _t } from "@web/core/l10n/translation";
-import {
-    Component,
-    useRef,
-    onMounted,
-    onWillDestroy,
-    markup,
-    useExternalListener,
-} from "@odoo/owl";
+import { Component, useRef, onMounted, onWillDestroy, useExternalListener } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
+import { simpleTags } from "@web/core/utils/html";
 import { scrollTo, closestScrollableY } from "@web/core/utils/scrolling";
 
 export class ImageCrop extends Component {
@@ -119,10 +113,9 @@ export class ImageCrop extends Component {
 
         if (this.uncroppable) {
             this.notification.add(
-                markup(
-                    _t(
-                        "This type of image is not supported for cropping.<br/>If you want to crop it, please first download it from the original source and upload it in Odoo."
-                    )
+                _t(
+                    "This type of image is not supported for cropping.%(br)sIf you want to crop it, please first download it from the original source and upload it in Odoo.",
+                    simpleTags
                 ),
                 {
                     title: _t("This image is an external image"),

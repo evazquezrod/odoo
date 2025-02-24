@@ -1,21 +1,21 @@
 import { _t } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
+import { simpleTags } from "@web/core/utils/html";
 import { stepUtils } from "@web_tour/tour_service/tour_utils";
 
-import { markup } from "@odoo/owl";
 
 registry.category("web_tour.tours").add('crm_tour', {
     url: "/odoo",
     steps: () => [stepUtils.showAppsMenuItem(), {
     isActive: ["community"],
     trigger: '.o_app[data-menu-xmlid="crm.crm_menu_root"]',
-    content: markup(_t('Ready to boost your sales? Let\'s have a look at your <b>Pipeline</b>.')),
+    content: _t('Ready to boost your sales? Let\'s have a look at your %(b_open)sPipeline%(b_close)s.', simpleTags),
     tooltipPosition: 'bottom',
     run: "click",
 }, {
     isActive: ["enterprise"],
     trigger: '.o_app[data-menu-xmlid="crm.crm_menu_root"]',
-    content: markup(_t('Ready to boost your sales? Let\'s have a look at your <b>Pipeline</b>.')),
+    content: _t('Ready to boost your sales? Let\'s have a look at your %(b_open)sPipeline%(b_close)s.', simpleTags),
     tooltipPosition: 'bottom',
     run: "click",
 },
@@ -24,12 +24,12 @@ registry.category("web_tour.tours").add('crm_tour', {
 },
 {
     trigger: '.o_opportunity_kanban .o-kanban-button-new',
-    content: markup(_t("<b>Create your first opportunity.</b>")),
+    content: _t("%(b_open)sCreate your first opportunity.%(b_close)s", simpleTags),
     tooltipPosition: 'bottom',
     run: "click",
 }, {
     trigger: ".o_kanban_quick_create .o_field_widget[name='partner_id'] input",
-    content: markup(_t('<b>Write a few letters</b> to look for a company, or create a new one.')),
+    content: _t('%(b_open)sWrite a few letters%(b_close)s to look for a company, or create a new one.', simpleTags),
     tooltipPosition: "top",
     run: "edit Brandon Freeman",
 }, {
@@ -38,7 +38,7 @@ registry.category("web_tour.tours").add('crm_tour', {
     run: "click",
 }, {
     trigger: ".o_kanban_quick_create .o_kanban_add",
-    content: markup(_t("Now, <b>add your Opportunity</b> to your Pipeline.")),
+    content: _t("Now, %(b_open)sadd your Opportunity%(b_close)s to your Pipeline.", simpleTags),
     tooltipPosition: "bottom",
     run: "click",
 },
@@ -47,7 +47,7 @@ registry.category("web_tour.tours").add('crm_tour', {
 },
 {
     trigger: ".o_opportunity_kanban .o_kanban_group:first-child .o_kanban_record:last-of-type",
-    content: markup(_t("<b>Drag &amp; drop opportunities</b> between columns as you progress in your sales cycle.")),
+    content: _t("%(b_open)sDrag &amp; drop opportunities%(b_close)s between columns as you progress in your sales cycle.", simpleTags),
     tooltipPosition: "right",
     run: "drag_and_drop(.o_opportunity_kanban .o_kanban_group:eq(2))",
 },
@@ -57,7 +57,7 @@ registry.category("web_tour.tours").add('crm_tour', {
 {
     // Choose the element that is not going to be moved by the previous step.
     trigger: ".o_opportunity_kanban .o_kanban_group .o_kanban_record .o-mail-ActivityButton",
-    content: markup(_t("Looks like nothing is planned. :(<br><br><i>Tip: Schedule activities to keep track of everything you have to do!</i>")),
+    content: _t("Looks like nothing is planned. :(%(br)s%(br)s%(i_open)sTip: Schedule activities to keep track of everything you have to do!%(i_close)s", simpleTags),
     tooltipPosition: "bottom",
     run: "click",
 },
@@ -66,18 +66,18 @@ registry.category("web_tour.tours").add('crm_tour', {
 },
 {
     trigger: ".o-mail-ActivityListPopover button:contains(Schedule an activity)",
-    content: markup(_t("Let's <b>Schedule an Activity.</b>")),
+    content: _t("Let's %(b_open)sSchedule an Activity.%(b_close)s", simpleTags),
     tooltipPosition: "bottom",
     run: "click",
 }, {
     trigger: '.modal-footer button[name="action_schedule_activities"]',
-    content: markup(_t("All set. Let’s <b>Schedule</b> it.")),
+    content: _t("All set. Let’s %(b_open)sSchedule%(b_close)s it.", simpleTags),
     tooltipPosition: "top",  // dot NOT move to bottom, it would cause a resize flicker, see task-2476595
     run: "click",
 }, {
     id: "drag_opportunity_to_won_step",
     trigger: ".o_opportunity_kanban .o_kanban_record:last-of-type",
-    content: markup(_t("Drag your opportunity to <b>Won</b> when you get the deal. Congrats!")),
+    content: _t("Drag your opportunity to %(b_open)sWon%(b_close)s when you get the deal. Congrats!", simpleTags),
     tooltipPosition: "right",
     run: "drag_and_drop(.o_opportunity_kanban .o_kanban_group:eq(3))",
 },

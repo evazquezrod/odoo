@@ -1,16 +1,16 @@
 import { _t } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
+import { simpleTags } from "@web/core/utils/html";
 import { stepUtils } from "@web_tour/tour_service/tour_utils";
 
-import { markup } from "@odoo/owl";
 
 registry.category("web_tour.tours").add('survey_tour', {
     url: "/odoo",
     steps: () => [
-    ...stepUtils.goToAppSteps('survey.menu_surveys', markup(_t("Ready to change the way you <b>gather data</b>?"))),
+    ...stepUtils.goToAppSteps('survey.menu_surveys', _t("Ready to change the way you %(b_open)sgather data%(b_close)s?", simpleTags)),
 {
     trigger: '.btn-outline-primary.o_survey_load_sample',
-    content: markup(_t("Load a <b>sample Survey</b> to get started quickly.")),
+    content: _t("Load a %(b_open)ssample Survey%(b_close)s to get started quickly.", simpleTags),
     tooltipPosition: 'left',
     run: "click",
 }, {

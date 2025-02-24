@@ -1,5 +1,6 @@
-import { markup } from "@odoo/owl";
+import { _t } from "@web/core/l10n/translation";
 import { registry } from "@web/core/registry";
+import { simpleTags } from "@web/core/utils/html";
 import { stepUtils } from "@web_tour/tour_service/tour_utils";
 
 registry.category("web_tour.tours").add('mass_mailing_code_view_tour', {
@@ -14,7 +15,7 @@ registry.category("web_tour.tours").add('mass_mailing_code_view_tour', {
             run: "click",
         }, {
             trigger: 'input#subject_0',
-            content: markup('Pick the <b>email subject</b>.'),
+            content: _t('Pick the %(b_open)semail subject%(b_close)s.', simpleTags),
             tooltipPosition: 'bottom',
             run: "edit Test",
         }, {
@@ -27,11 +28,11 @@ registry.category("web_tour.tours").add('mass_mailing_code_view_tour', {
             run: 'click',
         }, {
             trigger: 'div[name="body_arch"] :iframe #default',
-            content: markup('Choose this <b>theme</b>.'),
+            content: _t('Choose this %(b_open)stheme%(b_close)s.', simpleTags),
             run: 'click',
         }, {
             trigger: '.o_codeview_btn',
-            content: markup('Click here to switch to <b>code view</b>'),
+            content: _t('Click here to switch to %(b_open)scode view%(b_close)s', simpleTags),
             run: 'click'
         }, {
             trigger: ':iframe .o_codeview',
@@ -44,7 +45,7 @@ registry.category("web_tour.tours").add('mass_mailing_code_view_tour', {
             }
         }, {
             trigger: '.o_codeview_btn',
-            content: markup('Click here to switch back from <b>code view</b>'),
+            content: _t('Click here to switch back from %(b_open)scode view%(b_close)s', simpleTags),
             run: 'click'
         }, {
             trigger: '[name="body_arch"] :iframe .o_mail_wrapper_td',
