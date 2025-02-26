@@ -29710,7 +29710,7 @@ const templates = /* xml */ `
 </templates>
 `;
 let app;
-function renderToString(templateName, context = {}) {
+function renderToMarkup(templateName, context = {}) {
     return render(templateName, context).innerHTML;
 }
 function render(templateName, context = {}) {
@@ -29908,7 +29908,7 @@ function customTooltipHandler({ chart, tooltip }) {
             boxColor: typeof color === "string" ? setColorAlpha(color, 1) : color,
         };
     });
-    const innerHTML = renderToString("o-spreadsheet-CustomTooltip", {
+    const innerHTML = renderToMarkup("o-spreadsheet-CustomTooltip", {
         labelsMaxWidth: Math.floor(chart.canvas.clientWidth * 0.5) + "px",
         valuesMaxWidth: Math.floor(chart.canvas.clientWidth * 0.25) + "px",
         title: tooltip.title[0],

@@ -1,7 +1,7 @@
 /*global L*/
 
 import { Component, useEffect, useRef } from '@odoo/owl';
-import { renderToString } from '@web/core/utils/render';
+import { renderToMarkup } from '@web/core/utils/render';
 
 export class Map extends Component {
     static template = 'delivery.locationSelector.map';
@@ -105,7 +105,7 @@ export class Map extends Component {
             const iconInfo = {
                 className: isSelected ? 'o_location_selector_marker_icon_selected'
                                       : 'o_location_selector_marker_icon',
-                html: renderToString(
+                html: renderToMarkup(
                     'delivery.locationSelector.map.marker',
                     { number: locations.indexOf(loc) + 1 },
                 ),

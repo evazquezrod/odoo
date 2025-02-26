@@ -23,22 +23,12 @@ export function renderToFragment(template, context = {}) {
     return frag;
 }
 
-/**
- * renders a template with an (optional) context and outputs it as a string
- *
- * @param {string} template
- * @param {Object} context
- * @returns string: the html of the template
- */
-export function renderToString(template, context = {}) {
-    return render(template, context).innerHTML;
-}
 let app;
-Object.defineProperty(renderToString, "app", {
+Object.defineProperty(renderToMarkup, "app", {
     get: () => {
         if (!app) {
             app = new App(Component, {
-                name: "renderToString",
+                name: "renderToMarkup",
                 getTemplate,
                 translatableAttributes: ["data-tooltip"],
                 translateFn: _t,
@@ -49,7 +39,7 @@ Object.defineProperty(renderToString, "app", {
 });
 
 function render(template, context = {}) {
-    const app = renderToString.app;
+    const app = renderToMarkup.app;
     const templateFn = app.getTemplate(template);
     const bdom = templateFn(context, {});
     const div = document.createElement("div");
@@ -66,5 +56,5 @@ function render(template, context = {}) {
  * @returns {ReturnType<markup>} the html of the template, as a markup string
  */
 export function renderToMarkup(template, context = {}) {
-    return markup(renderToString(template, context));
+    return markup(render(template, context).innerHTML);
 }

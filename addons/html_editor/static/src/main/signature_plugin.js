@@ -3,7 +3,7 @@ import { _t } from "@web/core/l10n/translation";
 import { parseHTML } from "@html_editor/utils/html";
 import { user } from "@web/core/user";
 import { withSequence } from "@html_editor/utils/resource";
-import { renderToString } from "@web/core/utils/render";
+import { renderToMarkup } from "@web/core/utils/render";
 import { markup } from "@odoo/owl";
 import { isEmptyBlock, paragraphRelatedElementsSelector } from "@html_editor/utils/dom_info";
 
@@ -51,7 +51,7 @@ export class SignaturePlugin extends Plugin {
             // User signature is sanitized in backend.
             const signatureFragment = parseHTML(
                 this.document,
-                renderToString("html_editor.Signature", {
+                renderToMarkup("html_editor.Signature", {
                     signature: markup(currentUser.signature),
                     signatureClass: SIGNATURE_CLASS,
                 })

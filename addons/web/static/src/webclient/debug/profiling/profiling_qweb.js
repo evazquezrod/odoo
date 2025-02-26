@@ -1,7 +1,7 @@
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { loadBundle } from "@web/core/assets";
-import { renderToString } from "@web/core/utils/render";
+import { renderToMarkup } from "@web/core/utils/render";
 import { useDebounced } from "@web/core/utils/timing";
 import { standardFieldProps } from "@web/views/fields/standard_field_props";
 
@@ -297,7 +297,7 @@ export class ProfilingQwebView extends Component {
         }
     }
     _renderHover(delay, query, node) {
-        const xml = renderToString("web.ProfilingQwebView.hover", {
+        const xml = renderToMarkup("web.ProfilingQwebView.hover", {
             delay: this._formatDelay(delay),
             query: query,
         });
@@ -305,7 +305,7 @@ export class ProfilingQwebView extends Component {
         node.appendChild(div);
     }
     _renderInfo(delays, querys, displayDetail, groups, node) {
-        const xml = renderToString("web.ProfilingQwebView.info", {
+        const xml = renderToMarkup("web.ProfilingQwebView.info", {
             delay: this._formatDelay(delays.reduce((a, b) => a + b, 0)),
             query: querys.reduce((a, b) => a + b, 0) || ".",
             displayDetail: displayDetail,

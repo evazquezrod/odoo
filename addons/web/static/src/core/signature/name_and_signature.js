@@ -6,7 +6,7 @@ import { Dropdown } from "@web/core/dropdown/dropdown";
 import { DropdownItem } from "@web/core/dropdown/dropdown_item";
 import { rpc } from "@web/core/network/rpc";
 import { useAutofocus } from "@web/core/utils/hooks";
-import { renderToString } from "@web/core/utils/render";
+import { renderToMarkup } from "@web/core/utils/render";
 import { getDataURLFromFile } from "@web/core/utils/urls";
 
 import { Component, useState, onWillStart, useRef, useEffect } from "@odoo/owl";
@@ -124,8 +124,8 @@ export class NameAndSignature extends Component {
     }
 
     /**
-    * Loads a signature image from a base64 dataURL and updates the empty state.
-    */
+     * Loads a signature image from a base64 dataURL and updates the empty state.
+     */
     async fromDataURL() {
         await this.signaturePad.fromDataURL(...arguments);
         this.props.signature.isSignatureEmpty = this.isSignatureEmpty;
@@ -166,7 +166,7 @@ export class NameAndSignature extends Component {
      * @returns {string} image = mimetype + image data
      */
     getSVGText(font, text, width, height) {
-        const svg = renderToString("web.sign_svg_text", {
+        const svg = renderToMarkup("web.sign_svg_text", {
             width: width,
             height: height,
             font: font,
@@ -258,13 +258,16 @@ export class NameAndSignature extends Component {
         const img = new Image();
         img.onload = () => {
             const ctx = c.getContext("2d");
-            var ratio = ((img.width / img.height) > (c.width / c.height)) ? c.width / img.width : c.height / img.height;
-            ctx.drawImage( 
+            var ratio =
+                img.width / img.height > c.width / c.height
+                    ? c.width / img.width
+                    : c.height / img.height;
+            ctx.drawImage(
                 img,
-                (c.width / 2) - (img.width * ratio / 2),
-                (c.height / 2) - (img.height * ratio / 2)
-                , img.width * ratio
-                , img.height * ratio
+                c.width / 2 - (img.width * ratio) / 2,
+                c.height / 2 - (img.height * ratio) / 2,
+                img.width * ratio,
+                img.height * ratio
             );
             this.props.signature.isSignatureEmpty = this.isSignatureEmpty;
             this.props.onSignatureChange(this.state.signMode);

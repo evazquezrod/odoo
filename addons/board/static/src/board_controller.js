@@ -5,7 +5,7 @@ import { Dropdown } from "@web/core/dropdown/dropdown";
 import { DropdownItem } from "@web/core/dropdown/dropdown_item";
 import { rpc } from "@web/core/network/rpc";
 import { useService } from "@web/core/utils/hooks";
-import { renderToString } from "@web/core/utils/render";
+import { renderToMarkup } from "@web/core/utils/render";
 import { useSortable } from "@web/core/utils/sortable_owl";
 import { standardViewProps } from "@web/views/standard_view_props";
 import { BoardAction } from "./board_action";
@@ -115,12 +115,12 @@ export class BoardController extends Component {
     }
 
     saveBoard() {
-        const templateFn = renderToString.app.getTemplate("board.arch");
+        const templateFn = renderToMarkup.app.getTemplate("board.arch");
         const bdom = templateFn(this.board, {});
-        const root = document.createElement("rendertostring");
+        const root = document.createElement("renderToMarkup");
         blockDom.mount(bdom, root);
         const result = xmlSerializer.serializeToString(root);
-        const arch = result.slice(result.indexOf("<", 1), result.indexOf("</rendertostring>"));
+        const arch = result.slice(result.indexOf("<", 1), result.indexOf("</renderToMarkup>"));
 
         rpc("/web/view/edit_custom", {
             custom_id: this.board.customViewId,

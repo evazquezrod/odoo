@@ -2,7 +2,7 @@ import { AttendeeCalendarCommonRenderer } from "@calendar/views/attendee_calenda
 import { AttendeeCalendarRenderer } from "@calendar/views/attendee_calendar/attendee_calendar_renderer";
 import { user } from "@web/core/user";
 import { patch } from "@web/core/utils/patch";
-import { renderToString } from "@web/core/utils/render";
+import { renderToMarkup } from "@web/core/utils/render";
 import { onPatched } from "@odoo/owl";
 
 const { DateTime } = luxon;
@@ -84,7 +84,7 @@ patch(AttendeeCalendarCommonRenderer.prototype, {
             const box = info.el.querySelector(`.fc-daygrid-day-top`);
             if (!box)
                 return;
-            const content = renderToString(this.constructor.ButtonWorklocationTemplate, this.headerTemplateProps(info.date));
+            const content = renderToMarkup(this.constructor.ButtonWorklocationTemplate, this.headerTemplateProps(info.date));
             box.insertAdjacentHTML("beforeend", content);
         }
     },

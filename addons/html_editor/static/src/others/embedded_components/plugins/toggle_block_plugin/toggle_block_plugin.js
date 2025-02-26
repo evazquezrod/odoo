@@ -16,7 +16,7 @@ import { parseHTML } from "@html_editor/utils/html";
 import { childNodeIndex, nodeSize } from "@html_editor/utils/position";
 import { withSequence } from "@html_editor/utils/resource";
 import { _t } from "@web/core/l10n/translation";
-import { renderToString } from "@web/core/utils/render";
+import { renderToMarkup } from "@web/core/utils/render";
 import { uuid } from "@web/views/utils";
 
 const toggleSelector = "[data-embedded='toggleBlock']";
@@ -632,7 +632,7 @@ export class ToggleBlockPlugin extends Plugin {
         const baseContainer = this.dependencies.baseContainer.createBaseContainer();
         return parseHTML(
             this.document,
-            renderToString("html_editor.EmbeddedToggleBlockBlueprint", {
+            renderToMarkup("html_editor.EmbeddedToggleBlockBlueprint", {
                 baseContainerNodeName: baseContainer.nodeName,
                 baseContainerAttributes: {
                     class: baseContainer.className,

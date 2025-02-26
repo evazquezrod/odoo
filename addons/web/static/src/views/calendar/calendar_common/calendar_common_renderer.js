@@ -1,6 +1,6 @@
 import { getLocalYearAndWeek, is24HourFormat } from "@web/core/l10n/dates";
 import { localization } from "@web/core/l10n/localization";
-import { renderToFragment, renderToString } from "@web/core/utils/render";
+import { renderToFragment, renderToMarkup } from "@web/core/utils/render";
 import { getColor } from "../colors";
 import { useCalendarPopover, useClickHandler, useFullCalendar } from "../hooks";
 import { CalendarCommonPopover } from "./calendar_common_popover";
@@ -367,7 +367,7 @@ export class CalendarCommonRenderer extends Component {
 
     getHeaderHtml({ date }) {
         return {
-            html: renderToString(this.constructor.headerTemplate, this.headerTemplateProps(date)),
+            html: renderToMarkup(this.constructor.headerTemplate, this.headerTemplateProps(date)),
         };
     }
 

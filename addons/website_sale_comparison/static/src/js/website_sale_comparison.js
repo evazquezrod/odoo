@@ -2,7 +2,7 @@ import { cookie } from "@web/core/browser/cookie";
 import { _t } from "@web/core/l10n/translation";
 import { rpc } from "@web/core/network/rpc";
 import { Mutex } from "@web/core/utils/concurrency";
-import { renderToString } from "@web/core/utils/render";
+import { renderToMarkup } from "@web/core/utils/render";
 import publicWidget from "@web/legacy/js/public/public_widget";
 import VariantMixin from "@website_sale/js/sale_variant_mixin";
 import website_sale_utils from "@website_sale/js/website_sale_utils";
@@ -48,7 +48,7 @@ var ProductComparison = publicWidget.Widget.extend(VariantMixin, {
             },
             container: '.o_product_feature_panel',
             placement: 'top',
-            template: renderToString('popover'),
+            template: renderToMarkup('popover'),
             content: function () {
                 return $('#comparelist .o_product_panel_content').html();
             }
