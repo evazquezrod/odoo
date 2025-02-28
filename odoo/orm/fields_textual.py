@@ -372,6 +372,9 @@ class Char(BaseString):
     type = 'char'
     trim = True                         # whether value is trimmed (only by web client)
 
+    openapi_type = 'string'
+    openapi_format = None
+
     def _setup_attrs__(self, model_class, name):
         super()._setup_attrs__(model_class, name)
         assert self.size is None or isinstance(self.size, int), \
@@ -427,6 +430,9 @@ class Text(BaseString):
     type = 'text'
     _column_type = ('text', 'text')
 
+    openapi_type = 'string'
+    openapi_format = None
+
 
 class Html(BaseString):
     """ Encapsulates an html code content.
@@ -447,6 +453,9 @@ class Html(BaseString):
     """
     type = 'html'
     _column_type = ('text', 'text')
+
+    openapi_type = 'string'
+    openapi_format = 'html'
 
     sanitize = True                     # whether value must be sanitized
     sanitize_overridable = False        # whether the sanitation can be bypassed by the users part of the `base.group_sanitize_override` group

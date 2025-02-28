@@ -182,6 +182,9 @@ class Many2one(_Relational[M]):
     type = 'many2one'
     _column_type = ('int4', 'int4')
 
+    openapi_type = 'integer'
+    openapi_format = 'int32'
+
     ondelete = None                     # what to do when value is deleted
     delegate = False                    # whether self implements delegation
 
@@ -745,6 +748,9 @@ class One2many(_RelationalMulti[M]):
     """
     type = 'one2many'
 
+    openapi_type = 'array'
+    openapi_format = None
+
     inverse_name = None                 # name of the inverse field
     copy = False                        # o2m are not copied by default
 
@@ -1113,6 +1119,9 @@ class Many2many(_RelationalMulti[M]):
 
     """
     type = 'many2many'
+
+    openapi_type = 'array'
+    openapi_format = None
 
     _explicit = True                    # whether schema is explicitly given
     relation = None                     # name of table

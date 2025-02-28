@@ -40,6 +40,9 @@ class Binary(Field):
     _depends_context = ('bin_size',)    # depends on context (content or size)
     attachment = True                   # whether value is stored in attachment
 
+    openapi_type = 'string'
+    openapi_format = 'byte'
+
     @lazy_property
     def column_type(self):
         return None if self.attachment else ('bytea', 'bytea')

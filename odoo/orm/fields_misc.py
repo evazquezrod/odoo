@@ -25,6 +25,9 @@ class Boolean(Field[bool]):
     _column_type = ('bool', 'bool')
     falsy_value = False
 
+    openapi_type = 'boolean'
+    openapi_format = None
+
     def convert_to_column(self, value, record, values=None, validate=True):
         return bool(value)
     
@@ -71,6 +74,9 @@ class Json(Field):
     type = 'json'
     _column_type = ('jsonb', 'jsonb')
 
+    openapi_type = 'object'
+    openapi_format = None
+
     def convert_to_record(self, value, record):
         """ Return a copy of the value """
         return False if value is None else copy.deepcopy(value)
@@ -101,6 +107,9 @@ class Id(Field[IdType | typing.Literal[False]]):
     store = True
     readonly = True
     prefetch = False
+
+    openapi_type = 'integer'
+    openapi_format = 'int32'
 
     def update_db(self, model, columns):
         pass                            # this column is created with the table

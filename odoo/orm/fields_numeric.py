@@ -15,6 +15,9 @@ class Integer(Field[int]):
 
     aggregator = 'sum'
 
+    openapi_type = 'integer'
+    openapi_format = 'int32'
+
     def _get_attrs(self, model_class, name):
         res = super()._get_attrs(model_class, name)
         # The default aggregator is None for sequence fields
@@ -102,6 +105,8 @@ class Float(Field[float]):
     falsy_value = 0.0
     aggregator = 'sum'
 
+    openapi_type = 'number'
+
     def __init__(self, string: str | Sentinel = SENTINEL, digits: str | tuple[int, int] | None | Sentinel = SENTINEL, **kwargs):
         super(Float, self).__init__(string=string, _digits=digits, **kwargs)
 
@@ -114,6 +119,10 @@ class Float(Field[float]):
         # is faster for most operations (sums, etc.)
         return ('numeric', 'numeric') if self._digits is not None else \
                ('float8', 'double precision')
+
+    @property
+    def openapi_format(self):
+        return 'decimal' if self._digits is not None else 'double'
 
     def get_digits(self, env):
         if isinstance(self._digits, str):
@@ -178,6 +187,9 @@ class Monetary(Field[float]):
 
     currency_field = None
     aggregator = 'sum'
+
+    openapi_type = 'number'
+    openapi_format = 'decimal'
 
     def __init__(self, string: str | Sentinel = SENTINEL, currency_field: str | Sentinel = SENTINEL, **kwargs):
         super(Monetary, self).__init__(string=string, currency_field=currency_field, **kwargs)

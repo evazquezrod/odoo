@@ -268,6 +268,9 @@ class Field(typing.Generic[T]):
     default_export_compatible = False   # whether the field must be exported by default in an import-compatible export
     exportable = True
 
+    openapi_type: str                   # the type for openapi
+    openapi_format: str | None          # the format for openapi
+
     by_type = {}
 
     def __init__(self, string: str | Sentinel = SENTINEL, **kwargs):

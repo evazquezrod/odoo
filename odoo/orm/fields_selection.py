@@ -53,6 +53,9 @@ class Selection(Field[str | typing.Literal[False]]):
     type = 'selection'
     _column_type = ('varchar', pg_varchar())
 
+    openapi_type = 'string'
+    openapi_format = None
+
     selection = None            # [(value, string), ...], function or method name
     validate = True             # whether validating upon write
     ondelete = None             # {value: policy} (what to do when value is deleted)

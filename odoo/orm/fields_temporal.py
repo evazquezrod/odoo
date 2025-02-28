@@ -75,6 +75,9 @@ class Date(BaseDate[date]):
     type = 'date'
     _column_type = ('date', 'date')
 
+    openapi_type = 'string'
+    openapi_format = 'date'
+
     @staticmethod
     def today(*args):
         """Return the current day in the format expected by the ORM.
@@ -175,6 +178,9 @@ class Datetime(BaseDate[datetime]):
     """ Encapsulates a python :class:`datetime <datetime.datetime>` object. """
     type = 'datetime'
     _column_type = ('timestamp', 'timestamp')
+
+    openapi_type = 'string'
+    openapi_format = 'date-time'
 
     @staticmethod
     def now(*args):
