@@ -1,0 +1,264 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Odoo Live Models Documentation",
+        "version": ""
+    },
+    "servers": [
+        {"url": "http://localhost:8069"}
+    ],
+
+    "tags": [
+      {"name": "test_http.stargate"},
+      {"name": "test_http.galaxy"}
+    ],
+    "security": [
+        {"api-key": []},
+        {"session-cookie": []}
+    ],
+    "paths": {
+        "/json/2/{model}/search": {"post": {
+            "tags": ["test_http.stargate", "test_http.galaxy"],
+            "parameters": [
+              {
+                "name": "model",
+                "in": "path",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "enum": ["test_http.stargate", "test_http.galaxy"]
+                }
+              }
+            ],
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "context": {
+                                    "type": "object"
+                                },
+                                "ids": {
+                                    "type": "array"
+                                },
+                                "args": {
+                                    "type": "array"
+                                },
+                                "kwargs": {
+                                    "type": "object",
+                                    "properties": {
+                                        "domain": {"type": "array"},
+                                        "offset": {"type": "integer"},
+                                        "limit": {"type": "integer", "default": null},
+                                        "order": {"type": "string", "default": null}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "description": "The method succeeded, the body holds the json serialized return value.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {"type": "integer"}
+                            }
+                        }
+                    }
+                },
+                "400": {"description": "The request body doesn't contain a json object."},
+                "403": {"description": "The user cannot access the requested record, or the credentials expired."},
+                "404": {"description": "The requested model, or method, or id, doesn't exists."},
+                "405": {"description": "The request method was not POST."},
+                "409": {"description": "This request attempted to lock a record that was locked by another request already."},
+                "415": {"description": "The request Content-Type header was not application/json."},
+                "422": {"description": "A generic user error occured."},
+                "500": {"description": "A server error occured."}
+            }
+        }}
+    },
+    "components": {
+        "securitySchemes": {
+            "api-key": {
+                "type": "http",
+                "scheme": "bearer"
+            },
+            "session-cookie": {
+                "type": "apiKey",
+                "name": "session-id",
+                "in": "cookie"
+            }
+        },
+        "schemas": {
+            "json2rpc": {
+              "type": "object"
+            },
+            "command": {
+                "type": "array",
+                "items": {
+                    "anyOf": [
+                        {
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "prefixItems": [
+                                {"type": "integer", "const": 0},
+                                {"type": "integer", "const": 0},
+                                {"type": "object"}
+                            ],
+                            "title": "create(0, 0, values)"
+                        },
+                        {
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "prefixItems": [
+                                {"type": "integer", "const": 1},
+                                {"type": "integer"},
+                                {"type": "object"}
+                            ],
+                            "title": "update(1, id, values)"
+                        },
+                        {
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "prefixItems": [
+                                {"type": "integer", "const": 2},
+                                {"type": "integer"},
+                                {"type": "integer", "const": 0},
+                            ],
+                            "title": "delete(2, id, 0)"
+                        },
+                        {
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "prefixItems": [
+                                {"type": "integer", "const": 3},
+                                {"type": "integer"},
+                                {"type": "integer", "const": 0},
+                            ],
+                            "title": "link(3, id, 0)"
+                        },
+                        {
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "prefixItems": [
+                                {"type": "integer", "const": 4},
+                                {"type": "integer"},
+                                {"type": "integer", "const": 0},
+                            ],
+                            "title": "unlink(4, id, 0)"
+                        },
+                        {
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "prefixItems": [
+                                {"type": "integer", "const": 5},
+                                {"type": "integer", "const": 0},
+                                {"type": "integer", "const": 0},
+                            ],
+                            "title": "clear(5, 0, 0)"
+                        },
+                        {
+                            "type": "array",
+                            "minItems": 3,
+                            "maxItems": 3,
+                            "prefixItems": [
+                                {"type": "integer", "const": 6},
+                                {"type": "integer", "const": 0},
+                                {"type": "array", "items": {"type": "integer"}}
+                            ],
+                            "title": "set(6, 0, ids)"
+                        }
+                    ]
+                }
+            },
+
+            "test_http.galaxy": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "translated_name": {
+                        "type": "string"
+                    },
+                    "picture": {
+                        "type": "string",
+                        "contentEncoding": "base64"
+                    },
+                    "stargate_ids": {
+                        "oneOf": [
+                            {"type": "array", "items": {"type": "integer"}, "title": "read"},
+                            {"$ref": "#/components/schemas/command", "title": "Write"}
+                        ]
+                    }
+                }
+            },
+            "test_http.stargate": {
+                "type": "object",
+                "required": [
+                    "address",
+                    "galaxy_id"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "sgc_designation": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "galaxy_id": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "has_galaxy_crystal": {
+                        "type": "boolean"
+                    },
+                    "glyph_attach": {
+                        "type": "string",
+                        "contentEncoding": "base64"
+                    },
+                    "glyph_inline": {
+                        "type": "string",
+                        "contentEncoding": "base64"
+                    },
+                    "glyph_related": {
+                        "type": "string",
+                        "contentEncoding": "base64"
+                    },
+                    "glyph_compute": {
+                        "type": "string",
+                        "contentEncoding": "base64"
+                    },
+                    "galaxy_picture": {
+                        "type": "string",
+                        "contentEncoding": "base64"
+                    },
+                    "availability": {
+                        "type": "number",
+                        "format": "float8"
+                    },
+                    "last_use_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            }
+        }
+    }
+}

@@ -218,6 +218,10 @@ _logger = logging.getLogger(__name__)
 # Const
 # =========================================================
 
+# The format we accept for the Authorization header.
+AUTHORIZATION_RE = re.compile(
+    r"^(?i:bearer)\s+(?P<apikey>[0-9a-f]+)(?::(?P<dbname>\w+))?$")
+
 # The validity duration of a preflight response, one day.
 CORS_MAX_AGE = 60 * 60 * 24
 
@@ -1523,21 +1527,27 @@ class Request:
 
         dbname = None
         host = self.httprequest.environ['HTTP_HOST']
-        header_dbname = self.httprequest.headers.get('X-Odoo-Database')
+        auth = AUTHORIZATION_RE.search(self.httprequest.headers.get('Authorization', ''))
+        auth_dbname = auth and auth['dbname']
         if session.db and db_filter([session.db], host=host):
             dbname = session.db
-            if header_dbname and header_dbname != dbname:
+            if auth_dbname and auth_dbname != dbname:
                 e = ("Cannot use both the session_id cookie and the "
                      "x-odoo-database header.")
                 raise werkzeug.exceptions.Forbidden(e)
-        elif header_dbname:
+            _logger.debug("using session db")
+        elif auth_dbname:
             session.can_save = False  # stateless
-            if db_filter([header_dbname], host=host):
-                dbname = header_dbname
+            if db_filter([auth_dbname], host=host):
+                dbname = auth_dbname
+            _logger.debug("using authorization db")
         else:
             all_dbs = db_list(force=True, host=host)
             if len(all_dbs) == 1:
                 dbname = all_dbs[0]  # monodb
+                _logger.debug("using mono db")
+            else:
+                _logger.debug("using no db")
 
         if session.db != dbname:
             if session.db:
@@ -1887,7 +1897,8 @@ class Request:
                 if disp.is_compatible_with(self)
             ]
             e = (f"Request inferred type is compatible with {compatible_dispatchers} "
-                 f"but {routing['routes'][0]!r} is type={routing['type']!r}.")
+                 f"but {routing['routes'][0]!r} is type={routing['type']!r}. Most "
+                 "likely the Content-Type of the request is not supported by this URL.")
             # werkzeug doesn't let us add headers to UnsupportedMediaType
             # so use the following (ugly) to still achieve what we want
             res = UnsupportedMediaType(e).get_response()

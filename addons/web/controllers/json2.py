@@ -106,6 +106,7 @@ class WebJson2Controller(http.Controller):
         type='/json/2/rpc',
         readonly=_web_json_2_rpc_readonly,
         save_session=False,
+        cors='*',
     )
     def web_json_2_rpc(
         self,

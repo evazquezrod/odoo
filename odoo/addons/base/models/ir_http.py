@@ -209,7 +209,7 @@ class IrHttp(models.AbstractModel):
             # werkzeug<2.3 doesn't expose `authorization.token` (for bearer authentication)
             # check header directly
             header = headers.get("Authorization")
-            if header and (m := re.match(r"^bearer\s+(.+)$", header, re.IGNORECASE)):
+            if header and (m := re.match(r"^bearer\s+(.+)(?::(.+))?$", header, re.IGNORECASE)):
                 return m.group(1)
             return None
 

@@ -8,6 +8,30 @@ from odoo.exceptions import AccessError
 from odoo.http import request
 from odoo.service.model import get_public_method
 
+COMMAND_SCHEMA = {
+    'type': 'array',
+    'items': {
+        'anyOf': [
+            {   # create
+                'type': 'array',
+                'minItems': 3,
+                'maxItems': 3,
+                'prefixItems': [
+                    {'type': 'integer', 'enum': [0]},
+                    {'type': 'integer', 'enum': [0]},
+                    {'type': 'object'}
+                ]
+            },
+            # TODO: do the other commands
+            'array',
+        ]
+    }
+}
+
+EXTRA_SCHEMAS = {
+    'command': COMMAND_SCHEMA,
+}
+
 
 def is_public_method(model, name):
     try:
@@ -18,15 +42,15 @@ def is_public_method(model, name):
 
 
 class DocController(http.Controller):
-    @http.route('/doc', type='http', auth='public', readonly=True)
+    @http.route('/doc', type='http', auth='public', readonly=True, cors='*')
     def doc_home(self, model=None):
         return (
             "<p>Page under construction<p>"
             "<p>Please go to <a href={0!r}>{0}</a></p>"
         ).format(f'/doc/3/{model or "base"}.json')
 
-    @http.route('/doc/3/schema.json', type='http', auth='public', readonly=True)
-    def doc_schema(self, limit=10):
+    @http.route('/doc/3/database.json', type='http', auth='public', readonly=True, cors='*')
+    def doc_database(self, limit=10):
         base_methods = {
             attr
             for attr in dir(models.BaseModel)
@@ -50,41 +74,45 @@ class DocController(http.Controller):
             }
 
         openapi = {
-            "openapi": "3.0.2",
-            "info": {
-                "title": "Odoo Live Models Documentation",
-                "version": release.version,
+            'openapi': '3.0.2',
+            'info': {
+                'title': 'Odoo Live Models Documentation',
+                'version': release.version,
             },
-            "tags": [
+            'tags': [
                 {
-                    "name": model._name,
-                    "description": model._description
+                    'name': model._name,
+                    'description': model._description
                 }
                 for model in list(request.env.values())[:limit]
             ],
-            "paths": {
-                f"/json/2/{{model}}/{method_name}": {"post": {
-                    "tags": list(schemas)[:limit],
-                    "parameters": [
+            'paths': {
+                f'/json/2/{{model}}/{method_name}': {'post': {
+                    'tags': list(schemas)[:limit],
+                    'parameters': [
                       {
-                        "name": "model",
-                        "in": "path",
-                        "required": True,
-                        "schema": {"type": "string"}
+                        'name': 'model',
+                        'in': 'path',
+                        'required': True,
+                        'schema': {'type': 'string'}
                       }
                     ],
+                    'responses': {'200': {'description': ''}},
                 }}
                 for method_name in sorted(base_methods)
             } | {
-                f"/json/2/{model}/{method_name}": {"post": {"tags": [model]}}
+                f'/json/2/{model}/{method_name}': {'post': {
+                    'tags': [model],
+                    'responses': {'200': {'description': ''}}
+                }}
                 for model in list(schemas)[:limit]
                 for method_name, method in schemas[model]['methods'].items()
             },
-            "components": {
-                "schemas": {
+            'components': {
+                'schemas': {
                     model: {
-                        "type": "object",
-                        "properties": {field: {} for field in schemas[model]['fields']}
+                        'type': 'object',
+                        'properties': {field: {} for field in schemas[model]['fields']}
                     }
                     for model in list(schemas)[:limit]
                 }
@@ -93,7 +121,7 @@ class DocController(http.Controller):
 
         return request.make_json_response(openapi)
 
-    @http.route('/doc/3/<model_name>.json', type='http', auth='public', readonly=True)
+    @http.route('/doc/3/<model_name>.json', type='http', auth='public', readonly=True, cors='*')
     def doc_model(self, model_name):
         model = request.env.get(model_name)
         if model:
@@ -128,7 +156,7 @@ class DocController(http.Controller):
                     'type': field_spec.openapi_type,
                 }
                 if field_spec.openapi_type == 'array':
-                    field['items'] = {'type': }
+                    field['items'] = {'$ref': '#/components/schemas/command'}
                 if field_spec.openapi_format:
                     field['format'] = field_spec.openapi_format
                 if field_spec.required:
@@ -144,24 +172,24 @@ class DocController(http.Controller):
 
 
         openapi = {
-            "openapi": "3.0.2",
-            "info": {
-                "title": "Odoo Live Models Documentation",
-                "version": release.version,
+            'openapi': '3.0.2',
+            'info': {
+                'title': 'Odoo Live Models Documentation',
+                'version': release.version,
             },
-            "tags": [model],
-            "paths": {
-                f"/json/2/{model_name}/{method_name}": {"post": {"tags": [model]}}
+            'tags': [model],
+            'paths': {
+                f'/json/2/{model_name}/{method_name}': {'post': {'tags': [model]}}
                 for method_name, method in methods.items()
             },
-            "components": {
-                "schemas": {
+            'components': {
+                'schemas': EXTRA_SCHEMAS | {
                     model_name: {
-                        "type": "object",
-                        "properties": {
+                        'type': 'object',
+                        'properties': {
                             field_name: {
-                                "type": field_spec.openapi_type,
-                                "format": field_spec.openapi_format,
+                                'type': field_spec.openapi_type,
+                                'format': field_spec.openapi_format,
                             }
                             for field_name, field_spec
                             in model._fields.items()
