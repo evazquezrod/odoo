@@ -296,7 +296,7 @@ class ProductProduct(models.Model):
             ):
                 product = self.env['product.product'].search(
                     expression.AND([
-                        expression.OR(domains + [name_domain]),
+                        expression.AND(domains + [name_domain]),
                         extra_domain,
                     ]),
                     limit=1,
