@@ -1561,6 +1561,8 @@ class Field(typing.Generic[T]):
                 missing = records - existing
                 for f in records.pool.field_computed[self]:
                     records.env.remove_to_compute(f, missing)
+            except KeyError:
+                pass
 
         if self.recursive:
             # recursive computed fields are computed record by record, in order
