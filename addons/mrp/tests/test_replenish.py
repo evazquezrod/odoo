@@ -161,7 +161,7 @@ class TestMrpReplenish(TestMrpCommon):
         # Scrap the product and trigger replenishment
         scrap_form = Form.from_action(self.env, basic_mo.button_scrap())
         scrap_form.product_id = product_to_scrap
-        scrap_form.scrap_qty = 5
+        scrap_form.quantity = 5
         scrap_form.should_replenish = True
         self.assertEqual(scrap_form.location_id, self.warehouse_1.pbm_loc_id)
         scrap_form.save().action_validate()
