@@ -51,7 +51,7 @@ export default class IndexedDB {
                     const data = { ...arrData[idx] };
                     delete data.JSONuiState;
                     delete data.date_order;
-                    delete data.write_date;
+                    delete data.lines;
 
                     let alreadyExists = storeData.find((item) => item.uuid === data.uuid);
                     if (alreadyExists) {
