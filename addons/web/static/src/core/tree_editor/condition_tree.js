@@ -210,6 +210,9 @@ function cloneValue(value) {
     if (Array.isArray(value)) {
         return value.map(cloneValue);
     }
+    if (isTree(value)) {
+        return cloneTree(value);
+    }
     return value;
 }
 
@@ -802,9 +805,9 @@ function createBetweenOperators(tree) {
             children.push(child1);
         }
     }
-    if (children.length === 1) {
-        return { ...children[0] };
-    }
+    // if (children.length === 1) {
+    //     return { ...children[0] };
+    // }
     return { ...tree, children };
 }
 
