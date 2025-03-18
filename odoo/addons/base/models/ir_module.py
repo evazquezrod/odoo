@@ -458,7 +458,10 @@ class IrModuleModule(models.Model):
 
     @assert_log_admin_access
     def button_install_cancel(self):
-        self.write({'state': 'uninstalled', 'demo': False})
+        installed_modules = self.filtered(lambda m: m.state == 'installed')
+        if installed_modules:
+             installed_modules.module_uninstall()
+        (self - installed_modules).write({'state': 'uninstalled', 'demo': False})
         return True
 
     @assert_log_admin_access
