@@ -7,7 +7,7 @@
             <field name="uom_id" ref="uom.product_uom_unit"/>
             <field name="name">Event Registration - Standard</field>
             <field name="description_sale" eval="False"/>
-            <field name="categ_id" ref="event_product.product_category_events"/>
+            <field name="categ_id" eval="ref('product.product_category_events', raise_if_not_found=False)"/>
             <field name="type">service</field>
             <field name="service_tracking">event</field>
         </record>
@@ -17,7 +17,7 @@
             <field name="uom_id" ref="uom.product_uom_unit"/>
             <field name="name">Event Registration - VIP</field>
             <field name="description_sale" eval="False"/>
-            <field name="categ_id" ref="event_product.product_category_events"/>
+            <field name="categ_id" eval="ref('product.product_category_events', raise_if_not_found=False)"/>
             <field name="type">service</field>
             <field name="service_tracking">event</field>
         </record>

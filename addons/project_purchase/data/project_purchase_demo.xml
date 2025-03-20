@@ -8,7 +8,7 @@
 
         <record id="product_product_cement" model="product.product">
             <field name="name">Cement</field>
-            <field name="categ_id" ref="product.product_category_construction"/>
+            <field name="categ_id" eval="ref('product.product_category_construction', raise_if_not_found=False)"/>
             <field name="standard_price">100.0</field>
             <field name="list_price">110.0</field>
             <field name="type">consu</field>
@@ -18,7 +18,7 @@
 
         <record id="product_product_sand" model="product.product">
             <field name="name">Sand</field>
-            <field name="categ_id" ref="product.product_category_construction"/>
+            <field name="categ_id" eval="ref('product.product_category_construction', raise_if_not_found=False)"/>
             <field name="standard_price">80.0</field>
             <field name="list_price">70.0</field>
             <field name="type">consu</field>
@@ -28,7 +28,7 @@
 
         <record id="product_product_bricks" model="product.product">
             <field name="name">Bricks</field>
-            <field name="categ_id" ref="product.product_category_construction"/>
+            <field name="categ_id" eval="ref('product.product_category_construction', raise_if_not_found=False)"/>
             <field name="standard_price">50.0</field>
             <field name="list_price">50.0</field>
             <field name="type">consu</field>

@@ -2,7 +2,7 @@
     <data>
         <record id="product_product_dinning_table" model="product.product">
             <field name="name">Dining Table</field>
-            <field name="categ_id" ref="product.product_category_construction"/>
+            <field name="categ_id" eval="ref('product.product_category_construction', raise_if_not_found=False)"/>
             <field name="standard_price">100.0</field>
             <field name="list_price">110.50</field>
             <field name="is_storable" eval="True"/>

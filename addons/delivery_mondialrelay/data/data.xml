@@ -6,7 +6,7 @@
             <field name="name">Mondial Relay</field>
             <field name="default_code">MR</field>
             <field name="type">service</field>
-            <field name="categ_id" ref="delivery.product_category_deliveries"/>
+            <field name="categ_id" eval="ref('delivery.product_category_deliveries', raise_if_not_found=False)"/>
             <field name="sale_ok" eval="False"/>
             <field name="purchase_ok" eval="False"/>
             <field name="list_price">5</field>

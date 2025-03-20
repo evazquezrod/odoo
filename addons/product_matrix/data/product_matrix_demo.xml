@@ -72,7 +72,7 @@
 
     <record id="matrix_product_template_shirt" model="product.template">
         <field name="name">My Company Tshirt (GRID)</field>
-        <field name="categ_id" ref="product.product_category_goods"/>
+        <field name="categ_id" eval="ref('product.product_category_goods', raise_if_not_found=False)"/>
         <field name="standard_price">7.0</field>
         <field name="list_price">15.0</field>
         <field name="type">consu</field>
