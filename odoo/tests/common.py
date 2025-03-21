@@ -54,7 +54,7 @@ from requests import PreparedRequest, Session
 from urllib3.util import Url, parse_url
 
 import odoo.orm.registry
-from odoo import api
+from odoo import api, fields
 from odoo.exceptions import AccessError
 from odoo.fields import Command
 from odoo.modules.registry import Registry, DummyRLock
@@ -1022,6 +1022,15 @@ class TransactionCase(BaseCase):
 
         savepoint = Savepoint(self.cr)
         self.addCleanup(savepoint.close)
+
+    @contextmanager
+    def mock_datetime_and_now(self, mock_dt):
+        """ Used when synchronization date (using env.cr.now()) is important
+        in addition to standard datetime mocks. Used mainly to detect sync
+        issues. """
+        mock_dt = fields.Datetime.to_datetime(mock_dt)
+        with freeze_time(mock_dt), patch.object(self.env.cr, 'now', lambda: mock_dt):
+            yield
 
     @contextmanager
     def enter_registry_test_mode(self):

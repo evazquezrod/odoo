@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from ast import literal_eval
-from contextlib import contextmanager
-from freezegun import freeze_time
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from lxml import html
-from unittest.mock import patch
 from werkzeug.urls import url_encode, url_join
 
 from odoo import SUPERUSER_ID
@@ -20,15 +16,6 @@ from odoo.tools import mute_logger
 
 
 class TestDigest(TestDigestCommon):
-
-    @contextmanager
-    def mock_datetime_and_now(self, mock_dt):
-        """ Used when synchronization date (using env.cr.now()) is important
-        in addition to standard datetime mocks. Used mainly to detect sync
-        issues. """
-        with freeze_time(mock_dt), \
-             patch.object(self.env.cr, 'now', lambda: mock_dt):
-            yield
 
     @classmethod
     def setUpClass(cls):

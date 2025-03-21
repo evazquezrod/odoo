@@ -2,6 +2,7 @@
 
 from unittest.mock import patch
 
+from odoo import fields
 from odoo.addons.im_livechat.tests.common import TestImLivechatCommon
 from odoo.tests.common import tagged
 
@@ -58,5 +59,6 @@ class TestImLivechatReport(TestImLivechatCommon):
 
     @classmethod
     def _create_message(cls, channel, author, date):
+        date = fields.Datetime.to_datetime(date)
         with patch.object(cls.env.cr, 'now', lambda: date):
             return channel.message_post(author_id=author.id, body=f'Message {date}')
