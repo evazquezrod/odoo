@@ -13,8 +13,9 @@ from dateutil.relativedelta import relativedelta
 import odoo
 from odoo import api, fields, models
 from odoo.exceptions import LockError, UserError
+from odoo.fields import Domain
 from odoo.modules.registry import Registry
-from odoo.tools import SQL
+from odoo.tools import OrderedSet, SQL
 from odoo.tools.constants import GC_UNLINK_LIMIT
 
 if typing.TYPE_CHECKING:
@@ -814,6 +815,84 @@ class IrCron(models.Model):
         progress.write(vals)
         self.env.cr.commit()
         return max(ctx.get('cron_end_time', float('inf')) - time.monotonic(), 0)
+
+    @api.model
+    def _job_queue_process(
+        self,
+        records: models.BaseModel,
+        process,
+        precondition,
+        *,
+        allow_referencing=True,
+        batch_size=1,
+        error_handler,
+        post_commit=False,
+        result_handler=lambda _: None,
+    ):
+        precondition = Domain(precondition).optimize(self)
+        if post_commit:
+            # queue for post-commit
+            if not records:
+                return
+
+            def queue_in_postcommit():
+                try:
+                    with Registry(records.env.registry.db_name).cursor() as cr:
+                        env = records.env(cr=cr)
+                        env['ir.cron']._job_queue_process(
+                            records.with_env(env),
+                            process,
+                            precondition,
+                            allow_referencing=allow_referencing,
+                            batch_size=batch_size,
+                            error_handler=error_handler,
+                            post_commit=False,
+                            result_handler=result_handler,
+                        )
+                except Exception:
+                    _logger.exception("Error in post-transaction on queue for %s", self)
+                    return
+
+            postcommit = self.env.cr.postcommit
+            postcommit.add(queue_in_postcommit)
+        elif self.env.context.get('ir_cron'):
+            # from cron job
+            ids = OrderedSet(records.ids)
+            remaining_time = True
+            while remaining_time:
+                records = records.browse(ids).try_lock_for_update(allow_referencing=allow_referencing, limit=batch_size)
+                ids -= set(records._ids)
+                records = records.filtered_domain(precondition)
+                if not records:
+                    continue
+                try:
+                    result = process(records)
+                    result_handler(records)
+                    remaining_time = self._commit_progress(len(records))
+                except Exception as e:
+                    self.env.cr.rollback()
+                    error_handler(records, e)
+                    remaining_time = self._commit_progress()
+        else:
+            # normal call, do it now
+            if batch_size > 1:
+                from odoo.tools import split_every
+                all_records = split_every(batch_size, records)
+            else:
+                assert batch_size >= 1
+                all_records = records
+            for records in all_records:
+                records = records.try_lock_for_update(allow_referencing=allow_referencing).filtered_domain(precondition)
+                if not records:
+                    continue
+                # we need savepoints for processing and catching errors
+                try:
+                    with self.env.cr.savepoint():
+                        result = process(records)
+                        result_handler(records)
+                except Exception as e:
+                    error_handler(records, e)
+                    self.env.flush_all()  # report exceptions here
 
 
 class IrCronTrigger(models.Model):
