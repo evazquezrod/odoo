@@ -96,6 +96,7 @@ class WebsiteBackgroundVideoPlugin extends Plugin {
         loadResult: mediaSrc,
         param: { forceClean = false },
     }) {
+        console.error(mediaSrc)
         if (!forceClean && !mediaSrc) {
             // No video has been chosen by the user on the media dialog
             return;

@@ -2123,6 +2123,7 @@ class HttpCase(TransactionCase):
                 self.fail('%s\n\n%s' % (message, error))
 
         finally:
+            time.sleep(5)
             browser.stop()
             if sendone_patch:
                 sendone_patch.stop()

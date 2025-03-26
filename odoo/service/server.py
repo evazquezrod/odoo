@@ -178,8 +178,18 @@ class CommonRequestHandler(werkzeug.serving.WSGIRequestHandler):
                 path += '#' + fragment
             msg = f"{self.command} {path} {self.request_version}"
         except AttributeError:
-            # path isn't set if the requestline was bad
-            msg = self.requestline
+            print(dir(self), flush=True)
+            print(dir(self.request), flush=True)
+            #['MessageClass', '__annotations__', '__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattr__', '__getattribute__', '__getstate__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', '_control_char_table', 'address_string', 'client_address', 'close_connection', 'connection', 'connection_dropped', 'date_time_string', 'default_request_version', 'disable_nagle_algorithm', 'end_headers', 'error_content_type', 'error_message_format', 'finish', 'flush_headers', 'handle', 'handle_expect_100', 'handle_one_request', 'log', 'log_date_time_string', 'log_error', 'log_message', 'log_request', 'make_environ', 'monthname', 'parse_request', 'port_integer', 'protocol_version', 'rbufsize', 'request', 'responses', 'rfile', 'run_wsgi', 'send_error', 'send_header', 'send_response', 'send_response_only', 'server', 'server_version', 'setup', 'sys_version', 'timeout', 'version_string', 'wbufsize', 'weekdayname', 'wfile']
+            #['__class__', '__del__', '__delattr__', '__dir__', '__doc__', '__enter__', '__eq__', '__exit__', '__format__', '__ge__', '__getattribute__', '__getstate__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__slots__', '__str__', '__subclasshook__', '__weakref__', '_accept', '_check_sendfile_params', '_closed', '_decref_socketios', '_io_refs', '_real_close', '_sendfile_use_send', '_sendfile_use_sendfile', 'accept', 'bind', 'close', 'connect', 'connect_ex', 'detach', 'dup', 'family', 'fileno', 'get_inheritable', 'getblocking', 'getpeername', 'getsockname', 'getsockopt', 'gettimeout', 'listen', 'makefile', 'proto', 'recv', 'recv_into', 'recvfrom', 'recvfrom_into', 'recvmsg', 'recvmsg_into', 'send', 'sendall', 'sendfile', 'sendmsg', 'sendmsg_afalg', 'sendto', 'set_inheritable', 'setblocking', 'setsockopt', 'settimeout', 'shutdown', 'timeout', 'type']
+
+            print(self.request.timeout, flush=True)
+            print(self.request.__class__, flush=True)
+            import traceback
+            traceback.print_stack()
+            exception = args[0]
+            traceback.print_exception(args[0])
+            msg = f'{self} {self.request}'
         super().log_error(f"Request timed out: {msg}")
 
 

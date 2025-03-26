@@ -59,7 +59,7 @@ class PostgreSQLHandler(logging.Handler):
 
     def emit(self, record):
         ct = threading.current_thread()
-        ct_db = getattr(ct, 'dbname', None)
+        ct_db = getattr(ct, 'dbname', tools.config.get('db_name'))
         dbname = tools.config['log_db'] if tools.config['log_db'] and tools.config['log_db'] != '%d' else ct_db
         if not dbname:
             return
