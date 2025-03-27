@@ -29,6 +29,18 @@ Note:
     'auto_install': ['account'],
     'data': [
         'data/account_tax_report_data.xml',
+
+        'data/acc_form_3.xml',
+        'data/acc_general_taxpayer_schedule_1_3.xml',
+        'data/acc_general_taxpayer_schedule_2_3.xml',
+        'data/acc_simplified_taxpayer_schedule_4_3.xml',
+        'data/acc_simplified_taxpayer_schedule_5_3.xml',
+
+        'data/ded_form_3.xml',
+        'data/ded_general_taxpayer_schedule_1_3.xml',
+        'data/ded_general_taxpayer_schedule_2_3.xml',
+        'data/ded_simplified_taxpayer_schedule_4_3.xml',
+        'data/ded_simplified_taxpayer_schedule_5_3.xml',
     ],
     'demo': [
         'demo/demo_company.xml',
