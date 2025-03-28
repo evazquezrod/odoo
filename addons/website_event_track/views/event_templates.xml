@@ -6,6 +6,7 @@
     <xpath expr="//div[hasclass('container')]/div[last()]" position="after">
         <div t-if="event.website_track and event.published_track_count" class="row mt-5 mb256">
             <div class="col-12">
+                <h3>Book your seats to the best talks</h3>
                 <p>Get prepared and
                     <a t-att-href="'/event/%s/track' % (slug(event))">register to your favorites talks now.</a>
                 </p>

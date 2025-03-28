@@ -1084,7 +1084,7 @@ class WebsiteSale(payment_portal.PaymentPortal):
             order_sudo=order_sudo,
             # Skip required fields check for customers' main address when order only contains
             # service type products
-            skip_required_fields_check=(
+            skip_address_required_fields=(
                 order_sudo.only_services
                 and (partner_sudo == order_sudo.partner_id or is_anonymous_cart)
             ),

@@ -2406,7 +2406,7 @@
                         'o_img_ratio_2_3' if is_view_active('website_sale.products_thumb_2_3') else
                         '')
             ">
-                <h3 class="mb-3">Order summary</h3>
+                <h4 class="mb-3">Order summary</h4>
                 <div t-if="abandoned_proceed or access_token" class="alert alert-info mt8 mb8" role="alert"> <!-- abandoned cart choices -->
                     <t t-if="abandoned_proceed">
                         <p>Your previous cart has already been completed.</p>
@@ -2711,7 +2711,12 @@
             <attribute name="t-if">display_b2b_fields</attribute>
         </t>
         <input name="required_fields" position="replace">
-            <input type="hidden" t-if="only_services" name="required_fields" t-att-value="'name,email'"/>
+            <input
+                t-if="only_services"
+                name="required_fields"
+                type="hidden"
+                t-att-value="'name,email'"
+            />
             <t t-else="">
                 <t>$0</t> <!-- Replaced by old content. -->
             </t>
@@ -2965,9 +2970,9 @@
                                         Your cart is empty!
                                     </div>
                                     <div id="o_wsale_accordion_item"
-                                        t-attf-class="accordion-collapse collapse mb-4 mb-lg-0 {{ expand_order_summary and 'show' }}"
+                                        t-attf-class="accordion-collapse collapse mb-4 pt-4 mb-lg-0 {{ expand_order_summary and 'show' }}"
                                         data-bs-parent="#o_wsale_total_accordion">
-                                        <div t-att-class="len(website_sale_order.website_order_line) &gt; 3 and 'o_wsale_scrollable_table mt-n4 me-n4 pt-4 pe-4'">
+                                        <div t-att-class="len(website_sale_order.website_order_line) &gt; 3 and 'o_wsale_scrollable_table mt-n4 me-n4 pe-4'">
                                             <table t-if="website_sale_order and website_sale_order.website_order_line"
                                                 class="table accordion-body mb-0"
                                                 id="cart_products">
@@ -3084,13 +3089,7 @@
             <div class="oe_structure mt-3" id="oe_structure_website_sale_confirmation_2"/>
             <t t-if="request.env['res.users']._get_signup_invitation_scope() == 'b2c' and request.website.is_public_user()">
                 <p class="alert alert-info mt-3" role="status">
-                    <a
-                        role="button"
-                        t-att-href="order.partner_id.signup_prepare() and order.partner_id.with_context(relative_url=True)._get_signup_url()"
-                        class="btn btn-primary"
-                    >
-                        Sign Up
-                    </a>
+                    <a role="button" t-att-href="order.partner_id.signup_prepare() and order.partner_id.with_context(relative_url=True)._get_signup_url()" class="btn btn-primary">Sign Up</a>
                     <span class="align-middle">to follow your order.</span>
                 </p>
             </t>
@@ -3232,7 +3231,7 @@
                     </t>
                 </div>
                 <t t-if="tx_sudo.provider_code == 'custom'">
-                    <div name="order_ref" t-if="order.reference" class="mt-2">
+                    <div id="o_wsale_order_ref" t-if="order.reference" class="mt-2">
                         <b>Communication: </b><span t-esc='order.reference'/>
                     </div>
                     <div t-if="tx_sudo.provider_id.sudo().qr_code">

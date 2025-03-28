@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from collections import defaultdict
@@ -71,13 +72,14 @@ class WebsiteEventSaleController(WebsiteEventController):
         if any(info['event_ticket_id'] for info in registrations):
             if order_sudo.amount_total:
                 if order_sudo._is_anonymous_cart():
-                    booked_by_partner, _feedback_dict = CustomerPortal()._create_or_update_address(
-                        False,
+                    booked_by_partner, feedback_dict = CustomerPortal()._create_or_update_address(
+                        None,
                         order_sudo=order_sudo,
-                        skip_required_fields_check=True,
+                        skip_address_required_fields=True,
                         **registrations[0]
                     )
-                    order_sudo._update_address(booked_by_partner.id, ['partner_id'])
+                    if not feedback_dict.get('invalid_fields'):
+                        order_sudo._update_address(booked_by_partner.id, ['partner_id'])
                 request.session['sale_last_order_id'] = order_sudo.id
                 return request.redirect("/shop/checkout?try_skip_step=true")
             else:

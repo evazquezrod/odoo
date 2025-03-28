@@ -7,13 +7,13 @@
         name="Newsletter"
         active="False"
     >
-        <div id="div_phone" position="after">
+         <div id="div_email" position="inside">
             <div t-if="is_anonymous_cart" class="col-lg-12 col-form-label">
                 <label>
                     <input
                         type="checkbox"
                         name="newsletter"
-                        class="form-check-input"
+                        class="form-check-input label-optional"
                     /> Subscribe to our newsletter
                 </label>
             </div>
