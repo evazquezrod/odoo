@@ -2026,11 +2026,11 @@ class IrModelAccess(models.Model):
     # not be really necessary as a cache key, unless the `ormcache_context`
     # decorator catches the exception (it does not at the moment.)
 
-    @tools.ormcache('self.env.uid', 'mode')
+    @tools.ormcache('self.env.uid', 'mode', 'self.env._group_ids_override')
     def _get_allowed_models(self, mode='read'):
         assert mode in ('read', 'write', 'create', 'unlink'), 'Invalid access mode'
 
-        group_ids = self.env.user._get_group_ids()
+        group_ids = self.env.all_group_ids
         self.flush_model()
         rows = self.env.execute_query(SQL("""
             SELECT m.model

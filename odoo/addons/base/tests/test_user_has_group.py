@@ -332,11 +332,11 @@ class TestHasGroup(TransactionCase):
         # cache before calling its parent class method (`odoo.models.Model.write`)
         # as explain in the `res.group.write` comment.
         # This verifies that calling `call_cache_clearing_methods()` invalidates
-        # the ormcache of method `user._has_group()`
+        # the ormcache of method `user._get_group_ids()`
         self.env['ir.model.access'].call_cache_clearing_methods()
         self.assertFalse(
             self.registry._Registry__caches['default'],
-            "call_cache_clearing_methods() must invalidate user._has_group cache"
+            "call_cache_clearing_methods() must invalidate user._get_group_ids cache"
         )
 
     def test_has_group_with_new_id(self):

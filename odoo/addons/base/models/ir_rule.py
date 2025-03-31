@@ -128,7 +128,7 @@ class IrRule(models.Model):
                     WHERE rg.group_id IN %s
                 ))
             ORDER BY r.id
-        """, model_name, SQL(mode), tuple(self.env.user._get_group_ids()) or (None,))
+        """, model_name, SQL(mode), tuple(self.env.all_group_ids) or (None,))
         return self.browse(v for v, in self.env.execute_query(sql))
 
     @api.model
@@ -170,6 +170,8 @@ class IrRule(models.Model):
         return Domain.AND(global_domains).optimize(model)
 
     def _compute_domain_context_values(self):
+        if group_override := self.env._group_ids_override:
+            yield group_override
         for k in self._compute_domain_keys():
             v = self._context.get(k)
             if isinstance(v, list):

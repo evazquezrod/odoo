@@ -40,6 +40,7 @@ class Environment(Mapping[str, "BaseModel"]):
     - :attr:`uid`: the current user id (for access rights checks);
     - :attr:`context`: the current context dictionary (arbitrary metadata);
     - :attr:`su`: whether in superuser mode.
+    - :attr:`all_groups`: groups the user belongs to
 
     It provides access to the registry by implementing a mapping from model
     names to models. It also holds a cache for records, and a data
@@ -51,13 +52,14 @@ class Environment(Mapping[str, "BaseModel"]):
     context: frozendict
     su: bool
     transaction: Transaction
+    _group_ids_override: frozenset[int]
 
     def reset(self) -> None:
         """ Reset the transaction, see :meth:`Transaction.reset`. """
         warnings.warn("Since 19.0, use directly `transaction.reset()`", DeprecationWarning)
         self.transaction.reset()
 
-    def __new__(cls, cr: BaseCursor, uid: int, context: dict, su: bool = False):
+    def __new__(cls, cr: BaseCursor, uid: int, context: dict, su: bool = False, all_groups: frozenset[int] = frozenset()):
         assert isinstance(cr, BaseCursor)
         if uid == SUPERUSER_ID:
             su = True
@@ -69,7 +71,7 @@ class Environment(Mapping[str, "BaseModel"]):
 
         # if env already exists, return it
         for env in transaction.envs:
-            if env.cr is cr and env.uid == uid and env.su == su and env.context == context:
+            if env.cr is cr and env.uid == uid and env.su == su and env.context == context and env._group_ids_override == all_groups:
                 return env
 
         # otherwise create environment, and add it in the set
@@ -77,6 +79,7 @@ class Environment(Mapping[str, "BaseModel"]):
         self.cr, self.uid, self.su = cr, uid, su
         self.context = frozendict(context)
         self.transaction = transaction
+        self._group_ids_override = all_groups or frozenset()
 
         transaction.envs.add(self)
         # the default transaction's environment is the first one with a valid uid
@@ -125,6 +128,7 @@ class Environment(Mapping[str, "BaseModel"]):
         user: IdType | BaseModel | None = None,
         context: dict | None = None,
         su: bool | None = None,
+        additional_group_id: int | None = None,
     ) -> Environment:
         """ Return an environment based on ``self`` with modified parameters.
 
@@ -134,6 +138,7 @@ class Environment(Mapping[str, "BaseModel"]):
         :type user: int or :class:`res.users record<~odoo.addons.base.models.res_users.ResUsers>`
         :param dict context: optional context dictionary to change the current context
         :param bool su: optional boolean to change the superuser mode
+        :param additional_group_id: optional identifier of a group to add
         :returns: environment with specified args (new or existing one)
         """
         cr = self.cr if cr is None else cr
@@ -141,7 +146,13 @@ class Environment(Mapping[str, "BaseModel"]):
         if context is None:
             context = clean_context(self.context) if su and not self.su else self.context
         su = (user is None and self.su) if su is None else su
-        return Environment(cr, uid, context, su)
+        if additional_group_id and additional_group_id not in self.all_groups:
+            group_ids = self.all_group_ids | {additional_group_id}
+            group_definitions = self['res.groups']._get_group_definitions()
+            group_ids = group_ids | group_definitions.get_superset(group_ids)
+        else:
+            group_ids = frozenset()
+        return Environment(cr, uid, context, su, group_ids)
 
     @typing.overload
     def ref(self, xml_id: str, raise_if_not_found: typing.Literal[True] = True) -> BaseModel:
@@ -283,6 +294,19 @@ class Environment(Mapping[str, "BaseModel"]):
         #   - when accessing to a record from the notification email template
         #   - when loading an binary image on a template
         return self['res.company'].browse(user_company_ids)
+
+    @functools.cached_property
+    def all_group_ids(self) -> frozenset[int]:
+        if not self.uid:
+            print('eu')
+        return self._group_ids_override or frozenset(self.user._get_group_ids() if self.uid else ())
+
+    def has_group(self, group: int | str) -> bool:
+        if isinstance(group, str):
+            group_id = self['res.groups']._get_group_definitions().get_id(group)
+        else:
+            group_id = group
+        return group_id in self.all_group_ids
 
     @functools.cached_property
     def lang(self) -> str | None:
