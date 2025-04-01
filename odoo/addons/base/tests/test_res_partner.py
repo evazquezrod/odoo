@@ -333,7 +333,7 @@ class TestPartner(TransactionCaseWithUserDemo):
         self.assertEqual(child_contact.with_context(lang='fr_FR').display_name, 'Parent, Autre')
 
 
-@tagged('res_partner')
+@tagged('res_partner', 'post_install', '-at_install')
 class TestPartnerAddressCompany(TransactionCase):
 
     def test_address(self):
