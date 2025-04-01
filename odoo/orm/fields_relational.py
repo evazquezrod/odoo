@@ -506,28 +506,35 @@ class _RelationalMulti(_Relational[M], typing.Generic[M]):
             ids = OrderedSet(record[self.name]._ids if record._origin else ())
             # modify ids with the commands
             for command in value:
-                if isinstance(command, (tuple, list)):
-                    if command[0] == Command.CREATE:
-                        ids.add(comodel.new(command[2], ref=command[1]).id)
-                    elif command[0] == Command.UPDATE:
-                        line = browse(command[1])
-                        if validate:
-                            line.update(command[2])
-                        else:
-                            line._update_cache(command[2], validate=False)
-                        ids.add(line.id)
-                    elif command[0] in (Command.DELETE, Command.UNLINK):
-                        ids.discard(browse(command[1]).id)
-                    elif command[0] == Command.LINK:
-                        ids.add(browse(command[1]).id)
-                    elif command[0] == Command.CLEAR:
+                if isinstance(command, list):
+                    command = tuple(command)
+                match command:
+                    case (Command.UNLINK, id, _):
+                        ids.discard(browse(id).id)
+                    case (Command.LINK, id, _):
+                        ids.add(browse(id).id)
+                    case (Command.SET, _, values):
+                        ids = OrderedSet(browse(it).id for it in values)
+                    case (Command.CLEAR, _, _):
                         ids.clear()
-                    elif command[0] == Command.SET:
-                        ids = OrderedSet(browse(it).id for it in command[2])
-                elif isinstance(command, dict):
-                    ids.add(comodel.new(command).id)
-                else:
-                    ids.add(browse(command).id)
+                    case (Command.CREATE, ref, values):
+                        ids.add(comodel.new(values, ref=ref).id)
+                    case (Command.UPDATE, id, values):
+                        line = browse(id)
+                        if validate:
+                            line.update(values)
+                        else:
+                            line._update_cache(values, validate=False)
+                        ids.add(line.id)
+                    case (Command.DELETE, id, _):
+                        line = browse(id)
+                        ids.discard(line.id)
+                        if validate:
+                            line.unlink()
+                    case dict():
+                        ids.add(comodel.new(command).id)
+                    case id:
+                        ids.add(browse(id).id)
             # return result as a tuple
             return tuple(ids)
 

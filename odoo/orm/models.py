@@ -1318,7 +1318,7 @@ class BaseModel(metaclass=MetaModel):
         for fname, value in defaults.items():
             if fname in self._fields:
                 field = self._fields[fname]
-                value = field.convert_to_cache(value, self, validate=False)
+                value = field.convert_to_cache(value, self, validate=True)
                 defaults[fname] = field.convert_to_write(value, self)
 
         # add default values for inherited fields
