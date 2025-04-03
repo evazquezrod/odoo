@@ -9,6 +9,7 @@ import time
 from odoo.addons.hw_drivers.main import manager, iot_devices
 from odoo.addons.hw_drivers.tools import helpers, upgrade, wifi
 from odoo.addons.hw_drivers.tools.iot_system import IS_IOT_BOX, IS_IOT_TEST
+from odoo.addons.hw_drivers.tools.iot_system import IS_IOT_BOX, IS_IOT_TEST
 
 _logger = logging.getLogger(__name__)
 
