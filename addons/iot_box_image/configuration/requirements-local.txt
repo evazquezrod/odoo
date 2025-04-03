@@ -1,0 +1,5 @@
+# Requirements for local development
+# Generally, IoT box libraries installed as packages
+-r requirements.txt
+cryptography==38.0.4
+netifaces==0.11.0

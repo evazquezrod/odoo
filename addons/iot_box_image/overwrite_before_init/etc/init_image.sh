@@ -170,7 +170,7 @@ apt-get clean
 localepurge
 rm -rfv /usr/share/doc
 
-pip3 install -r /home/pi/odoo/addons/iot_box_image/configuration/requirements.txt --break-system-package
+pip3 install -r /home/pi/odoo/addons/iot_box_image/configuration/requirements-box.txt --break-system-package
 
 # Dowload MPD server and library for Six terminals
 wget 'https://nightly.odoo.com/master/iotbox/eftdvs' -P /usr/local/bin/

@@ -1,0 +1,3 @@
+# IoT can be ran locally, we ignore the folder to avoid accidentally pushing downloaded handlers
+*
+!.gitignore

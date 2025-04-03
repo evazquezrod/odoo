@@ -1,0 +1,8 @@
+# Requirements for IoT box image built from a Unix-like system
+-r requirements.txt
+evdev==1.6.0
+pycups
+pyusb
+RPi.GPIO
+v4l2
+vcgencmd

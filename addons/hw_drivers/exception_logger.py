@@ -4,6 +4,8 @@ from io import StringIO
 import logging
 import sys
 
+from odoo.addons.hw_drivers.tools.iot_system import IS_IOT_TEST
+
 _logger = logging.getLogger(__name__)
 
 
@@ -31,4 +33,6 @@ class ExceptionLogger:
     def close(self):
         self.flush()
 
-sys.stderr = ExceptionLogger()
+
+if not IS_IOT_TEST:
+    sys.stderr = ExceptionLogger()
