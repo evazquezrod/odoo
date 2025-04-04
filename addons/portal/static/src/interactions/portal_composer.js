@@ -137,7 +137,7 @@ export class PortalComposer extends Interaction {
                 message_type: "comment",
                 subtype_xmlid: "mail.mt_comment",
             },
-            attachment_tokens: this.attachments.map((a) => a.access_token),
+            attachment_tokens: this.attachments.map((a) => a.attachment_ownership),
             token: this.options.token,
             hash: this.options.hash,
             pid: this.options.pid,
