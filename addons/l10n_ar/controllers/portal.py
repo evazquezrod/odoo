@@ -7,12 +7,13 @@ from odoo.addons.l10n_latam_base.controllers.portal import L10nLatamBasePortalAc
 
 class L10nARPortalAccount(L10nLatamBasePortalAccount):
 
-    def _is_argentinean_company(self):
+    @staticmethod
+    def _is_argentinean_company():
         return request.env.company.country_code == 'AR'
 
     def _prepare_address_form_values(self, partner_sudo, *args, **kwargs):
         rendering_values = super()._prepare_address_form_values(partner_sudo, *args, **kwargs)
-        if self._is_argentinean_company() and rendering_values['is_used_as_billing']:
+        if L10nARPortalAccount._is_argentinean_company() and rendering_values['is_used_as_billing']:
             can_edit_vat = rendering_values['can_edit_vat']
             ArAfipResponsibilityType = request.env['l10n_ar.afip.responsibility.type']
             rendering_values.update({
@@ -21,13 +22,15 @@ class L10nARPortalAccount(L10nLatamBasePortalAccount):
             })
         return rendering_values
 
-    def _get_mandatory_billing_address_fields(self, country_sudo):
+    @staticmethod
+    def _get_mandatory_billing_address_fields(country_sudo):
         mandatory_fields = super()._get_mandatory_billing_address_fields(country_sudo)
-        if self._is_argentinean_company():
+        if L10nARPortalAccount._is_argentinean_company():
             mandatory_fields.add('l10n_ar_afip_responsibility_type_id')
         return mandatory_fields
 
-    def _validate_address_values(self, address_values, partner_sudo, address_type, *args, **kwargs):
+    @staticmethod
+    def _validate_address_values(address_values, partner_sudo, address_type, *args, **kwargs):
         """ We extend the method to add a new validation. If AFIP Resposibility is:
 
         * Final Consumer or Foreign Customer: then it can select any identification type.
@@ -38,7 +41,7 @@ class L10nARPortalAccount(L10nLatamBasePortalAccount):
         )
 
         # Identification type and AFIP Responsibility Combination
-        if address_type == 'billing' and self._is_argentinean_company():
+        if address_type == 'billing' and L10nARPortalAccount._is_argentinean_company():
             if (missing_fields
                 and (
                     'l10n_ar_afip_responsibility_type_id' in missing_fields

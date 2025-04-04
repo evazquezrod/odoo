@@ -1076,7 +1076,7 @@ class WebsiteSale(payment_portal.PaymentPortal):
             callback = callback or '/shop/checkout'
 
         is_anonymous_cart = order_sudo._is_anonymous_cart()
-        partner_sudo, feedback_dict = self._create_or_update_address(
+        partner_sudo, feedback_dict = WebsiteSale._create_or_update_address(
             partner_sudo,
             address_type=address_type,
             use_delivery_as_billing=use_delivery_as_billing,
@@ -1156,8 +1156,9 @@ class WebsiteSale(payment_portal.PaymentPortal):
 
         return partner_sudo, address_type
 
+    @staticmethod
     def _complete_address_values(
-        self, address_values, *args, order_sudo=False, **kwargs
+        address_values, *args, order_sudo=False, **kwargs
     ):
         super()._complete_address_values(
             address_values, *args, order_sudo=order_sudo, **kwargs
@@ -1195,7 +1196,7 @@ class WebsiteSale(payment_portal.PaymentPortal):
 
         :return: The created address, as a sudoed `res.partner` recordset.
         """
-        self._complete_address_values(
+        WebsiteSale._complete_address_values(
             address_values, address_type, use_delivery_as_billing, order_sudo=order_sudo
         )
         creation_context = clean_context(request.env.context)
@@ -1229,7 +1230,7 @@ class WebsiteSale(payment_portal.PaymentPortal):
 
         # Update the partner with all the information
         self._include_country_and_state_in_address(billing_address)
-        billing_address, _side_values = self._parse_form_data(billing_address)
+        billing_address, _side_values = WebsiteSale._parse_form_data(billing_address)
         if order_sudo._is_anonymous_cart():
 
             # Pricelist are recomputed every time the partner is changed. We don't want to recompute
@@ -1265,7 +1266,7 @@ class WebsiteSale(payment_portal.PaymentPortal):
         if shipping_address:
             #in order to not override shippig address, it's checked separately from shipping option
             self._include_country_and_state_in_address(shipping_address)
-            shipping_address, _side_values = self._parse_form_data(billing_address)
+            shipping_address, _side_values = WebsiteSale._parse_form_data(billing_address)
 
             if order_sudo.partner_shipping_id.name.endswith(order_sudo.name):
                 # The existing partner was created by `process_express_checkout_delivery_choice`, it

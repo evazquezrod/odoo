@@ -72,7 +72,7 @@ class WebsiteEventSaleController(WebsiteEventController):
         if any(info['event_ticket_id'] for info in registrations):
             if order_sudo.amount_total:
                 if order_sudo._is_anonymous_cart():
-                    booked_by_partner, feedback_dict = CustomerPortal()._create_or_update_address(
+                    booked_by_partner, feedback_dict = CustomerPortal._create_or_update_address(
                         None,
                         order_sudo=order_sudo,
                         skip_address_required_fields=True,

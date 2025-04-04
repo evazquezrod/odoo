@@ -28,13 +28,15 @@ class L10nLatamBasePortalAccount(PortalAccount):
             })
         return rendering_values
 
-    def _get_mandatory_billing_address_fields(self, country_sudo):
+    @staticmethod
+    def _get_mandatory_billing_address_fields(country_sudo):
         mandatory_fields = super()._get_mandatory_billing_address_fields(country_sudo)
         if request.env.company._is_latam():
             mandatory_fields.update({'l10n_latam_identification_type_id', 'vat'})
         return mandatory_fields
 
-    def _get_vat_validation_fields(self):
+    @staticmethod
+    def _get_vat_validation_fields():
         fnames = super()._get_vat_validation_fields()
         if request.env.company._is_latam():
             fnames.update({'name', 'l10n_latam_identification_type_id'})

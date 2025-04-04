@@ -10,7 +10,8 @@ from odoo.addons.website_sale.controllers.main import (
 
 class WebsiteSale(WebsiteSaleController):
 
-    def _handle_extra_form_data(self, extra_form_data, address_values):
+    @staticmethod
+    def _handle_extra_form_data(extra_form_data, address_values):
         super()._handle_extra_form_data(extra_form_data, address_values)
         if extra_form_data.get('newsletter') and address_values.get('email'):
             MassMailController.subscribe_to_newsletter(

@@ -7,12 +7,13 @@ from odoo.addons.l10n_latam_base.controllers.portal import L10nLatamBasePortalAc
 
 class L10nPEPortalAccount(L10nLatamBasePortalAccount):
 
-    def _is_peru_company(self):
+    @staticmethod
+    def _is_peru_company():
         return request.env.company.country_code == 'PE'
 
     def _prepare_address_form_values(self, partner_sudo, *args, **kwargs):
         rendering_values = super()._prepare_address_form_values(partner_sudo, *args, **kwargs)
-        if not self._is_peru_company():
+        if not L10nPEPortalAccount._is_peru_company():
             return rendering_values
 
         state = request.env['res.country.state'].browse(rendering_values['state_id'])
@@ -27,9 +28,10 @@ class L10nPEPortalAccount(L10nLatamBasePortalAccount):
         })
         return rendering_values
 
-    def _get_mandatory_address_fields(self, country_sudo):
+    @staticmethod
+    def _get_mandatory_address_fields(country_sudo):
         mandatory_fields = super()._get_mandatory_address_fields(country_sudo)
-        if not self._is_peru_company():
+        if not L10nPEPortalAccount._is_peru_company():
             return mandatory_fields
 
         if country_sudo.code == 'PE':

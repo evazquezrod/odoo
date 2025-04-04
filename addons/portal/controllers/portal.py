@@ -278,19 +278,20 @@ class CustomerPortal(Controller):
         :return: Whether all mandatory fields are filled.
         :rtype: bool
         """
-        mandatory_billing_fields = self._get_mandatory_billing_address_fields(
+        mandatory_billing_fields = CustomerPortal._get_mandatory_billing_address_fields(
             partner_sudo.country_id
         )
         return all(partner_sudo.read(mandatory_billing_fields)[0].values())
 
-    def _get_mandatory_billing_address_fields(self, country_sudo):
+    @staticmethod
+    def _get_mandatory_billing_address_fields(country_sudo):
         """ Return the set of mandatory billing field names.
 
         :param res.country country_sudo: The country to use to build the set of mandatory fields.
         :return: The set of mandatory billing field names.
         :rtype: set
         """
-        return self._get_mandatory_address_fields(country_sudo)
+        return CustomerPortal._get_mandatory_address_fields(country_sudo)
 
     def _check_delivery_address(self, partner_sudo):
         """ Check that all mandatory delivery fields are filled for the given partner.
@@ -299,21 +300,23 @@ class CustomerPortal(Controller):
         :return: Whether all mandatory fields are filled.
         :rtype: bool
         """
-        mandatory_delivery_fields = self._get_mandatory_delivery_address_fields(
+        mandatory_delivery_fields = CustomerPortal._get_mandatory_delivery_address_fields(
             partner_sudo.country_id
         )
         return all(partner_sudo.read(mandatory_delivery_fields)[0].values())
 
-    def _get_mandatory_delivery_address_fields(self, country_sudo):
+    @staticmethod
+    def _get_mandatory_delivery_address_fields(country_sudo):
         """ Return the set of mandatory delivery field names.
 
         :param res.country country_sudo: The country to use to build the set of mandatory fields.
         :return: The set of mandatory delivery field names.
         :rtype: set
         """
-        return self._get_mandatory_address_fields(country_sudo)
+        return CustomerPortal._get_mandatory_address_fields(country_sudo)
 
-    def _get_mandatory_address_fields(self, country_sudo):
+    @staticmethod
+    def _get_mandatory_address_fields(country_sudo):
         """ Return the set of common mandatory address fields.
 
         :param res.country country_sudo: The country to use to build the set of mandatory fields.
@@ -467,12 +470,12 @@ class CustomerPortal(Controller):
         if partner_sudo and not partner_sudo._can_be_edited_by_current_customer():
             raise Forbidden()
 
-        _partner_sudo, feedback_dict = self._create_or_update_address(partner_sudo, **form_data)
+        _partner_sudo, feedback_dict = CustomerPortal._create_or_update_address(partner_sudo, **form_data)
 
         return json.dumps(feedback_dict)
 
+    @staticmethod
     def _create_or_update_address(
-        self,
         partner_sudo,
         address_type='billing',
         use_delivery_as_billing=False,
@@ -499,10 +502,10 @@ class CustomerPortal(Controller):
         use_delivery_as_billing = str2bool(use_delivery_as_billing or 'false')
 
         # Parse form data into address values, and extract incompatible data as extra form data.
-        address_values, extra_form_data = self._parse_form_data(form_data)
+        address_values, extra_form_data = CustomerPortal._parse_form_data(form_data)
 
         # Validate the address values and highlights the problems in the form, if any.
-        invalid_fields, missing_fields, error_messages = self._validate_address_values(
+        invalid_fields, missing_fields, error_messages = CustomerPortal._validate_address_values(
             address_values,
             partner_sudo,
             address_type,
@@ -518,7 +521,7 @@ class CustomerPortal(Controller):
             }
 
         if not partner_sudo:  # Creation of a new address.
-            self._complete_address_values(
+            CustomerPortal._complete_address_values(
                 address_values, address_type, use_delivery_as_billing, **form_data
             )
             create_context = clean_context(request.env.context)
@@ -532,17 +535,18 @@ class CustomerPortal(Controller):
             if hasattr(partner_sudo, '_onchange_phone_validation'):
                 # The `phone_validation` module is installed.
                 partner_sudo._onchange_phone_validation()
-        elif not self._are_same_addresses(address_values, partner_sudo):
+        elif not CustomerPortal._are_same_addresses(address_values, partner_sudo):
             partner_sudo.write(address_values)  # Keep the same partner if nothing changed.
             if 'phone' in address_values and hasattr(partner_sudo, '_onchange_phone_validation'):
                 # The `phone_validation` module is installed.
                 partner_sudo._onchange_phone_validation()
 
-        self._handle_extra_form_data(extra_form_data, address_values)
+        CustomerPortal._handle_extra_form_data(extra_form_data, address_values)
 
         return partner_sudo, {'successUrl': callback}
 
-    def _parse_form_data(self, form_data):
+    @staticmethod
+    def _parse_form_data(form_data):
         """ Parse the form data and return them converted into address values and extra form data.
 
         :param dict form_data: The form data to convert to address values.
@@ -583,8 +587,8 @@ class CustomerPortal(Controller):
 
         return address_values, extra_form_data
 
+    @staticmethod
     def _validate_address_values(
-        self,
         address_values,
         partner_sudo,
         address_type,
@@ -707,7 +711,7 @@ class CustomerPortal(Controller):
         ):
             partner_dummy = ResPartnerSudo.new({
                 fname: address_values[fname]
-                for fname in self._get_vat_validation_fields()
+                for fname in CustomerPortal._get_vat_validation_fields()
                 if fname in address_values
             })
             try:
@@ -726,12 +730,12 @@ class CustomerPortal(Controller):
             not skip_address_required_fields
             and (address_type == 'delivery' or use_delivery_as_billing)
         ):
-            required_field_set |= self._get_mandatory_delivery_address_fields(country)
+            required_field_set |= CustomerPortal._get_mandatory_delivery_address_fields(country)
         if (
             not skip_address_required_fields
             and (address_type == 'billing' or use_delivery_as_billing)
         ):
-            required_field_set |= self._get_mandatory_billing_address_fields(country)
+            required_field_set |= CustomerPortal._get_mandatory_billing_address_fields(country)
             if not is_commercial_address:
                 commercial_fields = ResPartnerSudo._commercial_fields()
                 for fname in commercial_fields:
@@ -747,11 +751,13 @@ class CustomerPortal(Controller):
 
         return invalid_fields, missing_fields, error_messages
 
-    def _get_vat_validation_fields(self):
+    @staticmethod
+    def _get_vat_validation_fields():
         return {'country_id', 'vat'}
 
+    @staticmethod
     def _complete_address_values(
-        self, address_values, address_type, use_delivery_as_billing, **kwargs
+        address_values, address_type, use_delivery_as_billing, **kwargs
     ):
         """ Complete the address values with the request's contextual values.
 
@@ -777,7 +783,8 @@ class CustomerPortal(Controller):
         if commercial_partner.active:
             address_values['parent_id'] = commercial_partner.id
 
-    def _are_same_addresses(self, address_values, partner):
+    @staticmethod
+    def _are_same_addresses(address_values, partner):
         ResPartner = request.env['res.partner']
         for key, new_val in address_values.items():
             val = ResPartner._fields[key].convert_to_cache(partner[key], ResPartner)
@@ -786,7 +793,8 @@ class CustomerPortal(Controller):
                 return False
         return True
 
-    def _handle_extra_form_data(self, extra_form_data, address_values):
+    @staticmethod
+    def _handle_extra_form_data(extra_form_data, address_values):
         """ Handling extra form data that were not processed on the address from.
 
         :param dict extra_form_data: The extra form data.
@@ -805,9 +813,9 @@ class CustomerPortal(Controller):
     def portal_address_country_info(self, country, address_type, **kw):
         address_fields = country.get_address_fields()
         if address_type == 'billing':
-            required_fields = self._get_mandatory_billing_address_fields(country)
+            required_fields = CustomerPortal._get_mandatory_billing_address_fields(country)
         else:
-            required_fields = self._get_mandatory_delivery_address_fields(country)
+            required_fields = CustomerPortal._get_mandatory_delivery_address_fields(country)
         return {
             'fields': address_fields,
             'zip_before_city': (

@@ -9,7 +9,8 @@ from odoo.addons.account.controllers.portal import PortalAccount
 
 class L10nITPortalAccount(PortalAccount):
 
-    def _validate_address_values(self, address_values, *args, **kwargs):
+    @staticmethod
+    def _validate_address_values(address_values, *args, **kwargs):
         invalid_fields, missing_fields, error_messages = super()._validate_address_values(
             address_values, *args, **kwargs
         )
