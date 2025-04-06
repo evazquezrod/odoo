@@ -1,15 +1,14 @@
-# -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import api, models
-from odoo.osv import expression
+from odoo.fields import Domain
 
 
 class SmsTemplate(models.Model):
     _inherit = 'sms.template'
 
     @api.model
-    def _search(self, domain, *args, **kwargs):
+    def _search_domain(self, domain):
         """Context-based hack to filter reference field in a m2o search box to emulate a domain the ORM currently does not support.
 
         As we can not specify a domain on a reference field, we added a context
@@ -18,8 +17,8 @@ class SmsTemplate(models.Model):
         method to filtrate the SMS templates.
         """
         if self.env.context.get('filter_template_on_event'):
-            domain = expression.AND([[('model', '=', 'event.registration')], domain])
-        return super()._search(domain, *args, **kwargs)
+            return super()._search_domain(domain) & Domain('model', '=', 'event.registration')
+        return super()._search_domain(domain)
 
     def unlink(self):
         res = super().unlink()

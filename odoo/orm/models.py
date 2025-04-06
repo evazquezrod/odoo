@@ -197,6 +197,28 @@ def check_companies_domain_parent_of(self, companies):
     ])]
 
 
+def add_record_rules_to_subdomains(model: BaseModel, domain: Domain) -> Domain:
+    # XXX make this an optimization level
+    if model.env.su:
+        def add_record_rules(condition: domains.DomainCondition) -> Domain:
+            if condition.operator not in ('any', 'not any'):
+                return condition
+            return Domain(condition.field_expr, condition.opreator + '*', condition.value)
+    else:
+        def add_record_rules(condition: domains.DomainCondition) -> Domain:
+            if condition.operator not in ('any', 'not any'):
+                return condition
+            domain = condition.value
+            field = condition._field(model)
+            if isinstance(domain, Domain):
+                comodel = model.env[field.comodel_name]
+                domain = comodel._search_domain(domain, check_rules=not field.auto_join)
+            # build any*
+            return Domain(condition.field_expr, condition.operator + '*', domain)
+
+    return domain.optimize(model, full=True).map_conditions(add_record_rules).optimize(model, full=True)
+
+
 class MetaModel(type):
     """ The metaclass of all model classes.
         Its main purpose is to register the models per module.
@@ -5016,33 +5038,13 @@ class BaseModel(metaclass=MetaModel):
         # XXX use no_record_rules iso sudo
         # XXX active_test=False => dummy (active)
         check_rules = not (self.env.su or no_record_rules)
-        if check_rules:
-            self.browse().check_access('read')
-
-        domain = Domain(domain)
-        # inactive records unless they were explicitly asked for
-        if (
-            self._active_name
-            and self.env.context.get('active_test', True)
-            and not any(leaf.field_expr == self._active_name for leaf in domain.iter_conditions())
-        ):
-            domain &= Domain(self._active_name, '=', True)
+        domain = self._search_domain(Domain(domain), check_rules=check_rules)
 
         # build the query
-        domain = domain.optimize(self, full=True)
         if domain.is_false():
             return self.browse()._as_query()
         query = Query(self.env, self._table, self._table_sql)
         query.add_where(domain._to_sql(self, self._table, query))
-
-        # security access domain
-        if check_rules:
-            sec_domain = self.env['ir.rule']._compute_domain(self._name, 'read')
-            sec_domain = sec_domain.optimize(self.sudo(), full=True)
-            if sec_domain.is_false():
-                return self.browse()._as_query()
-            if not sec_domain.is_true():
-                query.add_where(sec_domain._to_sql(self.sudo(), self._table, query))
 
         # add order and limits
         if order:
@@ -5053,6 +5055,34 @@ class BaseModel(metaclass=MetaModel):
             query.offset = offset
 
         return query
+
+    @api.model
+    def _search_domain(self, domain: Domain, check_rules: bool) -> Domain:
+        """TODO"""
+        if check_rules:
+            self.browse().check_access('read')
+
+        # if the object has an active field ('active', 'x_active'), filter out all
+        # inactive records unless they were explicitly asked for
+        if (
+            self._active_name
+            and self.env.context.get('active_test', True)
+            and not any(leaf.field_expr == self._active_name for leaf in domain.iter_conditions())
+        ):
+            domain &= Domain(self._active_name, '=', True)
+
+        # optimize
+        domain = add_record_rules_to_subdomains(self, domain)
+        if not check_rules or domain.is_false():
+            return domain
+
+        # add security rule
+        self_sudo = self.sudo()
+        sec_domain = self.env['ir.rule']._compute_domain(self._name, 'read')
+        # combine
+        domain = add_record_rules_to_subdomains(self_sudo, domain & sec_domain)
+
+        return domain
 
     def _as_query(self, ordered: bool = True) -> Query:
         """ Return a :class:`Query` that corresponds to the recordset ``self``.

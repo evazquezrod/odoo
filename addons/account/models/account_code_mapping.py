@@ -45,7 +45,7 @@ class AccountCodeMapping(models.Model):
             mapping.code = vals['code']
         return mappings
 
-    def _search(self, domain, offset=0, limit=None, order=None) -> Query:
+    def _search(self, domain, offset=0, limit=None, order=None) -> Query:  # XXX search_domain
         account_ids = []
 
         def get_accounts(condition):

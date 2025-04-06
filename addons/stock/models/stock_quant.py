@@ -179,11 +179,11 @@ class StockQuant(models.Model):
         for quant in self:
             quant.last_count_date = date_by_quant.get((quant.location_id.id, quant.package_id.id, quant.product_id.id, quant.lot_id.id, quant.owner_id.id))
 
-    def _search(self, domain, *args, **kwargs):
+    def _search_domain(self, domain):
         domain = Domain(domain).map_conditions(
             lambda condition: Domain('lot_id', 'any', [condition]) if condition.field_expr.startswith('lot_properties.') else condition
         )
-        return super()._search(domain, *args, **kwargs)
+        return super()._search_domain(domain)
 
     @api.depends('inventory_quantity', 'inventory_quantity_set')
     def _compute_inventory_diff_quantity(self):
