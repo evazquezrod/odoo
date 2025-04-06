@@ -79,7 +79,7 @@ class AccountTax(models.Model):
     _rec_names_search = ['name', 'description', 'invoice_label']
     _check_company_domain = models.check_company_domain_parent_of
 
-    name = fields.Char(string='Tax Name', required=True, translate=True, tracking=True)
+    name = fields.Char(string='Tax Name', required=True, translate=True, tracking=True, search='_search_name')
     name_searchable = fields.Char(store=False, search='_search_name',
           help="This dummy field lets us use another search method on the field 'name'."
                "This allows more freedom on how to search the 'name' compared to 'filter_domain'."
@@ -518,19 +518,6 @@ class AccountTax(models.Model):
             else:
                 list_name[i] = '%'.join(re.sub(r"\W+", "", name))
         return ''.join(list_name)
-
-    @api.model
-    def _search(self, domain, offset=0, limit=None, order=None):
-        """
-        Intercept the search on `name` to allow searching more freely on taxes
-        when using `like` or `ilike`.
-        """
-        def preprocess_name(cond):
-            if cond.field_expr == 'name' and cond.operator in ('like', 'ilike') and isinstance(cond.value, str):
-                return Domain('name', cond.operator, AccountTax._parse_name_search(cond.value))
-            return cond
-        domain = Domain(domain).map_conditions(preprocess_name)
-        return super()._search(domain, offset, limit, order)
 
     def _search_name(self, operator, value):
         if isinstance(value, str):

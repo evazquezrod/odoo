@@ -507,11 +507,11 @@ class IrAttachment(models.Model):
         return ret_attachments
 
     @api.model
-    def _search(self, domain, offset=0, limit=None, order=None):
+    def _search_domain(self, domain):
         # add res_field=False in domain if not present; the arg[0] trick below
         # works for domain items and '&'/'|'/'!' operators too
         disable_binary_fields_attachments = False
-        domain = Domain(domain)
+        domain = super()._search_domain(domain)
         if (
             not self.env.context.get('skip_res_field_check')
             and not any(d.field_expr in ('id', 'res_field') for d in domain.iter_conditions())
@@ -521,14 +521,14 @@ class IrAttachment(models.Model):
 
         if self.env.is_superuser():
             # rules do not apply for the superuser
-            return super()._search(domain, offset, limit, order)
+            return domain
 
         # For attachments, the permissions of the document they are attached to
         # apply, so we must remove attachments for which the user cannot access
         # the linked document. For the sake of performance, fetch the fields to
         # determine those permissions within the same SQL query.
         fnames_to_read = ['id', 'res_model', 'res_id', 'res_field', 'public', 'create_uid']
-        query = super()._search(domain, offset, limit, order)
+        query = self.sudo()._search(domain)
         rows = self.env.execute_query(query.select(
             *[self._field_to_sql(self._table, fname) for fname in fnames_to_read],
         ))
@@ -563,20 +563,7 @@ class IrAttachment(models.Model):
         # filter out all_ids by keeping allowed_ids only
         result = [id_ for id_ in all_ids if id_ in allowed_ids]
 
-        # If the original search reached the limit, it is important the
-        # filtered record set does so too. When a JS view receive a
-        # record set whose length is below the limit, it thinks it
-        # reached the last page. To avoid an infinite recursion due to the
-        # permission checks the sub-call need to be aware of the number of
-        # expected records to retrieve
-        if len(all_ids) == limit and len(result) < self._context.get('need', limit):
-            need = self._context.get('need', limit) - len(result)
-            more_ids = self.with_context(need=need)._search(
-                domain, offset + len(all_ids), limit, order,
-            )
-            result.extend(list(more_ids)[:limit - len(result)])
-
-        return self.browse(result)._as_query(order)
+        return Domain('id', 'in', result)
 
     def write(self, vals):
         self.check('write', values=vals)

@@ -4888,16 +4888,10 @@ class BaseModel(metaclass=MetaModel):
         :return: the query expressing the given domain as provided in domain
         """
         domain = Domain(domain)
-
-        # if the object has an active field ('active', 'x_active'), filter out all
-        # inactive records unless they were explicitly asked for
-        if (
-            self._active_name
-            and active_test
-            and self.env.context.get('active_test', True)
-            and not any(leaf.field_expr == self._active_name for leaf in domain.iter_conditions())
-        ):
-            domain &= Domain(self._active_name, '=', True)
+        if active_test:
+            domain = self._search_domain(domain)
+        else:
+            domain = self.with_context(active_test=False)._search_domain(domain)
 
         domain = domain.optimize(self, full=True)
         if domain.is_false():
@@ -5087,6 +5081,20 @@ class BaseModel(metaclass=MetaModel):
             query.offset = offset
 
         return query
+
+    @api.model
+    def _search_domain(self, domain: Domain) -> Domain:
+        """TODO"""
+        # if the object has an active field ('active', 'x_active'), filter out all
+        # inactive records unless they were explicitly asked for
+        if (
+            self._active_name
+            and self.env.context.get('active_test', True)
+            and not any(leaf.field_expr == self._active_name for leaf in domain.iter_conditions())
+        ):
+            domain &= Domain(self._active_name, '=', True)
+
+        return domain
 
     def _as_query(self, ordered: bool = True) -> Query:
         """ Return a :class:`Query` that corresponds to the recordset ``self``.

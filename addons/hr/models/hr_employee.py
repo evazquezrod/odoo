@@ -494,6 +494,14 @@ class HrEmployee(models.Model):
         # the result is expected from this table, so we should link tables
         return super(HrEmployee, self.sudo())._search([('id', 'in', ids)], order=order)
 
+    @api.model
+    def _search_domain(self, domain):
+        # XXX maybe
+        if self.browse().has_access('read'):
+            return super()._search_domain(domain)
+        query = self.env['hr.employee.public']._search(domain)
+        return Domain('id', 'in', query)
+
     def get_formview_id(self, access_uid=None):
         """ Override this method in order to redirect many2one towards the right model depending on access_uid """
         user = self.env.user

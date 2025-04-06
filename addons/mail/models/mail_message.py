@@ -9,6 +9,7 @@ from collections import defaultdict
 
 from odoo import _, api, fields, models, modules, tools
 from odoo.exceptions import AccessError
+from odoo.fields import Domain
 from odoo.osv import expression
 from odoo.tools import clean_context, groupby, SQL
 from odoo.tools.misc import OrderedSet
@@ -267,7 +268,7 @@ class MailMessage(models.Model):
     # ------------------------------------------------------
 
     @api.model
-    def _search(self, domain, offset=0, limit=None, order=None):
+    def _search_domain(self, domain):
         """ Override that adds specific access rights of mail.message, to remove
         ids uid could not see according to our custom rules. Please refer to
         _check_access() for more details about those rules.
@@ -282,23 +283,24 @@ class MailMessage(models.Model):
         - uid has a notification on the message
         - otherwise: remove the id
         """
+        domain = super()._search_domain(domain)
         # Rules do not apply to administrator
         if self.env.is_superuser():
-            return super()._search(domain, offset, limit, order)
+            return domain
 
         # Non-employee see only messages with a subtype and not internal
         if not self.env.user._is_internal():
-            domain = self._get_search_domain_share() + domain
-
-        # make the search query with the default rules
-        query = super()._search(domain, offset, limit, order)
+            domain &= domain
 
         # retrieve matching records and determine which ones are truly accessible
         self.flush_model(['model', 'res_id', 'author_id', 'message_type', 'partner_ids'])
         self.env['mail.notification'].flush_model(['mail_message_id', 'res_partner_id'])
 
+        # make the search query with the default rule
+        query = self.sudo()._search(domain)
+
         pid = self.env.user.partner_id.id
-        ids = []
+        ids = OrderedSet()
         allowed_ids = set()
         model_ids = defaultdict(lambda: defaultdict(set))
 
@@ -331,20 +333,17 @@ class MailMessage(models.Model):
             ),
         ))
         for id_, model, res_id, author_id, message_type, partner_id in self.env.cr.fetchall():
-            ids.append(id_)
-            if author_id == pid:
-                allowed_ids.add(id_)
-            elif partner_id == pid:
+            ids.add(id_)
+            if author_id == pid or partner_id == pid:
                 allowed_ids.add(id_)
             elif model and res_id and message_type != 'user_notification':
                 model_ids[model][res_id].add(id_)
 
         allowed_ids.update(self._find_allowed_doc_ids(model_ids))
-        allowed = self.browse(id_ for id_ in ids if id_ in allowed_ids)
-        return allowed._as_query(order)
+        return Domain('id', 'in', ids & allowed_ids)
 
-    def _get_search_domain_share(self):
-        return ['&', '&', ('is_internal', '=', False), ('subtype_id', '!=', False), ('subtype_id.internal', '=', False)]
+    def _get_search_domain_share(self) -> Domain:
+        return Domain(['&', '&', ('is_internal', '=', False), ('subtype_id', '!=', False), ('subtype_id.internal', '=', False)])
 
     @api.model
     def _find_allowed_model_wise(self, doc_model, doc_dict):
