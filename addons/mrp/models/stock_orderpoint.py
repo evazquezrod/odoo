@@ -85,6 +85,9 @@ class StockWarehouseOrderpoint(models.Model):
         }
         orderpoints_without_kit = self - self.env['stock.warehouse.orderpoint'].concat(*bom_kit_orderpoints.keys())
         res = super(StockWarehouseOrderpoint, orderpoints_without_kit)._quantity_in_progress()
+        if not bom_kit_orderpoints:
+            return res
+
         for orderpoint in bom_kit_orderpoints:
             dummy, bom_sub_lines = bom_kit_orderpoints[orderpoint].explode(orderpoint.product_id, 1)
             ratios_qty_available = []
