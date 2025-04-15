@@ -38,6 +38,7 @@ import uuid
 import warnings
 from collections import defaultdict, deque
 from collections.abc import Callable, Mapping
+from decimal import Decimal
 from inspect import getmembers
 from operator import attrgetter, itemgetter
 
@@ -1702,6 +1703,10 @@ class BaseModel(metaclass=MetaModel):
             raise ValueError(f"Aggregate method {func!r} can be only used on relational field (or id) (for {aggregate_spec!r}).")
 
         sql_field = self._field_to_sql(self._table, fname, query)
+        if (
+            field.type == 'monetary' or (field.type == 'float' and field.is_decimal)
+        ) and not func.startswith('count') and not func.startswith('bool'):
+            sql_field = SQL("CAST(%s AS FLOAT)", sql_field)
         return READ_GROUP_AGGREGATE[func](self._table, sql_field)
 
     def _read_group_groupby(self, groupby_spec: str, query: Query) -> SQL:
@@ -1787,6 +1792,9 @@ class BaseModel(metaclass=MetaModel):
             if field.type == 'date' and granularity not in READ_GROUP_NUMBER_GRANULARITY:
                 # If the granularity uses date_trunc, we need to convert the timestamp back to a date.
                 sql_expr = SQL("%s::date", sql_expr)
+
+        elif field.type == 'monetary' or (field.type == 'float' and field.is_decimal):
+            sql_expr = SQL("CAST(%s AS FLOAT)", sql_expr)
 
         elif field.type == 'boolean':
             sql_expr = SQL("COALESCE(%s, FALSE)", sql_expr)
@@ -1965,6 +1973,10 @@ class BaseModel(metaclass=MetaModel):
                 return Model(self.env, ids, prefetch_ids)
 
             return (recordset(value) for value in raw_values)
+
+        field = self._fields[fname]
+        if field.type == 'monetary' or (field.type == 'number' and field.is_decimal):
+            raw_values = (float(value) if isinstance(value, Decimal) else value for value in raw_values)
 
         return ((value if value is not None else empty_value) for value in raw_values)
 

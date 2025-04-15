@@ -3,6 +3,7 @@
 import logging
 import math
 from collections.abc import Iterable
+from decimal import Decimal
 
 from odoo import api, fields, models, tools
 from odoo.exceptions import UserError, ValidationError
@@ -221,6 +222,8 @@ class ResCurrency(models.Model):
            :return: rounded float
         """
         self.ensure_one()
+        if isinstance(amount, Decimal):
+            return round(amount, self.decimal_places)
         return tools.float_round(amount, precision_rounding=self.rounding)
 
     def compare_amounts(self, amount1, amount2):
