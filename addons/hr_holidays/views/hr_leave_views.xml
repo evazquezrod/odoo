@@ -344,7 +344,7 @@
                                     options="{'end_date_field': 'request_date_to'}"/>
                                 <field name="request_date_to" invisible="1"/> <!-- For Form view test-->
                                 <div>
-                                ( <field name="duration_display" readonly="1" class="w-auto"/> )
+                                ( <field name="duration_display" id="full_date_warnings" readonly="1" class="w-auto"/> )
                                 </div>
                             </div>
                             <label for="request_unit_half" string="" invisible="not leave_type_request_unit or leave_type_request_unit == 'day'"/>
