@@ -13,7 +13,7 @@ class TestDiscussAttachmentController(MailControllerAttachmentCommon):
         )
         channel.add_members(guest_ids=[self.guest.id])
         channel.env.context = {**channel.env.context, "guest": self.guest}
-        self._execute_subtests(
+        self._execute_subtests_upload(
             channel,
             (
                 (self.guest, True),
@@ -22,4 +22,24 @@ class TestDiscussAttachmentController(MailControllerAttachmentCommon):
                 (self.user_portal, True),
                 (self.user_public, True),
             ),
+        )
+
+    def test_attachment_delete_linked_to_channel(self):
+        """Test access to delete an attachment associated with a channel"""
+        channel = self.env["discuss.channel"].create({"name": "public channel"})
+        # Subtest format: (user, token, result)
+        self._execute_subtests_delete(
+            (
+                (self.guest, False, False),
+                (self.guest, True, False),
+                (self.user_admin, False, True),
+                (self.user_admin, True, True),
+                (self.user_employee, False, True),
+                (self.user_employee, True, True),
+                (self.user_portal, False, False),
+                (self.user_portal, True, False),
+                (self.user_public, False, False),
+                (self.user_public, True, False),
+            ),
+            thread=channel,
         )
