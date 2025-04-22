@@ -34,19 +34,12 @@ export default class DevicesSynchronisation {
      * @param {Object} data - The data that needs to be synchronized.
      */
     async dispatch(data) {
-        const recordIds = Object.entries(data).reduce((acc, [model, records]) => {
-            if (!this.staticModels.has(model)) {
-                return acc;
-            }
-            acc[model] = records.map((record) => record.id);
-            return acc;
-        }, {});
-
+        // TODO(master): remove data arg from function.
         await this.pos.data.call("pos.config", "notify_synchronisation", [
             odoo.pos_config_id,
             odoo.pos_session_id,
             odoo.login_number,
-            recordIds,
+            {},
         ]);
     }
 
