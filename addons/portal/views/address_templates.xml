@@ -211,8 +211,8 @@
                 </div>
                 <div t-elif="not is_commercial_address" class="col-12 d-none d-lg-block mb-1">
                     <small class="form-text text-muted">
-                        <t t-if="commercial_partner.is_company">
-                            The company name and VAT number can only be updated on the company account.
+                        <t t-if="commercial_partner.parent_id">
+                            The company name and VAT number can only be updated on the parent account.
                         </t>
                         <t t-else="">
                             The company name and VAT number can only be updated on your main account.

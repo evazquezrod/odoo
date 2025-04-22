@@ -41,8 +41,6 @@ export class Persona extends Record {
     function;
     /** @type {number} */
     id;
-    /** @type {boolean | undefined} */
-    is_company;
     /** @type {string} */
     phone;
     debouncedSetImStatus;

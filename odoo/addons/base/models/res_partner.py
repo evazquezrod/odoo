@@ -274,14 +274,8 @@ class ResPartner(models.Model):
         'Formatted Email', compute='_compute_email_formatted',
         help='Format email address "Name <email@domain>"')
     phone = fields.Char()
-    is_company = fields.Boolean(string='Is a Company', default=False,
-        help="Check if the contact is a company, otherwise it is a person")
     is_public = fields.Boolean(compute='_compute_is_public', compute_sudo=True)
     industry_id: ResPartnerIndustry = fields.Many2one('res.partner.industry', 'Industry')
-    # company_type is only an interface field, do not use it in business logic
-    company_type = fields.Selection(string='Company Type',
-        selection=[('person', 'Person'), ('company', 'Company')],
-        compute='_compute_company_type', inverse='_write_company_type')
     company_id: ResCompany = fields.Many2one('res.company', 'Company', index=True)
     color = fields.Integer(string='Color Index', default=0)
     user_ids: ResUsers = fields.One2many('res.users', 'partner_id', string='Users', auto_join=True)
@@ -325,23 +319,23 @@ class ResPartner(models.Model):
         self.ensure_one()
         return tools.street_split(self.street or '')
 
-    @api.depends('name', 'user_ids.share', 'image_1920', 'is_company', 'type')
+    @api.depends('name', 'user_ids.share', 'image_1920', 'type')
     def _compute_avatar_1920(self):
         super()._compute_avatar_1920()
 
-    @api.depends('name', 'user_ids.share', 'image_1024', 'is_company', 'type')
+    @api.depends('name', 'user_ids.share', 'image_1024', 'type')
     def _compute_avatar_1024(self):
         super()._compute_avatar_1024()
 
-    @api.depends('name', 'user_ids.share', 'image_512', 'is_company', 'type')
+    @api.depends('name', 'user_ids.share', 'image_512', 'type')
     def _compute_avatar_512(self):
         super()._compute_avatar_512()
 
-    @api.depends('name', 'user_ids.share', 'image_256', 'is_company', 'type')
+    @api.depends('name', 'user_ids.share', 'image_256', 'type')
     def _compute_avatar_256(self):
         super()._compute_avatar_256()
 
-    @api.depends('name', 'user_ids.share', 'image_128', 'is_company', 'type')
+    @api.depends('name', 'user_ids.share', 'image_128', 'type')
     def _compute_avatar_128(self):
         super()._compute_avatar_128()
 
@@ -358,7 +352,7 @@ class ResPartner(models.Model):
             partner[avatar_field] = partner[image_field]
 
     def _avatar_get_placeholder_path(self):
-        if self.is_company:
+        if not self.parent_id:
             return "base/static/img/company_image.png"
         if self.type == 'delivery':
             return "base/static/img/truck.png"
@@ -378,11 +372,11 @@ class ResPartner(models.Model):
         if self.company_name or self.parent_id:
             if not name and self.type in displayed_types:
                 name = type_description[self.type]
-            if not self.is_company and not self.env.context.get('partner_display_name_hide_company'):
+            if not self.env.context.get('partner_display_name_hide_company'):
                 name = f"{self.commercial_company_name or self.sudo().parent_id.name}, {name}"
         return name.strip()
 
-    @api.depends('is_company', 'name', 'parent_id.name', 'type', 'company_name', 'commercial_company_name')
+    @api.depends('name', 'parent_id.name', 'type', 'company_name', 'commercial_company_name')
     def _compute_complete_name(self):
         for partner in self:
             partner.complete_name = partner.with_context({})._get_complete_name()
@@ -407,8 +401,8 @@ class ResPartner(models.Model):
 
     @api.depends('parent_id')
     def _compute_user_id(self):
-        """ Synchronize sales rep with parent if partner is a person """
-        for partner in self.filtered(lambda partner: not partner.user_id and partner.company_type == 'person' and partner.parent_id.user_id):
+        """ Synchronize sales rep with parent """
+        for partner in self.filtered(lambda partner: not partner.user_id and partner.parent_id.user_id):
             partner.user_id = partner.parent_id.user_id
 
     @api.depends('user_ids.share', 'user_ids.active')
@@ -469,8 +463,6 @@ class ResPartner(models.Model):
                 partner.type_address_label = _('Invoice Address')
             elif partner.type == 'delivery':
                 partner.type_address_label = _('Delivery Address')
-            elif partner.type == 'contact' and partner.parent_id:
-                partner.type_address_label = _('Company Address')
             else:
                 partner.type_address_label = _('Address')
 
@@ -483,19 +475,18 @@ class ResPartner(models.Model):
         for partner in self:
             partner.self = partner.id
 
-    @api.depends('is_company', 'parent_id.commercial_partner_id')
+    @api.depends('parent_id.commercial_partner_id')
     def _compute_commercial_partner(self):
         for partner in self:
-            if partner.is_company or not partner.parent_id:
+            if not partner.parent_id:
                 partner.commercial_partner_id = partner
             else:
                 partner.commercial_partner_id = partner.parent_id.commercial_partner_id
 
-    @api.depends('company_name', 'parent_id.is_company', 'commercial_partner_id.name')
+    @api.depends('company_name', 'commercial_partner_id.name')
     def _compute_commercial_company_name(self):
         for partner in self:
-            p = partner.commercial_partner_id
-            partner.commercial_company_name = p.is_company and p.name or partner.company_name
+            partner.commercial_company_name = partner.company_name or partner.commercial_partner_id.name
 
     def _compute_company_registry(self):
         # exists to allow overrides
@@ -523,11 +514,11 @@ class ResPartner(models.Model):
     @api.constrains('company_id')
     def _check_partner_company(self):
         """
-        Check that for every partner which has a company,
+        Check that for every partner,
         if there exists a company linked to that partner,
         the company_id set on the partner is that company
         """
-        partners = self.filtered(lambda p: p.is_company and p.company_id)
+        partners = self.filtered(lambda p: p.company_id)
         companies = self.env['res.company'].search_fetch([('partner_id', 'in', partners.ids)], ['partner_id'])
         for company in companies:
             if company != company.partner_id.company_id:
@@ -602,19 +593,6 @@ class ResPartner(models.Model):
                     partner.name or u"False",
                     partner.email
                 ))
-
-    @api.depends('is_company')
-    def _compute_company_type(self):
-        for partner in self:
-            partner.company_type = 'company' if partner.is_company else 'person'
-
-    def _write_company_type(self):
-        for partner in self:
-            partner.is_company = partner.company_type == 'company'
-
-    @api.onchange('company_type')
-    def onchange_company_type(self):
-        self.is_company = (self.company_type == 'company')
 
     @api.constrains('barcode')
     def _check_barcode_unicity(self):
@@ -726,7 +704,7 @@ class ResPartner(models.Model):
         if fields_to_sync is None:
             fields_to_sync = self._commercial_fields()
         sync_vals = commercial_partner._convert_fields_to_values(fields_to_sync)
-        sync_children = self.child_ids.filtered(lambda c: not c.is_company)
+        sync_children = self.child_ids
         for child in sync_children:
             child._commercial_sync_to_descendants(fields_to_sync)
         sync_children.write(sync_vals)
@@ -795,7 +773,7 @@ class ResPartner(models.Model):
         parent = self.parent_id
         address_fields = self._address_fields()
         if (
-            (parent.is_company or not parent.parent_id)
+            (not parent.parent_id)
             and any(self[f] for f in address_fields)
             and not any(parent[f] for f in address_fields)
             and len(parent.child_ids) == 1
@@ -867,12 +845,7 @@ class ResPartner(models.Model):
                             self.env._("The selected company is not compatible with the companies of the related user(s)"))
                 if partner.child_ids:
                     partner.child_ids.write({'company_id': company_id})
-        result = True
-        # To write in SUPERUSER on field is_company and avoid access rights problems.
-        if 'is_company' in vals and not self.env.su and self.env.user.has_group('base.group_partner_manager'):
-            result = super(ResPartner, self.sudo()).write({'is_company': vals.get('is_company')})
-            del vals['is_company']
-        result = result and super().write(vals)
+        result = super().write(vals)
         for partner, pre_values in zip(self, pre_values_list, strict=True):
             if any(u._is_internal() for u in partner.user_ids if u != self.env.user):
                 self.env['res.users'].check_access('write')
@@ -957,20 +930,6 @@ class ResPartner(models.Model):
             partner._children_sync(vals)
             partner._handle_first_contact_creation()
         return partners
-
-    def create_company(self):
-        self.ensure_one()
-        if self.company_name:
-            # Create parent company
-            values = dict(name=self.company_name, is_company=True, vat=self.vat)
-            values.update(self._convert_fields_to_values(self._address_fields()))
-            new_company = self.create(values)
-            # Set new company as my parent
-            self.write({
-                'parent_id': new_company.id,
-                'child_ids': [Command.update(partner_id, dict(parent_id=new_company.id)) for partner_id in self.child_ids.ids]
-            })
-        return True
 
     def open_commercial_entity(self):
         """ Utility method used to add an "Open Company" button in partner views """
@@ -1070,8 +1029,8 @@ class ResPartner(models.Model):
 
     def address_get(self, adr_pref=None):
         """ Find contacts/addresses of the right type(s) by doing a depth-first-search
-        through descendants within company boundaries (stop at entities flagged ``is_company``)
-        then continuing the search at the ancestors that are within the same company boundaries.
+        through descendants within company boundaries then continuing the search at the
+        ancestors that are within the same company boundaries.
         Defaults to partners of type ``'default'`` when the exact type is not found, or to the
         provided partner itself if no type ``'default'`` is found either. """
         adr_pref = set(adr_pref or [])
@@ -1092,11 +1051,10 @@ class ResPartner(models.Model):
                     if len(result) == len(adr_pref):
                         return result
                     to_scan = [c for c in record.child_ids
-                                 if c not in visited
-                                 if not c.is_company] + to_scan
+                                 if c not in visited] + to_scan
 
                 # Continue scanning at ancestor if current_partner is not a commercial entity
-                if current_partner.is_company or not current_partner.parent_id:
+                if not current_partner.parent_id:
                     break
                 current_partner = current_partner.parent_id
 

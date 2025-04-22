@@ -415,7 +415,7 @@ class TestEfakturCoretax(AccountTestInvoicingCommon):
                     <BuyerCountry>IDN</BuyerCountry>
                     <BuyerDocumentNumber/>
                     <BuyerName>partner_a</BuyerName>
-                    <BuyerAdress>Indonesia</BuyerAdress>
+                    <BuyerAdress>partner_a      Indonesia</BuyerAdress>
                     <BuyerEmail/>
                     <BuyerIDTKU>1234567890123457000000</BuyerIDTKU>
                     <ListOfGoodService>
@@ -576,7 +576,7 @@ class TestEfakturCoretax(AccountTestInvoicingCommon):
                 <BuyerName>partner_a invoice</BuyerName>
             </xpath>
             <xpath expr="//BuyerAdress" position="replace">
-                <BuyerAdress>invoice address     Indonesia</BuyerAdress>
+                <BuyerAdress>partner_a invoice address     Indonesia</BuyerAdress>
             </xpath>
             '''
         )

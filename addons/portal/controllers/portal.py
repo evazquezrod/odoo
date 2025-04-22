@@ -660,9 +660,9 @@ class CustomerPortal(Controller):
                     ):
                         invalid_fields.add(commercial_field_name)
                         field_description = partner_sudo._fields[commercial_field_name]._description_string(request.env)
-                        if partner_sudo.commercial_partner_id.is_company:
+                        if partner_sudo.commercial_partner_id.parent_id:
                             error_messages.append(_(
-                                "The %(field_name)s is managed on your company account.",
+                                "The %(field_name)s is managed on your parent account.",
                                 field_name=field_description,
                             ))
                         else:
