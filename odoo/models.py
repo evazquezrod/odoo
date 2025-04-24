@@ -6341,6 +6341,8 @@ class BaseModel(metaclass=MetaModel):
                     if '.' in key:
                         fname, rest = key.split('.', 1)
                         field = self._fields[fname]
+                        if field.type == 'properties':
+                            key, value = fname, {rest: value}
                         if field.relational:
                             # for relational fields, evaluate as 'any'
                             # so that negations are applied on the result of 'any' instead
@@ -6374,6 +6376,8 @@ class BaseModel(metaclass=MetaModel):
                 matching_ids = set()
                 for record in self:
                     data = record.mapped(key)
+                    if field and field.type == 'properties':
+                        data = data and [{k: v} for k, v in data[0].items()]
                     if isinstance(data, BaseModel) and comparator not in ('any', 'not any'):
                         v = value
                         if isinstance(value, (list, tuple, set)) and value:
