@@ -103,8 +103,9 @@ class MailControllerAttachmentCommon(MailControllerCommon):
 
     def _execute_subtests_delete(self, subtests, message=None, thread=None):
         for data_user, token, allowed, *args in subtests:
-            route_kw = args[0] if args else {}
-            author = (args[1] if len(args) > 1 else {}).get("author")
+            extra_params = args[0] if args else {}
+            route_kw = extra_params.get("route_kw", {})
+            author = extra_params.get("author")
             user, guest = self._authenticate_pseudo_user(data_user)
             with self.subTest(user=user.name, guest=guest.name, token=token, route_kw=route_kw):
                 attachment = self.env["ir.attachment"].create({"name": "sample attachment"})

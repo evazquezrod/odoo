@@ -1,4 +1,5 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
+import itertools
 
 import odoo
 from odoo.addons.mail.tests.common_controllers import MailControllerAttachmentCommon
@@ -24,22 +25,32 @@ class TestDiscussAttachmentController(MailControllerAttachmentCommon):
             ),
         )
 
-    def test_attachment_delete_linked_to_channel(self):
-        """Test access to delete an attachment associated with a channel"""
+    def test_attachment_delete_linked_to_public_channel(self):
+        """Test access to delete an attachment associated with a public channel"""
         channel = self.env["discuss.channel"].create({"name": "public channel"})
-        # Subtest format: (user, token, result)
-        self._execute_subtests_delete(
-            (
-                (self.guest, False, False),
-                (self.guest, True, False),
-                (self.user_admin, False, True),
-                (self.user_admin, True, True),
-                (self.user_employee, False, True),
-                (self.user_employee, True, True),
-                (self.user_portal, False, False),
-                (self.user_portal, True, False),
-                (self.user_public, False, False),
-                (self.user_public, True, False),
-            ),
-            thread=channel,
+        denied_cases = itertools.product(
+            (self.guest, self.user_portal, self.user_public),
+            (False, True),
+            [False],
         )
+        allowed_cases = itertools.product(
+            (self.user_admin, self.user_employee),
+            (False, True),
+            [True],
+        )
+        # Subtest format: (user, token, result)
+        self._execute_subtests_delete(itertools.chain(denied_cases, allowed_cases), thread=channel)
+
+    def test_attachment_delete_linked_to_private_channel(self):
+        """Test access to delete an attachment associated with a private channel"""
+        channel = self.env["discuss.channel"].create(
+            {"name": "Private Channel", "channel_type": "group"}
+        )
+        denied_cases = itertools.product(
+            (self.guest, self.user_employee, self.user_portal, self.user_public),
+            (False, True),
+            [False],
+        )
+        allowed_cases = itertools.product(self.user_admin, (False, True), [True])
+        # Subtest format: (user, token, result)
+        self._execute_subtests_delete(itertools.chain(denied_cases, allowed_cases), thread=channel)

@@ -88,3 +88,12 @@ class MailTestAccessPublic(models.Model):
             if not values.get('phone'):
                 values['phone'] = record.mobile
         return email_key_to_values
+
+class MailTestAccessAdmin(models.Model):
+    """A model inheriting from mail.thread with only admin access
+    to test some other users interaction to a non-accessible thread."""
+    _description = "Access Test Admin"
+    _name = "mail.test.access.admin"
+    _inherit = ["mail.thread"]
+
+    name = fields.Char("Name")
