@@ -26,3 +26,17 @@ class StockPicking(models.Model):
         for picking in self:
             moves = picking.move_ids.filtered(lambda m: not m.location_dest_id._child_of(picking.location_dest_id))
             moves.write({'location_dest_id': picking.location_dest_id.id})
+
+
+class StockPickingType(models.Model):
+    _inherit = "stock.picking.type"
+
+    dispatch_management = fields.Boolean(
+        'Dispatch Management',
+        help="Enable this option to display dispatch management related details in the batch form view and stock picking type kanban view."
+    )
+
+    dock_location_ids = fields.Many2many(
+        'stock.location', 'stock_picking_type_dock_location_rel',
+        'picking_type_id', 'location_id'
+    )

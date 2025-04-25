@@ -10,8 +10,9 @@ class StockPickingBatch(models.Model):
     vehicle_category_id = fields.Many2one(
         'fleet.vehicle.model.category', string="Vehicle Category",
         compute='_compute_vehicle_category_id', store=True, readonly=False)
-    dock_id = fields.Many2one('stock.location', string="Dock Location", domain="[('warehouse_id', '=', warehouse_id), ('is_a_dock', '=', True)]",
-                              compute='_compute_dock_id', store=True, readonly=False)
+    allowed_dock_location_ids = fields.Many2many(related='picking_type_id.dock_location_ids')
+    dock_id = fields.Many2one('stock.location', string="Dock", compute='_compute_dock_id', store=True, readonly=False,
+        domain="[('warehouse_id', '=', warehouse_id), ('id', 'child_of', allowed_dock_location_ids), ('usage', '=', 'internal')]")
     vehicle_weight_capacity = fields.Float(string="Vehcilce Payload Capacity",
                               related='vehicle_category_id.weight_capacity')
     weight_uom_name = fields.Char(string='Weight unit of measure label', compute='_compute_weight_uom_name')
@@ -36,7 +37,7 @@ class StockPickingBatch(models.Model):
     def _compute_dock_id(self):
         for batch in self:
             if batch.picking_ids:
-                if len(batch.picking_ids.location_id) == 1 and batch.picking_ids.location_id.is_a_dock:
+                if len(batch.picking_ids.location_id) == 1 and batch.picking_ids.location_id in self.allowed_dock_location_ids:
                     batch.dock_id = batch.picking_ids.location_id
 
     def _compute_weight_uom_name(self):
