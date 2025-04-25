@@ -156,15 +156,16 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
         product_quantities_info = defaultdict(OrderedDict)
         for line in lines:
             product = line.product_id
+            line_quantity = line_quantities.get(line.id, 0.0)
             quantities_info = self._get_quantities_info(product, line.product_uom_id, product_info, parent_bom, parent_product)
             stock_loc = quantities_info['stock_loc']
-            product_info[product.id]['consumptions'][stock_loc] += line_quantities.get(line.id, 0.0)
+            product_info[product.id]['consumptions'][stock_loc] += line_quantity
             product_quantities_info[product.id][line.id] = product_info[product.id]['consumptions'][stock_loc]
             if (not product.is_storable or
                     product.uom_id.compare(product_info[product.id]['consumptions'][stock_loc], quantities_info['free_qty']) <= 0):
                 # Use date.min as a sentinel value for _get_stock_availability
                 closest_forecasted[product.id][line.id] = date.min
-            elif stock_loc != 'in_stock':
+            elif stock_loc != 'in_stock' or quantities_info['forecasted_qty'] < line_quantity:
                 closest_forecasted[product.id][line.id] = date.max
             else:
                 remaining_products.append(product.id)
@@ -424,6 +425,7 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
         quantities_info = {
             'free_qty': max(product.uom_id._compute_quantity(product.free_qty, bom_uom), 0) if product.is_storable else 0,
             'on_hand_qty': product.uom_id._compute_quantity(product.qty_available, bom_uom) if product.is_storable else 0,
+            'forecasted_qty': product.uom_id._compute_quantity(product.virtual_available, bom_uom) if product.is_storable else 0,
             'stock_loc': 'in_stock',
         }
         quantities_info['free_to_manufacture_qty'] = quantities_info['free_qty']
