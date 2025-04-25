@@ -4,6 +4,8 @@ from functools import cache
 import logging
 import platform
 
+from odoo.tools import config
+
 _logger = logging.getLogger(__name__)
 
 
@@ -42,5 +44,8 @@ any system which are not raspberry pi nor Windows"""
 IS_IOT_BOX = IOT_SYSTEM == IoTSystem.IOT_BOX
 IS_WINDOWS = IOT_SYSTEM == IoTSystem.WINDOWS
 
-LOG_LEVEL = logging.WARNING if IS_IOT_TEST else logging.INFO
+IS_TESTING = config['test_enable']
+"""True if odoo is running in test mode"""
+
+LOG_LEVEL = logging.WARNING if IS_IOT_TEST and not IS_TESTING else logging.INFO
 _logger.log(LOG_LEVEL, "Detected IoT system: %s (%s)", IOT_SYSTEM.name, IOT_SYSTEM.value)

@@ -17,6 +17,7 @@ from odoo import http, tools
 from odoo.addons.hw_drivers.event_manager import event_manager
 from odoo.addons.hw_drivers.main import iot_devices, manager
 from odoo.addons.hw_drivers.tools import helpers, route
+from odoo.addons.hw_drivers.tools.iot_system import IS_TESTING
 
 _logger = logging.getLogger(__name__)
 
@@ -74,6 +75,11 @@ class DriverController(http.Controller):
                 _logger.debug("Event %s found for device %s ", event, event['device_identifier'])
                 return event
 
+        if IS_TESTING:
+            # Having polling in test mode is problematic as the test are expected to be synchronous
+            # Waiting 50 seconds is therefore not possible as it would block any other incoming request
+            # which would cause the tests to timeout
+            raise InternalServerError("This route is not available in test mode")
         # Wait for new event
         if req['event'].wait(50):
             req['event'].clear()

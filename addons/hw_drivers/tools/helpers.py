@@ -27,7 +27,7 @@ import zipfile
 from odoo import http, release, service
 from odoo.tools.func import reset_cached_properties
 from odoo.tools.misc import file_path
-from odoo.addons.hw_drivers.tools.iot_system import IOT_SYSTEM, IS_IOT_TEST, IS_IOT_BOX, IS_WINDOWS
+from odoo.addons.hw_drivers.tools.iot_system import IOT_SYSTEM, IS_IOT_TEST, IS_IOT_BOX, IS_WINDOWS, IS_TESTING
 
 lock = Lock()
 _logger = logging.getLogger(__name__)
@@ -128,59 +128,6 @@ def start_nginx_server():
         subprocess.check_call(["sudo", "service", "nginx", "restart"])
 
 
-@toggleable
-@require_db
-def check_git_branch(server_url=None):
-    """Check if the local branch is the same as the connected Odoo DB and
-    checkout to match it if needed.
-
-    :param server_url: The URL of the connected Odoo database (provided by decorator).
-    """
-    try:
-        response = requests.post(server_url + "/web/webclient/version_info", json={}, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-    except requests.exceptions.HTTPError:
-        _logger.exception('Could not reach configured server to get the Odoo version')
-        return
-    except ValueError:
-        _logger.exception('Could not load JSON data: Received data is not valid JSON.\nContent:\n%s', response.content)
-        return
-
-    try:
-        git = ['git', '--work-tree=/home/pi/odoo/', '--git-dir=/home/pi/odoo/.git']
-
-        db_branch = data['result']['server_serie'].replace('~', '-')
-        if not subprocess.check_output(git + ['ls-remote', 'origin', db_branch]):
-            db_branch = 'master'
-
-        local_branch = (
-            subprocess.check_output(git + ['symbolic-ref', '-q', '--short', 'HEAD']).decode('utf-8').rstrip()
-        )
-        _logger.info(
-            "Current IoT Box local git branch: %s / Associated Odoo database's git branch: %s",
-            local_branch,
-            db_branch,
-        )
-
-        if db_branch != local_branch:
-            try:
-                with writable():
-                    subprocess.run(git + ['branch', '-m', db_branch], check=True)
-                    subprocess.run(git + ['remote', 'set-branches', 'origin', db_branch], check=True)
-                    _logger.info("Updating odoo folder to the branch %s", db_branch)
-                    subprocess.run(
-                        ['/home/pi/odoo/addons/iot_box_image/configuration/checkout.sh'], check=True
-                    )
-            except subprocess.CalledProcessError:
-                _logger.exception("Failed to update the code with git.")
-            finally:
-                odoo_restart()
-    except Exception:
-        _logger.exception('An error occurred while trying to update the code with git')
-
->>>>>>> d094e03b6d9f ([IMP] hw_*: IoT compatibility for Linux/Mac computers)
-
 def check_image():
     """Check if the current image of IoT Box is up to date
 
@@ -250,6 +197,9 @@ def get_img_name():
     return 'iotboxv%s_%s.zip' % (major, minor)
 
 def get_ip():
+    if IS_TESTING:
+        # mandatory in test mode due to `fetch_proxy` preventing calls from LAN IP addresses
+        return '127.0.0.1'
     interfaces = netifaces.interfaces()
     for interface in interfaces:
         if netifaces.ifaddresses(interface).get(netifaces.AF_INET):

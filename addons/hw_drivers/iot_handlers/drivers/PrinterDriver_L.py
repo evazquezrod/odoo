@@ -129,7 +129,7 @@ class PrinterDriver(PrinterDriverBase):
     def _get_iot_status(cls):
         identifier = helpers.get_identifier()
         pairing_code = connection_manager.pairing_code
-        ssid = wifi.get_access_point_ssid() if wifi.is_access_point() else wifi.get_current()
+         ssid = wifi.get_access_point_ssid() if wifi.is_access_point() else wifi.get_current()
 
         ips = []
         for iface_id in ni.interfaces():

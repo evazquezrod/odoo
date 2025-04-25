@@ -3,11 +3,11 @@
 import logging
 import requests
 import schedule
-from threading import Thread
+from threading import Event, Thread
 import time
 
 from odoo.addons.hw_drivers.tools import certificate, helpers, upgrade, wifi
-from odoo.addons.hw_drivers.tools.iot_system import IS_IOT_TEST, IS_IOT_BOX
+from odoo.addons.hw_drivers.tools.iot_system import IS_IOT_TEST, IS_IOT_BOX, IS_TESTING
 from odoo.addons.hw_drivers.websocket_client import WebsocketClient
 
 if IS_IOT_BOX:
@@ -20,7 +20,6 @@ drivers = []
 interfaces = {}
 iot_devices = {}
 unsupported_devices = {}
-
 
 class Manager(Thread):
     daemon = True
@@ -120,6 +119,10 @@ class Manager(Thread):
                     self.send_all_devices()
                 if IS_IOT_BOX and helpers.get_ip() != '10.11.12.1':
                     wifi.reconnect(helpers.get_conf('wifi_ssid'), helpers.get_conf('wifi_password'))
+                
+                if IS_TESTING:
+                    # In test mode, we don't want to run the infinite loop
+                    break
                 time.sleep(3)
                 schedule.run_pending()
             except Exception:
@@ -127,4 +130,9 @@ class Manager(Thread):
                 _logger.exception("Manager loop unexpected error")
 
 manager = Manager()
-manager.start()
+
+
+if not IS_TESTING:
+    # Start the IoT manager if not in test mode
+    # Tests will simulate the IoT manager to avoid extra thread and have full control
+    manager.start()
