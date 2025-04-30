@@ -5072,14 +5072,15 @@ class BaseModel(metaclass=MetaModel):
         if self.env.su:
             sec_domain = Domain.TRUE
         else:
+            self_sudo = self.sudo().with_context(active_test=False)
             sec_domain = self.env['ir.rule']._compute_domain(self._name, 'read')
-            sec_domain = sec_domain.optimize(self.sudo(), full=True)
+            sec_domain = sec_domain.optimize(self_sudo, full=True)
 
         # build the query
         if sec_domain.is_false() or (not limit and limit is not None and limit is not False):
             return self.browse()._as_query()
         if not sec_domain.is_true():
-            query.add_where(sec_domain._to_sql(self.sudo(), self._table, query))
+            query.add_where(sec_domain._to_sql(self_sudo, self._table, query))
 
         if order:
             query.order = self._order_to_sql(order, query)
