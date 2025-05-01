@@ -109,9 +109,10 @@ export class ConfirmationPage extends Component {
                 }
                 order.nb_print = 1;
             } catch (e) {
-                if (e.errorCode === "EPTR_REC_EMPTY") {
+                if (["EPTR_REC_EMPTY", "EPTR_COVER_OPEN"].includes(e.errorCode)) {
                     this.dialog.add(OutOfPaperPopup, {
-                        trackingNumber: this.confirmedOrder.trackingNumber,
+                        trackingNumber: this.confirmedOrder.tracking_number,
+                        message: e.body,
                         close: () => {
                             this.router.navigate("default");
                         },
