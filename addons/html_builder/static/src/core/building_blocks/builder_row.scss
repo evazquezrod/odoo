@@ -41,14 +41,33 @@
 //     }
 }
 
+.hb-row-collapse-content-floating {
+    @include o-position-absolute($right: calc(100% + 10px));
+    width: 100%;
+    background-color: rgba(black, 0.8);;
+    box-sizing: border-box;
+    transform: translateY(($o-hb-row-min-height + $o-hb-row-spacing) * -1);
+    backdrop-filter: blur(22px) contrast(140%);
+    border-radius: $border-radius-lg;
+    color: $o-hb-fg-lighter;
+    box-shadow: $o-hb-dropdown-shadow;
 
-        &::after {
-            content: '\f0d7';
-        }
-        + * {
-            background: none;
-            border: none;
-            box-shadow: none;
-        }
+    .btn-close {
+        filter: invert(100%);
+        scale: 0.8;
+    }
+
+    > .hb-row:not(.d-none):first-of-type {
+        margin-top: map-get($spacers, 1);
+    }
+
+    .hb-row-collapse-content {
+        border-radius: $border-radius-lg;
+        transform: translateX(-0.2rem);
+        top: 0;
+    }
+
+    .hb-row-label {
+        background: none;
     }
 }
