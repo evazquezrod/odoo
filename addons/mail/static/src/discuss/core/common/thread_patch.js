@@ -11,6 +11,20 @@ const threadPatch = {
         super.setup(...arguments);
         useEffect(
             (loadNewer, mountedAndLoaded) => {
+                const el = this.scrollableRef.el;
+                if (
+                    mountedAndLoaded &&
+                    this.props.thread.selfMember &&
+                    this.scrollableRef.el &&
+                    // this.props.thread.scrollTop === "bottom" &&
+                    !this.props.thread.markedAsUnread
+                    // this.props.thread.scrollUnread
+                    // this.props.thread.isAtBottom
+                ) {
+                    if (Math.abs(el.scrollTop + el.clientHeight - el.scrollHeight) <= 1) {
+                        this.props.thread.markAsRead({ sync: false });
+                    }
+                }
                 if (
                     loadNewer ||
                     !mountedAndLoaded ||
@@ -19,7 +33,6 @@ const threadPatch = {
                 ) {
                     return;
                 }
-                const el = this.scrollableRef.el;
                 if (Math.abs(el.scrollTop + el.clientHeight - el.scrollHeight) <= 1) {
                     this.props.thread.selfMember.hideUnreadBanner = true;
                 }
