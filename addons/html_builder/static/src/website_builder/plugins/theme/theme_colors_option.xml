@@ -64,7 +64,7 @@
                     </div>
                 </div>
             </BuilderRow>
-            <BuilderRow label.translate="Color Presets">
+            <BuilderRow label.translate="Color Presets" floatingCollapse="false">
                 <div></div>     <!-- This is required, without it the row is not displayed at all -->
                 <t t-set-slot="collapse">
                     <t t-foreach="state.presets" t-as="preset" t-key="preset.id">
