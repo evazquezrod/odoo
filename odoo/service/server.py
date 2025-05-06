@@ -18,6 +18,7 @@ import time
 import contextlib
 from io import BytesIO
 
+import gevent.pool
 import psutil
 import werkzeug.serving
 
@@ -62,6 +63,8 @@ from odoo.tools.misc import stripped_sys_argv, dumpstacks
 _logger = logging.getLogger(__name__)
 
 SLEEP_INTERVAL = 60     # 1 min
+GEVENT_STOP_DELAY = 5
+GEVENT_STOP_TIMEOUT = 60
 
 def memory_info(process):
     """
@@ -645,6 +648,11 @@ class GeventServer(CommonServer):
         self.port = config['gevent_port']
         self.httpd = None
 
+    def sigint_handler(self, sig, frame):
+        if self.httpd:
+            self.httpd._stop_event.set()
+            # self.httpd.close()  -- This is less correct but also works if we don't like setting an internal variable
+
     def process_limits(self):
         restart = False
         if self.ppid != os.getppid():
@@ -725,6 +733,7 @@ class GeventServer(CommonServer):
             # Set process memory limit as an extra safeguard
             signal.signal(signal.SIGQUIT, dumpstacks)
             signal.signal(signal.SIGUSR1, log_ormcache_stats)
+            signal.signal(signal.SIGINT, self.sigint_handler)
             gevent.spawn(self.watchdog)
 
         self.httpd = WSGIServer(
@@ -732,19 +741,26 @@ class GeventServer(CommonServer):
             log=logging.getLogger('longpolling'),
             error_log=logging.getLogger('longpolling'),
             handler_class=ProxyHandler,
+            spawn=gevent.pool.Pool(),
         )
         _logger.info('Evented Service (longpolling) running on %s:%s', self.interface, self.port)
         try:
-            self.httpd.serve_forever()
+            if config['gevent_workers'] > 1 or os.environ.get('ODOO_GRACEFUL_RELOAD'):
+                # we monkey patch SO_REUSEADDR to use SO_REUSEPORT allowing concurrent gevent workers
+                # SO_REUSEPORT encapsulates SO_REUSEADDR so it's fine
+                gevent.server.SO_REUSEADDR = socket.SO_REUSEPORT
+                self.httpd.init_socket()
+                gevent.server.SO_REUSEADDR = socket.SO_REUSEADDR
+
+            self.httpd.serve_forever(stop_timeout=GEVENT_STOP_TIMEOUT)
         except:
             _logger.exception("Evented Service (longpolling): uncaught error during main loop")
             raise
 
     def stop(self):
-        import gevent
         self.httpd.stop()
         super().stop()
-        gevent.shutdown()
+        _logger.info('Gevent server stopped')
 
     def run(self, preload, stop):
         self.start()
@@ -773,7 +789,7 @@ class PreforkServer(CommonServer):
         self.workers = {}
         self.generation = 0
         self.queue = []
-        self.long_polling_pid = None
+        self.servers_gevent = {}
 
     def pipe_new(self):
         pipe = os.pipe()
@@ -813,15 +829,16 @@ class PreforkServer(CommonServer):
             worker.run()
             sys.exit(0)
 
-    def long_polling_spawn(self):
+    def gevent_spawn(self):
         nargs = stripped_sys_argv()
         cmd = [sys.executable, sys.argv[0], 'gevent'] + nargs[1:]
         popen = subprocess.Popen(cmd)
-        self.long_polling_pid = popen.pid
+        self.servers_gevent[popen.pid] = popen
 
     def worker_pop(self, pid):
-        if pid == self.long_polling_pid:
-            self.long_polling_pid = None
+        if pid in self.servers_gevent:
+            _logger.debug("Gevent worker (%s) unregistered", pid)
+            self.servers_gevent.pop(pid)
         if pid in self.workers:
             _logger.debug("Worker (%s) unregistered", pid)
             try:
@@ -896,8 +913,8 @@ class PreforkServer(CommonServer):
         if config['http_enable']:
             while len(self.workers_http) < self.population:
                 self.worker_spawn(WorkerHTTP, self.workers_http)
-            if not self.long_polling_pid:
-                self.long_polling_spawn()
+            while len(self.servers_gevent) < config['gevent_workers']:
+                self.gevent_spawn()
         while len(self.workers_cron) < config['max_cron_threads']:
             self.worker_spawn(WorkerCron, self.workers_cron)
 
@@ -951,12 +968,6 @@ class PreforkServer(CommonServer):
                 self.socket.bind((self.interface, self.port))
                 self.socket.listen(8 * self.population)
 
-    def stop_long_polling(self):
-        if self.long_polling_pid is not None:
-            # FIXME make longpolling process handle SIGTERM correctly
-            self.worker_kill(self.long_polling_pid, signal.SIGKILL)
-            self.long_polling_pid = None
-
     def reload_gracefully(self):
         _logger.info('Reloading server')
         pid = os.fork()
@@ -988,7 +999,31 @@ class PreforkServer(CommonServer):
         else:
             _logger.info("New server has started, stopping old server gracefully")
 
-        self.stop_long_polling()
+        # track workers with psutil as we're stopping them as a sibling (we don't get SIGCHLD when they die)
+        worker_http_processes = {}
+        worker_cron_processes = {}
+        gevent_processes = {}
+        for pid in self.workers_http:
+            worker_http_processes[pid] = psutil.Process(pid)
+        for pid in self.workers_cron:
+            worker_cron_processes[pid] = psutil.Process(pid)
+        for pid in self.servers_gevent:
+            gevent_processes[pid] = psutil.Process(pid)
+
+        # Signal workers to finish their current workload then stop
+        for pid in self.workers:
+            self.worker_kill(pid, signal.SIGINT)
+
+        start_time = time.monotonic()
+        limit_http = start_time + self.timeout
+        limit_cron = start_time + (self.cron_timeout or self.timeout)
+
+        # gevent servers take a bit longer to start so sleep a bit as a best effort to avoid downtime
+        time.sleep(GEVENT_STOP_DELAY)
+        for pid in self.servers_gevent:
+            self.worker_kill(pid, signal.SIGINT)
+
+        limit_gevent = time.monotonic() + GEVENT_STOP_TIMEOUT * 1.1
 
         def process_worker_group(workers, timeout_limit, name, now):
             # Clean up stopped processes
@@ -999,29 +1034,13 @@ class PreforkServer(CommonServer):
             # Kill remaining workers if timeout exceeded
             if now > timeout_limit and workers:
                 _logger.info("Timeout, shutting down remaining %s workers (%s) forcefully.",
-                             name, ') ('.join(str(pid) for pid in workers.keys()))
-                for pid in workers.keys():
+                             name, ') ('.join(str(pid) for pid in workers))
+                for pid in workers:
                     os.kill(pid, signal.SIGKILL)
                 workers.clear()
 
-        super().stop()
-
-        # Signal workers to finish their current workload then stop
-        worker_http_processes = {}
-        for pid in self.workers_http:
-            worker_http_processes[pid] = psutil.Process(pid)
-            self.worker_kill(pid, signal.SIGINT)
-        worker_cron_processes = {}
-        for pid in self.workers_cron:
-            worker_cron_processes[pid] = psutil.Process(pid)
-            self.worker_kill(pid, signal.SIGINT)
-
         self.beat = 0.1
-        start_time = time.monotonic()
-        limit_http = start_time + self.timeout
-        limit_cron = start_time + (self.cron_timeout or self.timeout)
-
-        while worker_http_processes or worker_cron_processes:
+        while worker_http_processes or worker_cron_processes or gevent_processes:
             try:
                 self.process_signals()
             except KeyboardInterrupt:
@@ -1029,10 +1048,11 @@ class PreforkServer(CommonServer):
                 break
 
             now = time.monotonic()
-
             process_worker_group(worker_http_processes, limit_http, 'http', now)
             process_worker_group(worker_cron_processes, limit_cron, 'cron', now)
-            if now > max(limit_http, limit_cron):
+            process_worker_group(gevent_processes, limit_gevent, 'gevent', now)
+
+            if now > max(limit_http, limit_cron, limit_gevent):
                 break
 
             self.sleep()
@@ -1047,7 +1067,9 @@ class PreforkServer(CommonServer):
         if os.environ.get('ODOO_GRACEFUL_RELOAD') and server_phoenix:
             return self.reload_gracefully()
 
-        self.stop_long_polling()
+        for pid in list(self.servers_gevent):
+            self.worker_kill(pid, signal.SIGKILL)
+
         if self.socket:
             self.socket.close()
         if graceful:
