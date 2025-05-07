@@ -200,7 +200,7 @@ class Monetary(Field[float]):
         # The currency field needs to be aggregable too
         if not currency_field.column_type or not currency_field.store:
             try:
-                model._read_group_select(f"{currency_field_name}:array_agg_distinct", query)
+                model._read_group_select(f"{currency_field_name}:array_agg_distinct", model._table, query)
             except (ValueError, AccessError):
                 return None
 

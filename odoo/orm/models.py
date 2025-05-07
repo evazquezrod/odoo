@@ -1651,7 +1651,7 @@ class BaseModel(metaclass=MetaModel):
             query.order = self._read_group_orderby(order, groupby_terms, query)
 
         select_terms: list[SQL] = [
-            self._read_group_select(spec, query)
+            self._read_group_select(spec, self._table, query)
             for spec in aggregates
         ]
 
@@ -1677,7 +1677,7 @@ class BaseModel(metaclass=MetaModel):
         # return [(a1, b1, c1), (a2, b2, c2), ...]
         return list(zip(*column_result))
 
-    def _read_group_select(self, aggregate_spec: str, query: Query) -> SQL:
+    def _read_group_select(self, aggregate_spec: str, alias: str, query: Query) -> SQL:
         """ Return <SQL expression> corresponding to the given aggregation.
         The method also checks whether the fields used in the aggregate are
         accessible for reading.
@@ -1701,8 +1701,8 @@ class BaseModel(metaclass=MetaModel):
         if func == 'recordset' and not (field.relational or fname == 'id'):
             raise ValueError(f"Aggregate method {func!r} can be only used on relational field (or id) (for {aggregate_spec!r}).")
 
-        sql_field = self._field_to_sql(self._table, fname, query)
-        return READ_GROUP_AGGREGATE[func](self._table, sql_field)
+        sql_field = self._field_to_sql(alias, fname, query)
+        return READ_GROUP_AGGREGATE[func](alias, sql_field)
 
     def _read_group_groupby(self, groupby_spec: str, query: Query) -> SQL:
         """ Return <SQL expression> corresponding to the given groupby element.
@@ -1812,7 +1812,7 @@ class BaseModel(metaclass=MetaModel):
                 left, operator, right = item
                 if operator not in SUPPORTED:
                     raise ValueError(f"Invalid having clause {item!r}: supported comparators are {SUPPORTED}")
-                sql_left = self._read_group_select(left, query)
+                sql_left = self._read_group_select(left, self._table, query)
                 stack.append(SQL("%s%s%s", sql_left, SQL_OPERATORS[operator], right))
             else:
                 raise ValueError(f"Invalid having clause {item!r}: it should be a domain-like clause")
@@ -1855,7 +1855,7 @@ class BaseModel(metaclass=MetaModel):
 
             if term not in groupby_terms:
                 try:
-                    sql_expr = self._read_group_select(term, query)
+                    sql_expr = self._read_group_select(term, self._table, query)
                 except ValueError as e:
                     raise ValueError(f"Order term {order_part!r} is not a valid aggregate nor valid groupby") from e
                 orderby_terms.append(SQL("%s %s %s", sql_expr, sql_direction, sql_nulls))
