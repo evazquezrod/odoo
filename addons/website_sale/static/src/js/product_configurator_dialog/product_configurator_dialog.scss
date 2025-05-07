@@ -3,3 +3,63 @@
     --modal-header-border-width: #{$border-width};
     --modal-footer-border-width: #{$border-width};
 }
+.modal-header {
+    display: none;
+}
+main.modal-body {
+    padding: 40px;
+}
+.o_sale_product_configurator_table {
+    border: none !important;
+    td,
+    th,
+    thead,
+    tbody,
+    tr {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+
+[name="o_sale_product_configurator_name"] {
+    span.h6 {
+        color: #714b67;
+        font-weight: 600;
+    }
+}
+footer.modal-footer.justify-content-around.justify-content-md-start.flex-wrap.gap-1.w-100 {
+    padding: 20px;
+}
+
+
+@media (min-width: 576px) {
+    .modal-content.o_sale_product_configurator_dialog {
+        border-radius: 1.75rem;
+    }
+}
+.o_sale_product_configurator_img {
+    .w-100{
+    width: 100% !important;
+    border-radius: 0.75rem;
+}
+}
+
+.o_product_configurator_dialog {
+    .o_sale_product_configurator_table_optional + .o_sale_product_configurator_table_optional {
+        margin-top: 0;
+    }
+
+    span[name="sale_product_configurator_list_total"] {
+        position: absolute;
+        bottom: 1.5rem;
+        right: 2rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .modal-footer {
+        position: relative;
+        padding-top: 3rem;
+    }
+}
