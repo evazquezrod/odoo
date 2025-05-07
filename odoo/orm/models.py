@@ -1641,7 +1641,7 @@ class BaseModel(metaclass=MetaModel):
         query.offset = offset
 
         groupby_terms: dict[str, SQL] = {
-            spec: self._read_group_groupby(spec, query)
+            spec: self._read_group_groupby(spec, self._table, query)
             for spec in groupby
         }
         if groupby_terms:
@@ -1704,7 +1704,7 @@ class BaseModel(metaclass=MetaModel):
         sql_field = self._field_to_sql(alias, fname, query)
         return READ_GROUP_AGGREGATE[func](alias, sql_field)
 
-    def _read_group_groupby(self, groupby_spec: str, query: Query) -> SQL:
+    def _read_group_groupby(self, groupby_spec: str, alias: str, query: Query) -> SQL:
         """ Return <SQL expression> corresponding to the given groupby element.
         The method also checks whether the fields used in the groupby are
         accessible for reading.
@@ -1716,7 +1716,7 @@ class BaseModel(metaclass=MetaModel):
         field = self._fields[fname]
 
         if field.type == 'properties':
-            sql_expr = self._read_group_groupby_properties(field, property_name, query)
+            sql_expr = self._read_group_groupby_properties(field, property_name, alias, query)
 
         elif property_name:
             raise ValueError(f"Property access on non-property field: {groupby_spec!r}")
@@ -1725,7 +1725,6 @@ class BaseModel(metaclass=MetaModel):
             raise ValueError(f"Granularity set on a no-datetime field or property: {groupby_spec!r}")
 
         elif field.type == 'many2many':
-            alias = self._table
             if field.related and not field.store:
                 _model, field, alias = self._traverse_related_sql(alias, field, query)
 
@@ -1757,7 +1756,7 @@ class BaseModel(metaclass=MetaModel):
             return SQL.identifier(rel_alias, field.column2)
 
         else:
-            sql_expr = self._field_to_sql(self._table, fname, query)
+            sql_expr = self._field_to_sql(alias, fname, query)
 
         if field.type in ('datetime', 'date') or (field.type == 'properties' and granularity):
             if not granularity:
@@ -1766,10 +1765,10 @@ class BaseModel(metaclass=MetaModel):
                 raise ValueError(f"Granularity specification isn't correct: {granularity!r}")
 
             if granularity in READ_GROUP_NUMBER_GRANULARITY:
-                sql_expr = field.property_to_sql(sql_expr, granularity, self, self._table, query)
+                sql_expr = field.property_to_sql(sql_expr, granularity, self, alias, query)
             elif field.type == 'datetime':
                 # set the timezone only
-                sql_expr = field.property_to_sql(sql_expr, 'tz', self, self._table, query)
+                sql_expr = field.property_to_sql(sql_expr, 'tz', self, alias, query)
 
             if granularity == 'week':
                 # first_week_day: 0=Monday, 1=Tuesday, ...
@@ -2612,15 +2611,15 @@ class BaseModel(metaclass=MetaModel):
             sql = field.property_to_sql(sql, property_name, self, alias, query)
         return sql
 
-    def _read_group_groupby_properties(self, field: Field, property_name: str, query: Query) -> SQL:
+    def _read_group_groupby_properties(self, field: Field, property_name: str, alias: str, query: Query) -> SQL:
         fname = field.name
         definition = self.get_property_definition(f"{fname}.{property_name}")
         property_type = definition.get('type')
-        sql_property = self._field_to_sql(self._table, f'{fname}.{property_name}', query)
+        sql_property = self._field_to_sql(alias, f'{fname}.{property_name}', query)
 
         # JOIN on the JSON array
         if property_type in ('tags', 'many2many'):
-            property_alias = query.make_alias(self._table, f'{fname}_{property_name}')
+            property_alias = query.make_alias(alias, f'{fname}_{property_name}')
             sql_property = SQL(
                 """ CASE
                         WHEN jsonb_typeof(%(property)s) = 'array'
@@ -2664,7 +2663,7 @@ class BaseModel(metaclass=MetaModel):
             options = [option[0] for option in definition.get('selection') or ()]
 
             # check the existence of the option
-            property_alias = query.make_alias(self._table, f'{fname}_{property_name}')
+            property_alias = query.make_alias(alias, f'{fname}_{property_name}')
             query.add_join(
                 "LEFT JOIN",
                 property_alias,
