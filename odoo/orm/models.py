@@ -1677,6 +1677,40 @@ class BaseModel(metaclass=MetaModel):
         # return [(a1, b1, c1), (a2, b2, c2), ...]
         return list(zip(*column_result))
 
+    def _read_group_spec(self, spec: str, alias: str, query: Query) -> tuple[BaseModel, str, str]:
+        if '.' not in spec:
+            return self, spec, alias
+
+        fname, remaining_spec = spec.split('.', 1)
+        field = self._fields.get(fname)
+        if fname is None:
+            raise ValueError(f"Invalid field {fname!r} on model {self._name!r} for {spec!r}.")
+        if field.type != 'many2one':
+            return self, spec, alias
+
+        if self.env.su:
+            coalias = query.make_alias(alias, fname)
+        else:
+            coalias = query.make_alias(alias, f"{fname}__{self.env.uid}")
+        condition = SQL(
+            "%s = %s",
+            SQL.identifier(coalias, 'id'),
+            SQL.identifier(alias, fname),
+        )
+        comodel = self.env[field.comodel_name]
+        comodel.check_access('read')
+        coquery = comodel._where_calc([], active_test=False)
+        comodel._apply_ir_rules(coquery)
+        if coquery.where_clause:
+            condition = SQL(
+                "%s AND %s IN %s",
+                condition,
+                SQL.identifier(coalias, 'id'),
+                coquery.subselect(),
+            )
+        query.add_join('LEFT JOIN', coalias, comodel._table, condition)
+        return comodel._read_group_spec(remaining_spec, coalias, query)
+
     def _read_group_select(self, aggregate_spec: str, alias: str, query: Query) -> SQL:
         """ Return <SQL expression> corresponding to the given aggregation.
         The method also checks whether the fields used in the aggregate are
@@ -1684,6 +1718,10 @@ class BaseModel(metaclass=MetaModel):
         """
         if aggregate_spec == '__count':
             return SQL("COUNT(*)")
+
+        model, spec, alias = self._read_group_spec(aggregate_spec, alias, query)
+        if spec != aggregate_spec:
+            return model._read_group_select(spec, alias, query)
 
         fname, property_name, func = parse_read_group_spec(aggregate_spec)
 
@@ -1709,6 +1747,10 @@ class BaseModel(metaclass=MetaModel):
         The method also checks whether the fields used in the groupby are
         accessible for reading.
         """
+        model, spec, alias = self._read_group_spec(groupby_spec, alias, query)
+        if spec != groupby_spec:
+            return model._read_group_groupby(spec, alias, query)
+
         fname, property_name, granularity = parse_read_group_spec(groupby_spec)
         if fname not in self._fields:
             raise ValueError(f"Invalid field {fname!r} on model {self._name!r}")
