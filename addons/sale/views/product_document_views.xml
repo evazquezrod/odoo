@@ -21,7 +21,7 @@
         <field name="arch" type="xml">
             <xpath expr="//main/div" position="inside">
                 <div class="d-flex mt-2">
-                    <span>Sales visibility</span>
+                    <span>Visibility</span>
                     <field name="attached_on_sale" class="ms-2" widget="selection"/>
                 </div>
             </xpath>
