@@ -8,8 +8,8 @@ import { rpc } from "@web/core/network/rpc";
 export class PosPrinter extends BasePrinter {
     setup({ ip }) {
         super.setup(...arguments);
-        this.url = window.location.protocol + "//" + ip;
-        this.address = this.url + "/cgi-bin/epos/service.cgi?devid=local_printer";
+        const [host, port] = ip.split(":");
+        this.ip = host + (port ? ":" + port : ":9100");
     }
 
     /**
@@ -18,7 +18,6 @@ export class PosPrinter extends BasePrinter {
      */
     processCanvas(canvas) {
         const rasterData = this.canvasToRaster(canvas);
-        this.sendToPrinter(canvas);
         const encodedData = this.encodeRaster(rasterData);
 
         return {
@@ -40,13 +39,12 @@ export class PosPrinter extends BasePrinter {
      */
     async sendPrintingJob(print_data) {
         try {
-            const res = await rpc("/pos/print-receipt/", print_data);
-            const body = await res.text();
-            const parser = new DOMParser();
-            const parsedBody = parser.parseFromString(body, "application/xml");
-            const response = parsedBody.querySelector("response");
+            const response = await rpc("/pos/print-receipt/", {
+                ...print_data,
+                printer_ip: this.ip,
+            });
             return {
-                result: response.getAttribute("success") === "true",
+                result: response.status === "success",
                 printerErrorCode: response.getAttribute("code"),
             };
         } catch {
@@ -185,16 +183,5 @@ export class PosPrinter extends BasePrinter {
                 body: message,
             },
         };
-    }
-
-    async sendToPrinter(canvas, cash_drawer = false) {
-        const rasterData = this.canvasToRaster(canvas);
-        const encodedData = this.encodeRaster(rasterData);
-        await rpc("/pos/print-receipt/", {
-            raster_base64: encodedData,
-            width: canvas.width,
-            height: canvas.height,
-            cash_drawer,
-        });
     }
 }
