@@ -19,6 +19,7 @@ export class BasePrinter {
      * @returns {{ successful: boolean; message?: { title: string; body?: string }}}
      */
     async printReceipt(receipt) {
+        console.log("printReceipt", receipt);
         if (receipt) {
             this.receiptQueue.push(receipt);
         }
