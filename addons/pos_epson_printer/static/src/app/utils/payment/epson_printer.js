@@ -34,7 +34,9 @@ export class EpsonPrinter extends BasePrinter {
     processCanvas(canvas) {
         const rasterData = this.canvasToRaster(canvas);
         this.sendToPrinter(canvas);
+        return;
         const encodedData = this.encodeRaster(rasterData);
+
         return ePOSPrint([
             createElement(
                 "image",
@@ -90,6 +92,7 @@ export class EpsonPrinter extends BasePrinter {
         const imageData = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height);
         const pixels = imageData.data;
         const width = imageData.width;
+        console.log("width==============",width)
         const height = imageData.height;
         const errors = Array.from(Array(width), (_) => Array(height).fill(0));
         const rasterData = new Array(width * height).fill(0);
@@ -212,38 +215,11 @@ export class EpsonPrinter extends BasePrinter {
         };
     }
 
-    MyCanvasToRaster(canvas) {
-        const ctx = canvas.getContext("2d");
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const pixels = imageData.data;
-        const width = canvas.width;
-        const height = canvas.height;
-        const raster = [];
-
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x += 8) {
-                let byte = 0;
-                for (let bit = 0; bit < 8; bit++) {
-                    const i = (y * width + x + bit) * 4;
-                    const r = pixels[i],
-                        g = pixels[i + 1],
-                        b = pixels[i + 2];
-                    const grayscale = (r + g + b) / 3;
-                    const pixel = grayscale < 128 ? 1 : 0;
-                    byte |= pixel << (7 - bit);
-                }
-                raster.push(byte);
-            }
-        }
-        return new Uint8Array(raster);
-    }
-
     async sendToPrinter(canvas) {
-        const rasterData = this.MyCanvasToRaster(canvas);
-        const base64Raster = btoa(String.fromCharCode(...rasterData));
-
+        const rasterData = this.canvasToRaster(canvas);
+        const encodedData = this.encodeRaster(rasterData);
         await rpc("/pos/print-receipt/", {
-            raster_base64: base64Raster,
+            raster_base64: encodedData,
             width: canvas.width,
             height: canvas.height,
         });
