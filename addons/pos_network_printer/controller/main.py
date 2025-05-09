@@ -18,6 +18,9 @@ class POSMyPrinter(http.Controller):
                  bytes([height % 256, height // 256])
         escpos_data = b'\x1b@' + header + raster_bytes + b'\x1b\x64\x03' + b'\x1dV\x00'
         # Send to printer via socket (adjust to your printer IP and port)
+        # with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as s:
+        #     s.connect(("A6:D7:3C:A3:A9:4C", 1))  # Change this!
+        #     s.sendall(escpos_data)
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect(("192.168.5.197", 9100))  # Change this!
             s.sendall(escpos_data)

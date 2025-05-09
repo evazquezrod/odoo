@@ -31,9 +31,9 @@ export class EpsonPrinter extends BasePrinter {
      * @override
      * Create the raster data from a canvas
      */
-    processCanvas(canvas) {
+    async processCanvas(canvas) {
         const rasterData = this.canvasToRaster(canvas);
-        this.sendToPrinter(canvas);
+        await this.sendToPrinter(canvas);
         return;
         const encodedData = this.encodeRaster(rasterData);
 
