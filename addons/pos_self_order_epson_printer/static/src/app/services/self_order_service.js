@@ -15,7 +15,7 @@ patch(SelfOrder.prototype, {
         );
     },
     createPrinter(printer) {
-        if (printer.printer_type === "epson_epos") {
+        if (printer.printer_type === "esc_pos_printer") {
             return new EpsonPrinter({ ip: printer.epson_printer_ip });
         }
         return super.createPrinter(...arguments);
