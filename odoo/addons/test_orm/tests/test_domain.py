@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from freezegun import freeze_time
 from itertools import combinations
 
 from odoo.fields import Command, Domain
@@ -629,6 +630,12 @@ class TestDomainOptimize(TransactionCase):
         with self.assertRaises(ValueError):
             Domain('date', '>', 'hello').optimize(model)
 
+        with freeze_time('2024-01-05 13:05:00'):
+            domain = Domain('date', '>', 'today')
+            self.assertEqual(domain.optimize(model), domain)
+            self.assertEqual(domain.optimize(model, full=True), Domain('date', '>', date(2024, 1, 5)))
+            self.assertEqual(Domain('date', '>', '+12H').optimize(model, full=True), Domain('date', '>', date(2024, 1, 6)))
+
     def test_condition_optimize_datetime(self):
         model = self.env['test_orm.mixed']
         self.assertEqual(
@@ -680,6 +687,12 @@ class TestDomainOptimize(TransactionCase):
 
         with self.assertRaises(ValueError):
             Domain('moment', '>', 'hello').optimize(model)
+
+        with freeze_time('2024-01-05 13:05:00'):
+            domain = Domain('moment', '>=', 'today')
+            self.assertEqual(domain.optimize(model), domain)
+            self.assertEqual(domain.optimize(model, full=True), Domain('moment', '>=', datetime(2024, 1, 5)))
+            self.assertEqual(Domain('moment', '>=', '+12H').optimize(model, full=True), Domain('moment', '>=', datetime(2024, 1, 6, 1, 5)))
 
     def test_condition_optimize_datetime_millisecond(self):
         model = self.env['test_orm.mixed']
