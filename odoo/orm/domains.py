@@ -67,8 +67,9 @@ from .utils import COLLECTION_TYPES
 
 if typing.TYPE_CHECKING:
     from collections.abc import Callable, Collection, Iterable
-    from odoo.fields import Field
-    from odoo.models import BaseModel
+    from .environments import Environment
+    from .fields import Field
+    from .models import BaseModel
 
 
 _logger = logging.getLogger('odoo.domains')
@@ -822,6 +823,14 @@ class DomainCondition(Domain):
         if not full:
             return self
 
+        # resolve dynamic values
+        if isinstance(self.value, dict):
+            try:
+                value = _parse_dynamic_value(model.env, self.value)
+            except ValueError as e:
+                self._raise(str(e))
+            return DomainCondition(self.field_expr, self.operator, value)
+
         # resolve inherited fields
         # inherits implies both Field.delegate=True and Field.auto_join=True
         # so no additional permissions will be added by the 'any' operator below
@@ -899,6 +908,124 @@ class DomainCondition(Domain):
 
     def _to_sql(self, model: BaseModel, alias: str, query: Query) -> SQL:
         return model._condition_to_sql(alias, self.field_expr, self.operator, self.value, query)
+
+
+def _parse_dynamic_value(env: Environment, dynamic_value: dict):
+    if len(dynamic_value) != (2 if 'default' in dynamic_value else 1):
+        raise ValueError("Expecting only one key and optional 'default'")
+    match dynamic_value:
+        case {'var': variable}:
+            record_name, *attributes = variable.split('.')
+            single = True
+            match record_name:
+                case 'uid':
+                    value = env.uid
+                case 'user':
+                    value = env.user
+                case 'company':
+                    value = env.company
+                case 'companies':
+                    value = env.companies
+                    single = False
+                case 'partner_id':
+                    value = env.user.partner_id
+                case 'commercial_partner_id':
+                    value = env.user.commercial_partner_id
+                case 'group_ids':
+                    value = env.user.all_group_ids
+                    single = False
+                case 'lang':
+                    value = env.lang
+                case 'website_id' if 'website' in env:
+                    value = env['website'].get_current_website()
+                case _:
+                    assert False, f"Unimplemented record_name: {record_name}"
+            from .models import BaseModel  # noqa: PLC0415
+            if attributes:
+                if len(attributes) > 1:
+                    raise ValueError("Can access only one direct attribute")
+                if not isinstance(value, BaseModel):
+                    raise ValueError("Trying to access an attribute of not a record")
+                value = value.with_env(env).mapped(attributes[0])
+                single = False
+            if isinstance(value, BaseModel):
+                value = value.id if single else value.ids
+        case {'date': date_spec}:
+            value = _parse_date_spec(env, date_spec)
+        case {'context': variable}:
+            value = env.context.get(variable, False)
+        case {'ref': variable}:
+            record = env.ref(variable, raise_if_not_found=False)
+            value = record.ids if record else []
+        case other:
+            raise ValueError(f"Invalid expression at {other!r}")
+    # fallback value
+    if 'default' in dynamic_value and not value:
+        value = dynamic_value['default']
+    return value
+
+
+RELATIVE_DATE_MINS = (
+    ('month', 1), ('day', 1), ('hour', 0), ('minute', 0), ('second', 0)
+)
+
+
+def _parse_date_spec(env, spec):
+    tokens = spec.split(' ')
+    from .fields_temporal import Date, Datetime  # noqa: PLC0415
+    from dateutil.relativedelta import relativedelta, MO, TU, WE, TH, FR, SA, SU  # noqa: PLC0415
+    match tokens.pop(0):
+        case 'now':
+            value = Datetime.context_timestamp(env['base'], Datetime.now())
+        case 'utc_now':
+            value = Datetime.now()
+        case 'today':
+            value = Date.context_today(env['base'])
+        case 'utc_today':
+            value = Date.today()
+        case _:
+            raise ValueError("Invalid date starting point")
+    field = None
+    for token in tokens:
+        match field, token:
+            case None, _:
+                field = token
+                continue
+            case 'weekday', 'monday':
+                delta = relativedelta(weekday=MO)
+            case 'weekday', 'tuesday':
+                delta = relativedelta(weekday=TU)
+            case 'weekday', 'wednesday':
+                delta = relativedelta(weekday=WE)
+            case 'weekday', 'thursday':
+                delta = relativedelta(weekday=TH)
+            case 'weekday', 'friday':
+                delta = relativedelta(weekday=FR)
+            case 'weekday', 'saturday':
+                delta = relativedelta(weekday=SA)
+            case 'weekday', 'sunday':
+                delta = relativedelta(weekday=SU)
+            case 'truncate', trunc:
+                mins = iter(RELATIVE_DATE_MINS)
+                for min_field, _ in mins:
+                    if min_field == trunc:
+                        break
+                mins = dict(mins)
+                if not mins:
+                    raise ValueError("Invalid argument for 'truncate'")
+                delta = relativedelta(**mins)
+            case _:
+                delta = relativedelta(**{field: int(token)})
+        if delta.weekday is not None:
+            # before going to next weekday, reset the date to Monday
+            value += relativedelta(weekday=(MO(-1)))
+        value += delta
+        field = None
+    if field is not None:
+        raise ValueError("Invalid syntax")
+    if isinstance(value, datetime) and value.tzinfo is not None:
+        value = value.astimezone(timezone.utc).replace(tzinfo=None)
+    return value
 
 
 # --------------------------------------------------
@@ -1071,6 +1198,9 @@ def _operator_equal_as_in(condition, _):
         else:
             _logger.debug("The domain condition %r should use the 'in' or 'not in' operator.", condition)
             value = OrderedSet(value)
+    elif isinstance(value, dict):
+        # dyamic value
+        pass
     elif isinstance(value, SQL):
         # transform '=' SQL("x") into 'in' SQL("(x)")
         value = SQL("(%s)", value)
@@ -1086,6 +1216,8 @@ def _optimize_in_set(condition, _model):
     if isinstance(value, ANY_TYPES):
         operator = 'any' if condition.operator == 'in' else 'not any'
         return DomainCondition(condition.field_expr, operator, value)
+    if isinstance(value, dict):
+        return condition
     if not value:
         return _FALSE_DOMAIN if condition.operator == 'in' else _TRUE_DOMAIN
     if not isinstance(value, COLLECTION_TYPES):
@@ -1104,6 +1236,7 @@ def _optimize_in_required(condition, model):
         field.falsy_value is None
         and field.required
         and field in model.env.registry.not_null_fields
+        and not isinstance(value, dict)
     ):
         value = OrderedSet(v for v in value if v is not False)
     if len(value) == len(condition.value):
@@ -1163,8 +1296,8 @@ def _optimize_like_str(condition, model):
         if condition._field(model).relational or '=' in condition.operator:
             return DomainCondition(condition.field_expr, '!=' if result else '=', False)
         return Domain(result)
-    if isinstance(value, (str, SQL)):
-        # accept both str and SQL
+    if isinstance(value, (str, SQL, dict)):
+        # accept both SQL and dynamic values
         return condition
     if '=' in condition.operator:
         condition._raise("The pattern to match must be a string", error=TypeError)
@@ -1217,6 +1350,8 @@ def _optimize_boolean_in(condition, model):
     """b in boolean_values"""
     value = condition.value
     operator = condition.operator
+    if isinstance(value, dict):
+        return condition
     if operator not in ('in', 'not in') or not isinstance(value, COLLECTION_TYPES):
         condition._raise("Cannot compare %r to %s which is not a collection of length 1", condition.field_expr, type(value))
     if not all(isinstance(v, bool) for v in value):
@@ -1274,9 +1409,13 @@ def _value_to_date(value):
 @field_type_optimization(['date'])
 def _optimize_type_date(condition, _):
     """Make sure we have a date type in the value"""
-    if condition.operator.endswith('like') or "." in condition.field_expr:
-        return condition
     operator = condition.operator
+    if (
+        operator not in ('in', 'not in', '>', '<', '<=', '>=')
+        or isinstance(condition.value, dict)
+        or "." in condition.field_expr
+    ):
+        return condition
     value = _value_to_date(condition.value)
     if value is False and operator[0] in ('<', '>'):
         # comparison to False results in an empty domain
@@ -1307,9 +1446,13 @@ def _value_to_datetime(value):
 @field_type_optimization(['datetime'])
 def _optimize_type_datetime(condition, _):
     """Make sure we have a datetime type in the value"""
-    if condition.operator.endswith('like') or "." in condition.field_expr:
-        return condition
     operator = condition.operator
+    if (
+        operator not in ('in', 'not in', '>', '<', '<=', '>=')
+        or isinstance(condition.value, dict)
+        or "." in condition.field_expr
+    ):
+        return condition
     value, is_day = _value_to_datetime(condition.value)
     if value is False and operator[0] in ('<', '>'):
         # comparison to False results in an empty domain
@@ -1342,6 +1485,8 @@ def _optimize_type_binary_attachment(condition, model):
     field = condition._field(model)
     operator = condition.operator
     value = condition.value
+    if isinstance(value, dict):
+        return condition
     if field.attachment and not (operator in ('in', 'not in') and set(value) == {False}):
         try:
             condition._raise('Binary field stored in attachment, accepts only existence check; skipping domain')
