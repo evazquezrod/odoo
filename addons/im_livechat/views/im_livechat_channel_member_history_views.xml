@@ -29,6 +29,15 @@
                 </list>
             </field>
         </record>
+        <record id="im_livechat_channel_member_history_view_form" model="ir.ui.view">
+            <field name="name">im_livechat.channel.member.history.view.form</field>
+            <field name="model">im_livechat.channel.member.history</field>
+            <field name="arch" type="xml">
+                <form js_class="livechat_session_form">
+                    <field name="channel_id"/>
+                </form>
+            </field>
+        </record>
         <record id="im_livechat_channel_member_history_action" model="ir.actions.act_window">
             <field name="name">Member History</field>
             <field name="res_model">im_livechat.channel.member.history</field>

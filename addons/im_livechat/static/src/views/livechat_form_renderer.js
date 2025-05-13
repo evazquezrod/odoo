@@ -30,6 +30,13 @@ export class LivechatSessionFormRenderer extends FormRenderer {
      * @param {Props} props
      */
     async getChannel(props) {
+        if (props.record.resModel == "im_livechat.channel.member.history") {
+            this.thread = await this.store.Thread.getOrFetch({
+                model: "discuss.channel",
+                id: props.record.data["channel_id"].id,
+            });
+            return;
+        }
         this.thread = await this.store.Thread.getOrFetch({
             model: "discuss.channel",
             id: props.record.resId,
