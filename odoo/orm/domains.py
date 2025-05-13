@@ -1582,6 +1582,78 @@ def _operator_parent_of_domain(comodel: BaseModel, parent):
     return parent_ids
 
 
+@operator_optimization(['expr'], OptimizationLevel.FULL)
+def _operator_expr_eval(condition, model):
+    """Evaluate a dynamic value given by the expression.
+
+    The value can be a `str` of `list[str]`. We try to find the expression that
+    will have a non-falsy value. Usually the resulting operator is `in`.
+
+    - "uid": = env.uid
+    - "groups": in env.user.all_group_ids.ids
+    - "{rec}" or "{rec}.{value}" where rec is user, company, companies,
+      partner_id are recordsets on which we can map a value;
+      for example "user.name" is `in user.mapped('name')`
+    - "context.{value}" read a value from env.context
+    """
+    env = model.env
+    expr_value = condition.value
+    if isinstance(expr_value, str):
+        expr_value = [expr_value]
+    elif not expr_value:
+        condition._raise(f"Invalid expression: {expr_value!r}")
+    for expr in expr_value:
+        # XXX not handling operator overload: child_of could be 'commercial_partner_ids.descendant_partner_ids'
+        # XXX env['website'].get_current_website() could be 'user.current_website_id'
+        if not isinstance(expr, str):
+            condition._raise(f"Invalid expression: {expr!r}")
+        operator = None  # reset operator which is used to check syntax errors
+
+        # environment values
+        if expr == 'uid':
+            operator, value = '=', env.uid
+        if expr == 'groups':
+            operator, value = 'in', env.user.all_group_ids
+
+        # environment recordset values
+        for prefix, obj in (
+            ('user', env.user),
+            ('company', env.company),
+            ('companies', env.companies),
+            ('partner_id', env.user.partner_id),
+        ):
+            if expr == prefix:
+                operator, value = 'in', obj
+                break
+            prefix += '.'
+            if expr.startswith(prefix):
+                # map the values using the environment to avoid reading in sudo
+                operator = 'in'
+                value = obj.with_env(env).mapped(expr[len(prefix):])
+                break
+
+        # context
+        if expr.startswith('context.'):
+            value = env.context.get(expr[len('context.'):], ())
+            operator = 'in' if isinstance(value, COLLECTION_TYPES) else '='
+
+        # check operator and stop if we have a value
+        if not operator:
+            condition._raise(f"Invalid expression: {expr!r}")
+        if value:
+            break
+
+    assert operator
+    from .models import BaseModel  # noqa: PLC0415
+    if isinstance(value, BaseModel):
+        assert operator == 'in', "Invalid operator for recordset comparison"
+        field = condition._field(model)
+        if field.comodel_name != value._name:
+            condition._raise(f"Cannot compare {field} and {value}")
+        value = value.ids
+    return DomainCondition(condition.field_expr, operator, value)
+
+
 # --------------------------------------------------
 # Optimizations: nary
 # --------------------------------------------------
