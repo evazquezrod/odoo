@@ -706,51 +706,24 @@ class _RelationalMulti(_Relational[M], typing.Generic[M]):
 
     def condition_to_sql(self, field_expr: str, operator: str, value, model: BaseModel, alias: str, query: Query) -> SQL:
         assert field_expr == self.name, "Supporting condition only to field"
-        model._check_field_access(self, 'read')
-        comodel = model.env[self.comodel_name]
+        assert operator in ('any*', 'not any*'), \
+            f"Relational field {self} expects 'any*' operator"
+        assert isinstance(value, (Domain, Query)), \
+            f"Relational field {self} expects a Domain or Query value"
 
-        # update the operator to 'any'
-        if operator in ('in', 'not in'):
-            operator = 'any' if operator == 'in' else 'not any'
-        assert operator in ('any', 'not any'), \
-            f"Relational field {self} expects 'any' operator"
-        exists = operator == 'any'
-
-        # check the value and execute the query
-        if isinstance(value, COLLECTION_TYPES):
-            value = OrderedSet(value)
-            comodel = comodel.sudo().with_context(active_test=False)
-            if False in value:
-                #  [not]in (False, 1) => split conditions
-                #  We want records that have a record such as condition or
-                #  that don't have any records.
-                if len(value) > 1:
-                    in_operator = 'in' if exists else 'not in'
-                    return SQL(
-                        "(%s OR %s)" if exists else "(%s AND %s)",
-                        self.condition_to_sql(field_expr, in_operator, (False,), model, alias, query),
-                        self.condition_to_sql(field_expr, in_operator, value - {False}, model, alias, query),
-                    )
-                #  in (False) => not any (Domain.TRUE)
-                #  not in (False) => any (Domain.TRUE)
-                value = comodel._search(Domain.TRUE)
-                exists = not exists
-            else:
-                value = comodel.browse(value)._as_query(ordered=False)
-        elif isinstance(value, SQL):
-            # wrap SQL into a simple query
-            comodel = comodel.sudo()
-            value = Domain('id', 'any', value)
+        # comodel is always is sudo because the domain was already optimized with record rules
+        comodel = model.env[self.comodel_name].sudo()
         coquery = self._get_query_for_condition_value(model, comodel, value)
-        return self._condition_to_sql_relational(model, alias, exists, coquery, query)
+        return self._condition_to_sql_relational(model, alias, operator == 'any*', coquery, query)
 
     def _get_query_for_condition_value(self, model: BaseModel, comodel: BaseModel, value: Domain | Query) -> Query:
         """ Return Query run on the comodel with the field.domain injected."""
+        assert comodel.env.su, "The comodel should be in sudo mode already"
         field_domain = self.get_comodel_domain(model)
         if isinstance(value, Domain):
             domain = value & field_domain
             comodel = comodel.with_context(**self.context)
-            query = comodel._search(domain, no_record_rules=self.auto_join)
+            query = comodel._search(domain)
             assert isinstance(query, Query)
             return query
         if isinstance(value, Query):

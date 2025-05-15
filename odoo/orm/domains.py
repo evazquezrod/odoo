@@ -168,6 +168,7 @@ class OptimizationLevel(enum.IntEnum):
     NONE = 0
     BASIC = enum.auto()
     FULL = enum.auto()
+    SQL = enum.auto()
 
 
 MAX_OPTIMIZE_ITERATIONS = 1000
@@ -1153,6 +1154,29 @@ def _optimize_any_domain_for_sql(condition, model):
     return DomainCondition(condition.field_expr, condition.operator, domain)
 
 
+@operator_optimization(['any', 'not any'], OptimizationLevel.SQL)
+def _optimize_any_domain_secu(condition, model):
+    if model.env.su or not isinstance(condition.value, Domain):
+        return Domain(condition.field_expr, condition.opreator + '*', condition.value)
+    return condition
+
+
+@operator_optimization(['any*', 'not any*'], OptimizationLevel.SQL)
+def _optimize_any_star_domain_secu(condition, model):
+    domain = condition.value
+    if not isinstance(domain, Domain):
+        return condition
+    field = condition._field(model)
+    if not field.relational:
+        condition._raise("Cannot use 'any' with non-relational fields")
+    try:
+        comodel = model.env[field.comodel_name]
+    except KeyError:
+        condition._raise("Cannot determine the comodel relation")
+    domain = domain.optimize(comodel, full=True)  # XXX apply until SQL optimal
+    return DomainCondition(condition.field_expr, condition.operator, domain)
+
+
 @operator_optimization([op for op in CONDITION_OPERATORS if op.endswith('like')])
 def _optimize_like_str(condition, model):
     """Validate value for pattern matching, must be a str"""
@@ -1466,6 +1490,58 @@ def _operator_parent_of_domain(comodel: BaseModel, parent):
             parent_ids.update(comodel._ids)
             comodel = comodel[parent].filtered(lambda p: p.id not in parent_ids)
     return parent_ids
+
+
+@field_type_optimization(['many2one'], OptimizationLevel.SQL)
+def _optimize_relational_m2o_secu(condition, model):
+    if condition.operator not in ('any', 'not any'):
+        return condition
+    domain = condition.value
+    field = condition._field(model)
+    if isinstance(domain, Domain):
+        comodel = model.env[field.comodel_name].with_context(active_test=False)
+        domain = comodel._search_domain(domain, check_rules=not field.auto_join)
+    # make any*
+    return Domain(condition.field_expr, condition.operator + '*', domain)
+
+
+@field_type_optimization(['one2many', 'many2many'], OptimizationLevel.SQL)
+def _optimize_relational_x2m_secu(condition, model):
+    value = condition.value
+    if condition.operator in ('any*', 'not any*'):
+        if isinstance(value, SQL):
+            # wrap SQL into a simple domain
+            return DomainCondition(condition.field_expr, condition.operator, DomainCondition('id', 'any*', value))
+        return condition
+    field = condition._field(model)
+    field_domain = field.get_comodel_domain(model)
+    comodel = model.env[field.comodel_name]
+    exists = not Domain.is_negative_operator(condition.operator)
+
+    if isinstance(value, COLLECTION_TYPES):
+        value = OrderedSet(value)
+        comodel = comodel.sudo().with_context(active_test=False)
+        if False in value:
+            #  [not]in (False, 1) => split conditions
+            #  We want records that have a record such as condition or
+            #  that don't have any records.
+            if len(value) > 1:
+                in_operator = 'in' if exists else 'not in'
+                return (Domain.OR if exists else Domain.AND)((
+                    _optimize_relational_x2m_secu(DomainCondition(condition.field_expr, in_operator, (False,)), model),
+                    _optimize_relational_x2m_secu(DomainCondition(condition.field_expr, in_operator, value - {False}), model),
+                ))
+            #  in (False) => not any (Domain.TRUE)
+            #  not in (False) => any (Domain.TRUE)
+            value = Domain.TRUE
+            exists = not exists
+        else:
+            value = DomainCondition('id', 'in', value)
+
+    assert isinstance(value, Domain), "Only handling domains at this point"
+    comodel = comodel.with_context(**field.context)
+    domain = comodel._search_domain(value & field_domain, check_rules=not field.auto_join)
+    return DomainCondition(condition.field_expr, 'any*' if exists else 'not any*', domain)
 
 
 # --------------------------------------------------
