@@ -631,8 +631,8 @@ class TestPerformance(SavepointCaseWithUserDemo):
         new_records_ids.append(new_record.id)
         new_records = model.browse(new_records_ids)
 
-        # fetch 'line_ids' on all records (2 queries), fetch 'value' on all lines (1 query)
-        with self.assertQueryCount(3):
+        # fetch 'line_ids' on all records (1 query), fetch 'value' on all lines (1 query)
+        with self.assertQueryCount(2):
             for record in new_records:
                 for line in record.line_ids:
                     line.value

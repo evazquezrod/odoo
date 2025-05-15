@@ -1244,7 +1244,7 @@ class PropertiesCase(TestPropertiesMixin):
         def name_get(records):
             return list(zip(records._ids, records.mapped('display_name')))
 
-        with self.assertQueryCount(4):
+        with self.assertQueryCount(3):
             self.message_1.attributes = [
                 {
                     "name": "moderator_partner_ids",
@@ -1516,7 +1516,7 @@ class PropertiesCase(TestPropertiesMixin):
                 msg='Should take the values of the new definition record',
             )
 
-        with self.assertQueryCount(6):
+        with self.assertQueryCount(5):
             message = message_form.save()
 
         self.assertEqual(message.attributes, {'state': 'draft'})
