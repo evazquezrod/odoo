@@ -1,5 +1,6 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+import logging
 from markupsafe import Markup
 import re
 from werkzeug.exceptions import NotFound
@@ -150,6 +151,9 @@ class LivechatController(http.Controller):
                 chatbot_script._post_welcome_steps(channel)
             with replace_exceptions(UserError, by=NotFound()):
                 # sudo: mail.guest - creating a guest and their member in a dedicated channel created from livechat
+                _logger = logging.getLogger(__name__)
+                _logger.info(f"when creating a guest: {request.env['website.visitor']._get_visitor_from_request()}")
+
                 __, guest = channel.sudo()._find_or_create_persona_for_channel(
                     guest_name=self._get_guest_name(),
                     country_code=request.geoip.country_code,
