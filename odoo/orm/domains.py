@@ -75,6 +75,7 @@ _logger = logging.getLogger('odoo.domains')
 
 STANDARD_CONDITION_OPERATORS = frozenset([
     'any', 'not any',
+    'any*', 'not any*',
     'in', 'not in',
     '<', '>', '<=', '>=',
     'like', 'not like',
@@ -1111,7 +1112,7 @@ def _optimize_in_required(condition, model):
     return DomainCondition(condition.field_expr, condition.operator, value)
 
 
-@operator_optimization(['any', 'not any'])
+@operator_optimization(['any', 'not any', 'any*', 'not any*'])
 def _optimize_any_domain(condition, model):
     """Make sure the value is an optimized domain (or Query or SQL)"""
     value = condition.value
@@ -1136,7 +1137,7 @@ def _optimize_any_domain(condition, model):
     return DomainCondition(condition.field_expr, condition.operator, domain)
 
 
-@operator_optimization(['any', 'not any'], OptimizationLevel.FULL)
+@operator_optimization(['any', 'not any', 'any*', 'not any*'], OptimizationLevel.FULL)
 def _optimize_any_domain_for_sql(condition, model):
     domain = condition.value
     if not isinstance(domain, Domain):

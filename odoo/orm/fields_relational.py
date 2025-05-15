@@ -424,7 +424,7 @@ class Many2one(_Relational[M]):
         return sql_field
 
     def condition_to_sql(self, field_expr: str, operator: str, value, model: BaseModel, alias: str, query: Query) -> SQL:
-        if operator not in ('any', 'not any') or field_expr != self.name:
+        if operator not in ('any', 'not any', 'any*', 'not any*') or field_expr != self.name:
             # for other operators than 'any', just generate condition based on column type
             return super().condition_to_sql(field_expr, operator, value, model, alias, query)
 
