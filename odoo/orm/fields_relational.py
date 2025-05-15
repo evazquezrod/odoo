@@ -424,7 +424,9 @@ class Many2one(_Relational[M]):
         return sql_field
 
     def condition_to_sql(self, field_expr: str, operator: str, value, model: BaseModel, alias: str, query: Query) -> SQL:
-        if operator not in ('any', 'not any', 'any*', 'not any*') or field_expr != self.name:
+        if operator in ('any', 'not any'):
+            raise ValueError("XXX update operator to * first")
+        if operator not in ('any*', 'not any*') or field_expr != self.name:
             # for other operators than 'any', just generate condition based on column type
             return super().condition_to_sql(field_expr, operator, value, model, alias, query)
 
@@ -455,7 +457,7 @@ class Many2one(_Relational[M]):
 
         # value is a Domain
 
-        if self.auto_join:
+        if True:  # XXX small diff here
             coalias = query.make_alias(alias, self.name)
             # auto_join bypasses checks to join the field
             # for the comodel, the access is not bypassed
@@ -476,10 +478,6 @@ class Many2one(_Relational[M]):
                     return SQL("(%s IS NULL OR (%s) IS NOT TRUE)", sql_field, sql)
                 else:
                     return SQL("(%s) IS NOT TRUE", sql)
-
-        # execute search and generate condition with a SQL query
-        domain_query = comodel.with_context(active_test=False)._search(value)
-        return self.condition_to_sql(fname, operator, domain_query, model, alias, query)
 
 
 class _RelationalMulti(_Relational[M], typing.Generic[M]):

@@ -211,7 +211,7 @@ def add_record_rules_to_subdomains(model: BaseModel, domain: Domain) -> Domain:
             domain = condition.value
             field = condition._field(model)
             if isinstance(domain, Domain):
-                comodel = model.env[field.comodel_name]
+                comodel = model.env[field.comodel_name].with_context(active_test=False)
                 domain = comodel._search_domain(domain, check_rules=not field.auto_join)
             # build any*
             return Domain(condition.field_expr, condition.operator + '*', domain)
