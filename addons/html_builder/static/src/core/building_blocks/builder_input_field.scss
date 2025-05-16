@@ -1,0 +1,13 @@
+// Rules shared across inputs of type "field" (number, text...).
+
+.o-hb-input-field {
+    border: $o-hb-sidebar-content-field-border-width solid $o-hb-sidebar-content-field-border-color;
+    border-radius: $o-hb-sidebar-content-field-border-radius;
+    background-color: $o-hb-sidebar-content-field-input-bg;
+    color: $o-hb-fg-lighter;
+    padding: 0.15rem $o-hb-sidebar-content-field-clickable-spacing;
+
+    &:focus {
+        border-color: $o-hb-sidebar-content-field-input-border-color;
+    }
+}
