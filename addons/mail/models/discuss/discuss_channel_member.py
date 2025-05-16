@@ -272,7 +272,7 @@ class DiscussChannelMember(models.Model):
         ]
 
     def _to_store_defaults(self):
-        return [
+        res = [
             Store.One("channel_id", [], as_thread=True, rename="thread"),
             "create_date",
             "fetched_message_id",
@@ -280,6 +280,9 @@ class DiscussChannelMember(models.Model):
             "seen_message_id",
             *self.env["discuss.channel.member"]._to_store_persona(),
         ]
+        if self.partner_id == self.env.user.partner_id:
+            res += ["custom_channel_name"]
+        return res
 
     def _get_store_partner_fields(self, fields):
         self.ensure_one()

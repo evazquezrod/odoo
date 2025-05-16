@@ -422,7 +422,7 @@ export class DiscussChannel extends models.ServerModel {
                     message_unread_counter,
                 });
                 Object.assign(res, {
-                    custom_channel_name: memberOfCurrentUser.custom_channel_name,
+                    // custom_channel_name: memberOfCurrentUser.custom_channel_name,
                     is_pinned: memberOfCurrentUser.is_pinned,
                 });
                 if (memberOfCurrentUser.rtc_inviting_session_id) {
@@ -536,10 +536,11 @@ export class DiscussChannel extends models.ServerModel {
             custom_channel_name: name,
         });
         const [partner] = ResPartner.read(this.env.user.partner_id);
+        const memberOfCurrentUser = this._find_or_create_member_for_self(channelId);
         BusBus._sendone(
             partner,
             "mail.record/insert",
-            new mailDataHelpers.Store(this.browse(channelId), {
+            new mailDataHelpers.Store(memberOfCurrentUser, {
                 custom_channel_name: name,
             }).get_result()
         );

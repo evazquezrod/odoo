@@ -91,6 +91,9 @@ export class DiscussChannelMember extends models.ServerModel {
         const ResPartner = this.env["res.partner"];
 
         for (const member of this.browse(ids)) {
+            if (member.partner_id === this.env.user.partner_id) {
+                fields.custom_channel_name = true;
+            }
             const [data] = this._read_format(
                 member.id,
                 Object.keys(fields).filter(

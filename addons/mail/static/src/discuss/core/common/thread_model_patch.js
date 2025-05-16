@@ -249,7 +249,7 @@ const threadPatch = {
     },
     get displayName() {
         if (this.channel_type === "chat" && this.correspondent) {
-            return this.custom_channel_name || this.correspondent.name;
+            return this.selfMember.custom_channel_name || this.correspondent.name;
         }
         if (this.channel_type === "group" && !this.name) {
             return formatList(this.channel_member_ids.map((channelMember) => channelMember.name));

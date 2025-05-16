@@ -1068,7 +1068,7 @@ class DiscussChannel(models.Model):
         ]
         if for_current_user:
             res = res + [
-                forward_member_field("custom_channel_name"),
+                # forward_member_field("custom_channel_name"),
                 forward_member_field("custom_notifications"),
                 {"fetchChannelInfoState": "fetched"},
                 "is_editable",
