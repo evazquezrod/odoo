@@ -3,7 +3,7 @@
 
 <t t-name="html_builder.BuilderRow">
     <BuilderComponent>
-        <div class="hb-row d-flex position-relative px-2" t-att-class="this.getLevelClass()" t-ref="root" t-att-data-label="props.label" t-attf-class="{{props.slots.collapse &amp;&amp; state.expanded ? 'active' : '' }}">
+        <div class="hb-row d-flex position-relative pe-2" t-att-class="this.getLevelClass()" t-ref="root" t-att-data-label="props.label" t-attf-class="{{props.slots.collapse &amp;&amp; state.expanded ? 'active' : '' }}">
             <button t-ref="collapse"
                     t-if="props.slots.collapse"
                     class="o_hb_collapse_toggler ms-n1 btn border-0 text-white bg-transparent"

@@ -1,6 +1,7 @@
 .hb-row {
     min-height: $o-hb-row-min-height;
-    margin-bottom: $o-hb-row-margin-bottom;
+    padding-top: $o-hb-row-spacing;
+    box-sizing: content-box;
     align-items: center;
     color: $o-hb-fg-dark;
 
@@ -15,6 +16,11 @@
     .hb-row-label {
         min-width: 0;
         flex: 0 0 44%;
+        background: #0a0a0a;
+        z-index: 4;
+        position: relative;
+        background-color: $o-hb-bg-darker;
+        padding: $o-hb-row-spacing 0 $o-hb-row-spacing $o-hb-row-padding-left;
     }
 
     .hb-row-content {
@@ -23,18 +29,41 @@
         gap: map-get($spacers, 1);
     }
 
-//     // Sublevels
-//     --treeEntry-padding-h: 0;
+    // Sublevels
 
-//     &.o_rtl:before {
-//         transform: scaleX(-1);
-//     }
+    // Rules shared across all sublevels
+    &.hb-row-sublevel {
+        padding-left: 0;
 
-//     @for $level from 1 through 3 {
-//         &.hb-row-sublevel-#{$level} {
-//             --treeEntry-padding-h: #{$level * 0.6em};
-//         }
-//     }
+        &:after {
+            opacity: .5;
+            position: absolute;
+            border-width: 0 0 $o-hb-border-width $o-hb-border-width;
+            height: 100%;
+            transform: translateY(($o-hb-row-min-height * -0.5) - $o-hb-border-width);border-style: solid;
+            pointer-events: none;
+            opacity: .6;
+            content: "";
+        }
+    }
+
+    // Sublevel specific rules
+    @for $_level from 1 through 3 {
+        &.hb-row-sublevel-#{$_level} {
+            .hb-row-label, &:after {
+                z-index: 4 - $_level;
+            }
+
+            .hb-row-label {
+                padding-left: $o-hb-row-padding-left + ($o-hb-row-padding-left * $_level) + ($o-hb-row-spacing * $_level);
+            }
+
+            &:after {
+                width: ($o-hb-row-padding-left * 0.5) + $o-hb-row-spacing;
+                left: ($o-hb-row-padding-left * $_level) + $o-hb-border-width;
+            }
+        }
+    }
 }
 
 .hb-row-collapse-content-floating {
