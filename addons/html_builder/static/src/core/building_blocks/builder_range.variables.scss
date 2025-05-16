@@ -1,0 +1,17 @@
+$o-hb-range-track-width: 100% !default;
+$o-hb-range-track-height: 1rem !default;
+$o-hb-range-track-cursor: col-resize !default;
+$o-hb-range-track-bg: $o-hb-sidebar-content-field-input-bg !default;
+$o-hb-range-track-border-radius: var(--border-radius) !default;
+$o-hb-range-track-box-shadow: inset 0 0 0px $o-hb-border-width $o-hb-bg-lighter !default;
+$o-hb-range-track-active-box-shadow: inset 0 0 0px $o-hb-border-width $o-hb-bg-lightest !default;
+
+$o-hb-range-thumb-width:  0.25rem !default;
+$o-hb-range-thumb-height: 100% !default;
+$o-hb-range-thumb-bg: $o-hb-fg-light !default;
+$o-hb-range-thumb-border: 0 !default;
+$o-hb-range-thumb-border-radius: 0 !default;
+$o-hb-range-thumb-box-shadow: -1px 0 0 $o-hb-bg-darkest, -1000px 0 0 1000px rgba($o-hb-color-accent, .6) !default;
+$o-hb-range-thumb-focus-box-shadow: -1px 0 0 $o-hb-bg-darkest, -1000px 0 0 1000px $o-hb-color-accent !default;
+$o-hb-range-thumb-active-bg: $o-hb-fg-lighter !default;
+$o-hb-range-thumb-disabled-bg: var(--secondary-color) !default;

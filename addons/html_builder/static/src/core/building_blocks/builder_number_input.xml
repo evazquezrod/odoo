@@ -7,7 +7,7 @@
             t-props="textInputBaseProps"
             inputRef="inputRef"
             value="displayValue"
-            inputClasses="props.inputClasses ? `o-hb-input-number text-end ${props.inputClasses}` : 'o-hb-input-number text-end'"
+            inputClasses="props.inputClasses ? `o-hb-input-field o-hb-input-number text-end ${props.inputClasses}` : 'o-hb-input-number text-end'"
             commit="commit"
             preview="preview"
             onKeydown.bind="onKeydown"
