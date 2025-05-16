@@ -4356,6 +4356,28 @@ export class OdooEditor extends EventTarget {
             if (selection.focusNode.nodeType === Node.ELEMENT_NODE) {
                 getDeepRange(this.editable, { selection, select: !isFocusContentEditable, correctTripleClick: !isFocusContentEditable });
             }
+            if (selection.focusNode.parentElement.classList.contains("o_text_highlight_item")) {
+                // We changed the `display` of `o_text_highlight_item` which is not a `block`
+                // so we should handle it separatly.
+                const currentBlock = selection.focusNode.parentElement;
+                const isAtLeftBoundary = selection.focusOffset === 0 || (selection.focusOffset === 1 && selection.focusNode.textContent.startsWith('\uFEFF'));
+                const isAtRightBoundary = selection.focusOffset === nodeSize(currentBlock.firstChild);
+                const isAtBoundary =
+                    (currentBlock.firstChild === selection.focusNode) && (isAtLeftBoundary || isAtRightBoundary)
+                const targetBlock = ev.key === 'ArrowUp' ? currentBlock?.previousElementSibling : currentBlock?.nextElementSibling;
+                if (isAtBoundary && targetBlock && targetBlock.classList.contains("o_text_highlight_item")) {
+                    const leafNode = targetBlock.firstChild; // text node of the span
+                    if (isAtLeftBoundary && ev.key === 'ArrowDown' && selection.isCollapsed) {
+                        setSelection(selection.anchorNode, selection.anchorOffset, selection.anchorNode, nodeSize(selection.anchorNode))
+                    } else if (isAtRightBoundary && ev.key === 'ArrowUp' && selection.isCollapsed) {
+                        setSelection(selection.anchorNode, nodeSize(selection.anchorNode), selection.focusNode, 0)
+                    } else {
+                        setSelection(selection.anchorNode, selection.anchorOffset, leafNode, selection.anchorOffset)
+                    }
+                    ev.preventDefault();
+                    return;
+                }
+            }
             const currentBlock = closestBlock(selection.focusNode);
             const isAtBoundary = ev.key === 'ArrowUp'
                 ? firstLeaf(currentBlock) === selection.focusNode && selection.focusOffset === 0
