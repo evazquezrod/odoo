@@ -5,6 +5,7 @@ from contextlib import suppress
 from lxml import etree
 
 from odoo import _, api, fields, models, Command
+from odoo.addons.account.models.company import PEPPOL_DEFAULT_COUNTRIES
 
 
 class AccountMove(models.Model):
@@ -56,6 +57,37 @@ class AccountMove(models.Model):
                 }
         return super()._get_invoice_legal_documents(filetype, allow_fallback=allow_fallback)
 
+    def _get_invoice_legal_documents_invoice_edi_format_generator(self, invoice_edi_format):
+        builder = self.partner_id._get_edi_builder(invoice_edi_format)
+        if builder is None:
+            return False
+
+        # TODO: Add some check?
+        # Would maybe nice to say that it cannot be generated instead of just omitting the entry
+
+        def _get_documents(invoice):
+            xml_content, errors = builder._export_invoice(invoice)
+            # TODO: not sure about error handling
+            # TODO: Test via: BIS 3.0 w/o invoice date
+            if errors:
+                # Return a text file with the errors.
+                invoice_edi_format_description = invoice.env['res.partner']._fields['invoice_edi_format'].get_description(invoice.env)
+                message = _("Error while generating the '%(invoice_edi_format_string)s' document:\n%(error_message)s",
+                            invoice_edi_format_string=dict(invoice_edi_format_description['selection'])[invoice_edi_format],
+                            error_message="\n".join(errors))
+                return {
+                    'filename': "Error.txt",
+                    'filetype': 'txt',
+                    'content': message,
+                }
+            return {
+                'filename': builder._export_invoice_filename(invoice),
+                'filetype': 'xml',
+                'content': xml_content,
+            }
+
+        return _get_documents
+
     def get_extra_print_items(self):
         print_items = super().get_extra_print_items()
         if self.ubl_cii_xml_id:
@@ -64,6 +96,14 @@ class AccountMove(models.Model):
                 'description': _('XML UBL'),
                 **self.action_invoice_download_ubl(),
             })
+
+        # Add 'ubl_bis3' for partners in "PEPPOL countries"
+        if set(PEPPOL_DEFAULT_COUNTRIES).intersection({p._deduce_country_code() for p in self.commercial_partner_id}):
+            bis3_edi_format = 'ubl_bis3'
+            bis3_print_item = next((item for item in print_items if item['key'] == f'generate_{bis3_edi_format}'), None)
+            if not bis3_print_item:
+                print_items.append(self._get_invoice_edi_format_print_item(bis3_edi_format))
+
         return print_items
 
     # -------------------------------------------------------------------------
