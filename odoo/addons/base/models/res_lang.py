@@ -21,7 +21,7 @@ DEFAULT_TIME_FORMAT = '%H:%M:%S'
 DEFAULT_SHORT_TIME_FORMAT = '%H:%M'
 
 
-class LangData(ReadonlyDict):
+class LangData(dict):  # XXX make readonly
     """ A ``dict``-like class which can access field value like a ``res.lang`` record.
     Note: This data class cannot store data for fields with the same name as
     ``dict`` methods, like ``dict.keys``.
@@ -38,7 +38,7 @@ class LangData(ReadonlyDict):
             raise AttributeError
 
 
-class LangDataDict(ReadonlyDict):
+class LangDataDict(dict):  # XXX make readonly
     """ A ``dict`` of :class:`LangData` objects indexed by some key, which returns
     a special dummy :class:`LangData` for missing keys.
     """

@@ -21,6 +21,7 @@ import tempfile
 import threading
 import time
 import traceback
+import types
 import typing
 import unicodedata
 import warnings
@@ -959,6 +960,10 @@ class frozendict(dict[K, T], typing.Generic[K, T]):
         return hash(frozenset((key, freehash(val)) for key, val in self.items()))
 
 
+def ReadonlyDict(mapping=(), /):
+    return types.MappingProxyType(frozendict(mapping))
+
+
 class Collector(dict[K, tuple[T, ...]], typing.Generic[K, T]):
     """ A mapping from keys to tuples.  This implements a relation, and can be
         seen as a space optimization for ``defaultdict(tuple)``.
@@ -1627,45 +1632,6 @@ def format_duration(value: float) -> str:
 
 
 consteq = hmac_lib.compare_digest
-
-
-class ReadonlyDict(Mapping[K, T], typing.Generic[K, T]):
-    """Helper for an unmodifiable dictionary, not even updatable using `dict.update`.
-
-    This is similar to a `frozendict`, with one drawback and one advantage:
-
-    - `dict.update` works for a `frozendict` but not for a `ReadonlyDict`.
-    - `json.dumps` works for a `frozendict` by default but not for a `ReadonlyDict`.
-
-    This comes from the fact `frozendict` inherits from `dict`
-    while `ReadonlyDict` inherits from `collections.abc.Mapping`.
-
-    So, depending on your needs,
-    whether you absolutely must prevent the dictionary from being updated (e.g., for security reasons)
-    or you require it to be supported by `json.dumps`, you can choose either option.
-
-        E.g.
-          data = ReadonlyDict({'foo': 'bar'})
-          data['baz'] = 'xyz' # raises exception
-          data.update({'baz', 'xyz'}) # raises exception
-          dict.update(data, {'baz': 'xyz'}) # raises exception
-    """
-    __slots__ = ('_data__',)
-
-    def __init__(self, data):
-        self._data__ = dict(data)
-
-    def __contains__(self, key: K):
-        return key in self._data__
-
-    def __getitem__(self, key: K) -> T:
-        return self._data__[key]
-
-    def __len__(self):
-        return len(self._data__)
-
-    def __iter__(self):
-        return iter(self._data__)
 
 
 class DotDict(dict):

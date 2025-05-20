@@ -2,10 +2,10 @@
 from datetime import date, datetime
 import json as json_
 import re
+from types import MappingProxyType
 
 import markupsafe
 from .func import lazy
-from .misc import ReadonlyDict
 
 JSON_SCRIPTSAFE_MAPPER = {
     '&': r'\u0026',
@@ -66,7 +66,7 @@ def json_default(obj):
         return fields.Date.to_string(obj)
     if isinstance(obj, lazy):
         return obj._value
-    if isinstance(obj, ReadonlyDict):
+    if isinstance(obj, MappingProxyType):
         return dict(obj)
     if isinstance(obj, bytes):
         return obj.decode()
