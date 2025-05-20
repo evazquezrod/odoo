@@ -60,6 +60,7 @@ class TestExpenses(TestExpenseCommon):
                 'payment_mode': 'company_account',
                 'company_id': self.company_data['company'].id,
                 'tax_ids': [Command.set(self.tax_purchase_a.ids)],
+                'journal_id': self.company_data['default_journal_bank'].id,
             }, {
                 'name': 'Company PB 160 + 2*15%',  # Taxes are included
                 'employee_id': self.expense_employee.id,
@@ -67,6 +68,7 @@ class TestExpenses(TestExpenseCommon):
                 'payment_mode': 'company_account',
                 'company_id': self.company_data['company'].id,
                 'date': '2021-10-11',
+                'journal_id': self.company_data['default_journal_bank'].id,
             },
         ])
         all_expenses = expenses_by_employee | expenses_by_company
@@ -124,7 +126,7 @@ class TestExpenses(TestExpenseCommon):
         default_account_payable_id = self.company_data['default_account_payable'].id
         product_b_account_id = self.product_b.property_account_expense_id.id
         product_c_account_id = self.product_c.property_account_expense_id.id
-        company_payment_account_id = self.outbound_payment_method_line.payment_account_id.id
+        company_payment_account_id = self.company_data['default_journal_bank'].outstanding_payment_account_id.id
         # One payment per expense
         self.assertRecordValues(all_expenses.account_move_id.line_ids.sorted(lambda line: (line.move_id, line)), [
             # own_account expense 1 move
@@ -547,31 +549,24 @@ class TestExpenses(TestExpenseCommon):
         }])
 
     def test_expense_payment_method(self):
-        default_payment_method_line = self.company_data['default_journal_bank'].outbound_payment_method_line_ids[0]
+        default_payment_method = self.outbound_payment_method
         check_method = self.env['account.payment.method'].sudo().create({
-            'name': 'Print checks',
-            'code': 'check_printing_expense_test',
+            'name': 'Test expense print checks',
+            'code': 'check_printing',
             'payment_type': 'outbound',
         })
-        new_payment_method_line = self.env['account.payment.method.line'].create({
-            'name': 'Check',
-            'payment_method_id': check_method.id,
-            'journal_id': self.company_data['default_journal_bank'].id,
-            'payment_account_id': self.inbound_payment_method_line.payment_account_id.id,
-        })
-
         expense = self.create_expenses({
-            'payment_method_line_id': default_payment_method_line.id,
+            'payment_method_id': default_payment_method.id,
             'payment_mode': 'company_account',
         })
 
-        self.assertRecordValues(expense, [{'payment_method_line_id': default_payment_method_line.id}])
-        expense.payment_method_line_id = new_payment_method_line
+        self.assertRecordValues(expense, [{'payment_method_id': default_payment_method.id}])
+        expense.payment_method_id = check_method
 
         expense.action_submit()
         expense.action_approve()
         expense.action_post()
-        self.assertRecordValues(expense.account_move_id.origin_payment_id, [{'payment_method_line_id': new_payment_method_line.id}])
+        self.assertRecordValues(expense.account_move_id.origin_payment_id, [{'payment_method_id': check_method.id}])
 
     @freeze_time('2024-01-01')
     def test_expense_vendor(self):
