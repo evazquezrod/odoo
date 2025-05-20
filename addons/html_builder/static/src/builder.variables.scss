@@ -8,8 +8,12 @@
 
 $o-hb-bg-darkest: #000000 !default;
 $o-hb-bg-darker: #0a0a0a !default; //panel
-$o-hb-bg-dark: #353535 !default; // bg
-$o-hb-bg-light: #232323 !default; // buttonlink hover 
+// $o-hb-bg-dark: #353535 !default; // bg
+// $o-hb-bg-light: #232323 !default; // buttonlink hover 
+
+$o-hb-bg-light: #353535 !default; // bg
+$o-hb-bg-dark: #232323 !default; // buttonlink hover 
+
 $o-hb-bg-lighter: #313131 !default; // button
 $o-hb-bg-lightest: #626262 !default; //scrollbar
 
