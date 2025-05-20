@@ -2649,13 +2649,13 @@
                                     <i class="fa fa-angle-right ms-2 fw-light"/>
                                 </a>
 
-                                <div class="position-relative d-flex d-lg-none w-100 justify-content-center align-items-center my-2 opacity-75">
+                                <div class="position-relative d-flex d-lg-none w-100 justify-content-center align-items-center my-2 opacity-75 d-none d-md-inline">
                                     <hr class="w-100"/>
                                     <span class="px-3">or</span>
                                     <hr class="w-100"/>
                                 </div>
 
-                                <a href="/shop/checkout" class="text-center">
+                                <a href="/shop/checkout" class="text-center d-none d-md-inline">
                                     <i class="fa fa-angle-left me-2 fw-light"/>
                                     Return to shipping
                                 </a>
@@ -3155,14 +3155,14 @@
             <t t-if="previous_website_checkout_step">
                 <a
                     t-att-href="previous_website_checkout_step.step_href"
-                    class="pt-2 pt-lg-0 text-center"
+                    class="pt-2 pt-lg-0 text-center d-none d-md-inline"
                 >
                     <i class="fa fa-angle-left me-2 fw-light"/>
                     <span t-field="previous_website_checkout_step.back_button_label"/>
                 </a>
             </t>
             <t t-else="">
-                <a t-att-href="'/shop'" class="pt-2 pt-lg-0 text-center">
+                <a t-att-href="'/shop'" class="pt-2 pt-lg-0 text-center d-none d-md-inline">
                     <i class="fa fa-angle-left me-2 fw-light"/>
                     Continue shopping
                 </a>
@@ -3480,7 +3480,7 @@
             <div id="wrap" class="d-flex flex-column flex-grow-1">
                 <div class="oe_website_sale o_website_sale_checkout_container container d-flex flex-column flex-grow-1 py-lg-2">
                     <div t-attf-class="row #{not show_wizard_checkout and 'mt32'} mb32">
-                        <div t-if="show_wizard_checkout" class="col-12">
+                        <div t-if="show_wizard_checkout" class="col-12 px-0 px-md-3">
                             <t t-call="website_sale.wizard_checkout"/>
                         </div>
                         <!-- Checkout Page Content | Left Column -->
@@ -3543,7 +3543,7 @@
                                 role="button"
                                 aria-controls="o_cart_summary_offcanvas"
                             >
-                                Order
+                                <span class="text-primary">Order</span>
                                 <span
                                     id="amount_total_summary"
                                     class="monetary_field ms-auto"
