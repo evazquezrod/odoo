@@ -7,6 +7,16 @@
     }
 }
 
+.o-dropdown-wrapper {
+    flex: 0 1 100%;
+
+    .dropdown-toggle.btn-secondary.show {
+        color: var(--btn-active-color);
+        background-color: var(--btn-active-bg);
+        border-color: var(--btn-active-border-color);
+    }
+}
+
 .dropdown-toggle .o_select_item_only {
-    display: none; 
+    display: none;
 }
