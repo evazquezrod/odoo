@@ -31,6 +31,7 @@
         ],
         'web._assets_primary_variables': [
             'html_builder/static/src/builder.variables.scss',
+            'html_builder/static/src/**/*.variables.scss',
         ],
         # this bundle is lazy loaded when the editor is ready
         'html_builder.assets': [
@@ -43,6 +44,7 @@
             'web/static/lib/bootstrap/scss/_maps.scss',
 
             'html_builder/static/src/**/*',
+            'web/static/fonts/fonts.scss',
         ],
         'html_builder.inside_builder_style': [
             ('include', 'web._assets_helpers'),
