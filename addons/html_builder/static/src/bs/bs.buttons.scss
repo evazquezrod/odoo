@@ -20,7 +20,7 @@
     &.btn-secondary {
         @include button-variant(
             $background: rgba($o-hb-bg-light, .6),
-            $border: $o-hb-bg-lighter,
+            $border: #4e4e4e, //$o-hb-bg-lighter,
             $color: $o-hb-fg-dark,
             $hover-background: $o-hb-bg-lighter,
             $hover-border: $o-hb-fg-darker,
