@@ -1,0 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&display=swap');
+
+.o_hr_onboarding_title {
+    font-size: 48px !important;
+    font-family: "caveat";
+}
+
+.o_hr_onboarding_type {
+    font-size: 36px;
+    font-family: "caveat";
+}
+
+.o_hr_onboarding_icon:hover {
+    transition-duration: 0.1s;
+    transform: translateY(5px);
+}

@@ -3,7 +3,7 @@
     <data noupdate="1">
 
         <record id="dep_administration" model="hr.department">
-          <field name="name">Administration</field>
+            <field name="name">Administration</field>
         </record>
 
         <record id="employee_admin" model="hr.employee">

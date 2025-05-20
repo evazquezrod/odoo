@@ -494,6 +494,37 @@ class HrEmployee(models.Model):
         # the result is expected from this table, so we should link tables
         return super(HrEmployee, self.sudo())._search([('id', 'in', ids)], order=order)
 
+    @api.model
+    def has_demo_data(self):
+        if not self.env.user.has_group("hr.group_hr_user"):
+            return True
+        return bool(self.env['ir.module.module'].search_count([
+            ('state', 'in', ['installed', 'to upgrade', 'uninstallable']), ('demo', '=', True)
+        ]))
+
+    def _load_demo_data(self):
+        if self.has_demo_data():
+            return None
+
+        module_scenario = [
+            ('hr', 'data/scenarios/hr_scenario.xml'),
+            ('hr_skills', 'data/scenarios/hr_skills_scenario.xml'),
+        ]
+
+        for module, scenario in module_scenario:
+            convert.convert_file(
+                env=self.env,
+                module=module,
+                filename=scenario,
+                idref=None,
+                mode='init',
+                kind='data',
+            )
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
+
     def get_formview_id(self, access_uid=None):
         """ Override this method in order to redirect many2one towards the right model depending on access_uid """
         user = self.env.user

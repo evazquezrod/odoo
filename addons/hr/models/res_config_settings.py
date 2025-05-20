@@ -4,6 +4,15 @@ from odoo import fields, models
 class ResConfigSettings(models.TransientModel):
     _inherit = 'res.config.settings'
 
+    hr_onboarding_status = fields.Selection(
+        selection=[
+            ('none', "nothing done yet"),
+            ('load_demo', "demo data loaded"),
+            ('from_scratch', "started from scratch"),
+        ],
+        string="HR Onboarding Status",
+        default='none', config_parameter='hr.hr_onboarding_status',
+    )
     resource_calendar_id = fields.Many2one(
         'resource.calendar', 'Company Working Hours',
         related='company_id.resource_calendar_id', readonly=False)

@@ -293,5 +293,13 @@
                 </xpath>
             </field>
         </record>
+
+        <!-- <record id="action_start_from_scratch" model="ir.actions.server">
+            <field name="name">Start From Scratch</field>
+            <field name="model_id" ref="base.model_res_user"/>
+            <field name="binding_model_id" ref=""/>
+            <field name="state">code</field>
+            <field name="code"></field>
+        </record> -->
     </data>
 </odoo>

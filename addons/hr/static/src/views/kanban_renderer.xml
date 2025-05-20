@@ -1,18 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <t t-name="hr.PivotView" t-inherit="web.PivotView">
-        <t t-call="web.ActionHelper" position="replace">
-            <t t-if="!isHrOnboardingDone">
+    <t t-name="hr.KanbanRenderer" t-inherit="web.KanbanRenderer">
+        <t t-as="groupOrRecord" position="before">
+            <t t-if="showOnboarding">
                 <HrActionOnboarding />
             </t>
-            <t t-elif="isHrOnboardingDone">
+            <t t-elif="showNoContentHelper">
                 <HrActionHelper
                     noContentTitle.translate="Create an employee."
                     noContentParagraph.translate="Find all the information on employees."
                 />
             </t>
-            <!-- <t t-elif="1"></t> -->
-            <!-- <t t-elif="!model.hasData() or model.useSampleModel and props.info.noContentHelp"> -->
         </t>
     </t>
 </odoo>
