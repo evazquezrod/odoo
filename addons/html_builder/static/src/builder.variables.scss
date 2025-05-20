@@ -48,7 +48,7 @@ $o-hb-colors: (
 $o-hb-bg: $o-hb-bg-light !default;
 $o-hb-color: $o-hb-fg-light !default;
 
-$o-hb-font-size: 11px !default;
+$o-hb-font-size: 12px !default;
 $o-hb-font-size-lg: 13px !default;
 $o-hb-font-family: "Roboto", $o-font-family-sans-serif !default;
 $o-hb-font-family-monospace: "Fira_mono", $o-font-family-monospace !default;
@@ -80,7 +80,7 @@ $o-hb-translated-content-color: rgba(120, 215, 110, 0.5) !default;
 
 $o-hb-item-spacing: 8px !default;
 $o-hb-item-border-width: 1px !default;
-$o-hb-item-border-color: transparent !default;
+$o-hb-item-border-color: $o-hb-bg-lighter !default;
 $o-hb-item-border-radius: 4px !default;
 $o-hb-item-clickable-bg: transparent !default;
 $o-hb-item-clickable-color: $o-hb-fg-light!default;

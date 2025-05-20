@@ -3,7 +3,9 @@
 
 <t t-name="html_builder.CarouselOption">
     <BuilderRow label.translate="Slide">
-        <BuilderButton title.translate="Add Slide"  action="'addSlide'">Add Slide</BuilderButton>
+        <BuilderButton title.translate="Add Slide" action="'addSlide'" type="'success'">
+            <i class="oi oi-plus ms-1"/> Add Slide
+        </BuilderButton>
     </BuilderRow>
     <BuilderRow label.translate="Style">
         <BuilderSelect>

@@ -5,7 +5,7 @@
     <div t-if="props.options.length"
          class="options-container position-relative opacity-trigger-hover mb-1" t-ref="root" t-att-data-container-title="title"
          t-on-mouseenter="onMouseEnter" t-on-mouseleave="onMouseLeave">
-        <div class="options-container-header d-flex align-items-center pt-2 px-2 pb-1">
+        <div class="options-container-header d-flex align-items-center pt-2 px-2">
             <span
                 class="me-auto text-white text-uppercase"
                 t-out="title"
@@ -51,7 +51,7 @@
             </div>
         </div>
 	    <t t-if="state.isUpToDate">
-            <div class="we-bg-options-container options-container-body py-2" t-ref="content">
+            <div class="we-bg-options-container options-container-body pb-2" t-ref="content">
                 <t t-foreach="props.options" t-as="option" t-key="option.id">
                     <BuilderContext applyTo="option.applyTo" t-if="hasAccess(option.groups)">
                         <t t-if="option.OptionComponent" t-component="option.OptionComponent" t-props="option.props || {}"></t>

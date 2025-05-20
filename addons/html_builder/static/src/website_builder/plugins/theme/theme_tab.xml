@@ -22,7 +22,7 @@
 <t t-name="html_builder.ThemeWebsiteSettingsOption">
     <BuilderContext preview="false">
         <BuilderRow label.translate="Theme">
-            <BuilderButton action="'switchTheme'" type="'solid-primary'">Switch Theme</BuilderButton>
+            <BuilderButton action="'switchTheme'" type="'solid-global'">Switch Theme</BuilderButton>
         </BuilderRow>
         <BuilderRow label.translate="Language">
             <BuilderButton action="'addLanguage'" className="'o_we_bg_brand_primary'">Add a Language</BuilderButton>

@@ -5,5 +5,5 @@ $o-hb-form-switch-focus-bg-image: url("data:image/svg+xml,<svg xmlns='http://www
 
 
 $o-hb-form-switch-checked-bg-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='3' fill='#{$o-hb-fg-lighter}'/></svg>") !default;
-$o-hb-form-check-input-checked-bg-color: $o-hb-color-green !default;
-$o-hb-form-check-input-checked-border-color: $o-hb-color-green !default;
+$o-hb-form-check-input-checked-bg-color: mix($o-hb-color-green, $o-hb-bg-dark, 40%) !default;
+$o-hb-form-check-input-checked-border-color: mix($o-hb-color-green, $o-hb-bg-dark, 40%) !default;

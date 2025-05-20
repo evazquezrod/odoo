@@ -7,8 +7,9 @@
             action="'replaceMedia'"
             title.translate="Replace image"
             type="'success'"
-            preview="false"
-            label.translate="Replace" />
+            preview="false">
+            Replace <i class="oi oi-launch ms-1"/>
+        </BuilderButton>
         <BuilderButton icon="'fa-link'"
             t-if="state.canSetLink"
             id="'media_link_opt'"
