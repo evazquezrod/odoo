@@ -5,7 +5,6 @@ from stdnum.fr import siret
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
 from odoo.addons.account_edi_ubl_cii.models.account_edi_common import EAS_MAPPING
-from odoo.addons.account.models.company import PEPPOL_DEFAULT_COUNTRIES
 
 
 class ResPartner(models.Model):
@@ -141,7 +140,9 @@ class ResPartner(models.Model):
     @api.model
     def _get_ubl_cii_formats_info(self):
         return {
-            'ubl_bis3': {'countries': list(PEPPOL_DEFAULT_COUNTRIES), 'on_peppol': True, 'sequence': 200},
+            # TODO: We do a fallback to 'ubl_bis3' in `_get_suggested_peppol_edi_format` already
+            # TODO: 'ubl_bis3' countries
+            'ubl_bis3': {'countries': ['BE', 'LU'], 'on_peppol': True},
             'xrechnung': {'countries': ['DE'], 'on_peppol': True},
             'ubl_a_nz': {'countries': ['NZ', 'AU'], 'on_peppol': False},  # Not yet available through Odoo's Access Point, although it's a Peppol valid format
             'nlcius': {'countries': ['NL'], 'on_peppol': True},
@@ -266,3 +267,7 @@ class ResPartner(models.Model):
             return self.env['account.edi.xml.ubl_bis3']
         if invoice_edi_format == 'ubl_sg':
             return self.env['account.edi.xml.ubl_sg']
+
+    def _get_local_invoice_edi_format(self):
+        ubl_cii_format = self._get_suggested_ubl_cii_edi_format()
+        return ubl_cii_format or super()._get_local_invoice_edi_format()
