@@ -64,6 +64,22 @@ class IrRule(models.Model):
 
     @api.constrains('active', 'domain_force', 'model_id')
     def _check_domain(self):
+        # XXX migrations
+        #  user.id to {'var': 'uid'}
+        #  user.ids to {'var': 'uid'}
+        #  company_ids {'var': 'company_ids'}
+        #  company_ids + [False] -- split
+        #  user.all_group_ids.ids {'var': 'group_ids'}
+        #  user.partner_id.id {'var': 'partner_id'}
+        #  user.commercial_partner_id.id {'var': 'commercial_partner_id'}
+        #  website.company_id.id {'var': 'website_id.company_id'}
+        #  user.env.companies.mapped('country_code')  {'var': 'companies.country_code'}
+        #  user.env.companies.mapped('country_id')  {'var': 'companies.country_id'}
+        #
+        #  user.employee_id.... (parent_id.id) -- search method?
+        #
+        #  user.partner_id.commercial_partner_id.bom_ids.ids -- search method (and some other stock stuff)
+        # TODO try to eval without context
         eval_context = self._eval_context()
         for rule in self:
             if rule.active and rule.domain_force:
