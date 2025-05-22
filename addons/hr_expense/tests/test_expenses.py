@@ -1805,3 +1805,102 @@ class TestExpenses(TestExpenseCommon):
         expense.quantity = 0
         self.assertTrue(expense.currency_id.is_zero(expense.total_amount_currency))
         self.assertEqual(expense.company_currency_id.compare_amounts(expense.price_unit, self.product_b.standard_price), 0)
+<<<<<<< ca9eae85526d1caae524dee5ed084880b7c9239b
+||||||| 2ff1bcd74cbf1722d6398a9b2601ea7fdf4bbd55
+
+    def test_move_creation_with_quantity(self):
+        expense_sheet = self.create_expense_report({
+            'name': 'Expense for John Smith',
+            'expense_line_ids': [Command.create({
+                'name': 'Test expense line',
+                'employee_id': self.expense_employee.id,
+                'product_id': self.product_a.id,
+                'quantity': 5,
+                'payment_mode': 'company_account',
+                'company_id': self.company_data['company'].id,
+                'tax_ids': False,
+            })],
+        })
+
+        expense_sheet.action_submit_sheet()
+        expense_sheet.action_approve_expense_sheets()
+        expense_sheet.action_sheet_move_create()
+        self.assertRecordValues(expense_sheet.account_move_ids.line_ids, [
+            {'balance': 4000.0, 'name': 'expense_employee: Test expense line', 'quantity': 5},
+            {'balance': -4000.0, 'name': 'expense_employee: Test expense line', 'quantity': 1},
+        ])
+=======
+
+    def test_move_creation_with_quantity(self):
+        expense_sheet = self.create_expense_report({
+            'name': 'Expense for John Smith',
+            'expense_line_ids': [Command.create({
+                'name': 'Test expense line',
+                'employee_id': self.expense_employee.id,
+                'product_id': self.product_a.id,
+                'quantity': 5,
+                'payment_mode': 'company_account',
+                'company_id': self.company_data['company'].id,
+                'tax_ids': False,
+            })],
+        })
+
+        expense_sheet.action_submit_sheet()
+        expense_sheet.action_approve_expense_sheets()
+        expense_sheet.action_sheet_move_create()
+        self.assertRecordValues(expense_sheet.account_move_ids.line_ids, [
+            {'balance': 4000.0, 'name': 'expense_employee: Test expense line', 'quantity': 5},
+            {'balance': -4000.0, 'name': 'expense_employee: Test expense line', 'quantity': 1},
+        ])
+
+    def test_expense_sheet_journal_id(self):
+        """
+        Ensure the journal_id is set to the one defined on the payment method line
+        when adding an expense line which uses the 'Company Account' payment method
+        and set back to the employee journal when using the 'Own Account' payment method.
+        """
+
+        expense_paid_by_company = self.env['hr.expense'].create({
+            'employee_id': self.expense_employee.id,
+            'name': 'Company expense',
+            'payment_mode': 'company_account',
+            'product_id': self.product_a.id,
+            'quantity': 1,
+        })
+
+        expense_paid_by_employee = self.env['hr.expense'].create({
+            'employee_id': self.expense_employee.id,
+            'name': 'Employee expense',
+            'payment_mode': 'own_account',
+            'product_id': self.product_a.id,
+            'quantity': 1,
+        })
+
+        expense_sheet = self.env['hr.expense.sheet'].create({
+            'employee_id': self.expense_employee.id,
+            'expense_line_ids': [],
+            'name': 'Expense for John Smith',
+        })
+
+        self.assertEqual(
+            expense_sheet.journal_id,
+            expense_sheet.employee_journal_id,
+            "The journal_id should be set to the employee journal when no expense line is set",
+        )
+
+        expense_sheet.expense_line_ids = expense_paid_by_company.ids
+
+        self.assertEqual(
+            expense_sheet.journal_id,
+            expense_sheet.payment_method_line_id.journal_id,
+            "The journal_id should be set to the one defined on the payment method line when using the 'Company Account' payment method",
+        )
+
+        expense_sheet.expense_line_ids = expense_paid_by_employee.ids
+
+        self.assertEqual(
+            expense_sheet.journal_id,
+            expense_sheet.employee_journal_id,
+            "The journal_id should be set back to the employee journal when using the 'Own Account' payment method",
+        )
+>>>>>>> 3f1c0ea2ba83c79cba8a2318e4087d8f65b78d6f
