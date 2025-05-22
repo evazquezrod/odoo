@@ -15,7 +15,7 @@ $o-hb-bg-light: #353535 !default; // bg
 $o-hb-bg-dark: #232323 !default; // buttonlink hover 
 
 $o-hb-bg-lighter: #313131 !default; // button
-$o-hb-bg-lightest: #626262 !default; //scrollbar
+$o-hb-bg-lightest: #474747 !default; //scrollbar
 
 $o-hb-fg-darker: #9d9d9d !default;
 $o-hb-fg-dark: #C6C6C6 !default;
@@ -84,7 +84,7 @@ $o-hb-translated-content-color: rgba(120, 215, 110, 0.5) !default;
 
 $o-hb-item-spacing: 8px !default;
 $o-hb-item-border-width: 1px !default;
-$o-hb-item-border-color: $o-hb-bg-lighter !default;
+$o-hb-item-border-color: $o-hb-bg-lightest !default;
 $o-hb-item-border-radius: 4px !default;
 $o-hb-item-clickable-bg: transparent !default;
 $o-hb-item-clickable-color: $o-hb-fg-light!default;

@@ -1,6 +1,11 @@
 .options-container {
-    .options-container-header, .options-container-body {
+    background-color: $o-hb-bg-darker;
+    background-image: linear-gradient(100deg, $o-hb-bg-darker 30%, $o-hb-bg-dark);
+    box-shadow: inset 0 $o-hb-border-width rgba(white, .3);
+
+    .options-container-header {
         background-color: $o-hb-bg-darker;
+        box-shadow: 0 1px rgba(255, 255, 255, 0.1);
     }
 
     // POC: Shouldn't be here

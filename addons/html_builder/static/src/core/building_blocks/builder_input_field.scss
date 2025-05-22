@@ -7,6 +7,10 @@
     color: $o-hb-fg-lighter;
     padding: 0.15rem $o-hb-sidebar-content-field-clickable-spacing;
 
+    &:hover {
+        border-color: $o-hb-fg-darker;
+    }
+
     &:focus {
         border-color: $o-hb-sidebar-content-field-input-border-color;
     }

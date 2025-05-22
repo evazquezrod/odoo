@@ -35,13 +35,21 @@
 .o-tab-content {
     z-index: 0;
     width: 100vw;
-    padding-top: o-to-rem($o-hb-sidebar-top-height) + map-get($spacers, 1);
     padding-left: calc(100vw - #{$o-hb-sidebar-width});
     transform: translateX(calc(-100vw + #{$o-hb-sidebar-width}));
     pointer-events: none;
     box-sizing: border-box;
     scrollbar-color: $o-hb-bg-lightest $o-hb-bg-light;
     scrollbar-width: thin;
+
+    &:before {
+        height: o-to-rem($o-hb-sidebar-top-height);
+        margin-bottom: map-get($spacers, 1);
+        width: 100%;
+        background-color: black;
+        display: block;
+        content: "";
+    }
 
     > * {
         pointer-events: auto;

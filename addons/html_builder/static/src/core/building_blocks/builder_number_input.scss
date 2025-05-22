@@ -3,4 +3,11 @@
 .o-hb-input-number {
     font-family: $o-hb-font-family-monospace;
     color: $o-hb-fg-lighter;
+    width: 4ch; // Allow up to 4 digits numbers
+    box-sizing: content-box;
+
+    // POC only, should not be here
+    .options-container div:has(> input):not(table.o_social_media_list div):has(&) {
+        flex-grow: 0;
+    }
 }
