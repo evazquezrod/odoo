@@ -7,12 +7,12 @@
 //------------------------------------------------------------------------------
 
 $o-hb-bg-darkest: #000000 !default;
-$o-hb-bg-darker: #0a0a0a !default; //panel
+$o-hb-bg-darker: #2b2b33 !default; //panel
 // $o-hb-bg-dark: #353535 !default; // bg
 // $o-hb-bg-light: #232323 !default; // buttonlink hover 
 
 $o-hb-bg-light: #353535 !default; // bg
-$o-hb-bg-dark: #232323 !default; // buttonlink hover 
+$o-hb-bg-dark: #3e3e46 !default; // buttonlink hover 
 
 $o-hb-bg-lighter: #313131 !default; // button
 $o-hb-bg-lightest: #474747 !default; //scrollbar
@@ -112,7 +112,7 @@ $o-hb-dropdown-item-active-bg: mix($o-hb-dropdown-item-bg, $o-hb-dropdown-item-b
 $o-hb-dropdown-item-active-color: $o-hb-fg-lighter !default;
 $o-hb-dropdown-caret-spacing: 2px !default;
 
-$o-hb-sidebar-bg: $o-hb-bg !default;
+$o-hb-sidebar-bg: $o-hb-bg-darker !default;
 $o-hb-sidebar-color: $o-hb-color !default;
 $o-hb-sidebar-font-size: 12px !default;
 $o-hb-sidebar-border-width: $o-hb-border-width !default;
