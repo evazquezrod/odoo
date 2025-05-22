@@ -25,15 +25,15 @@
             </div>
             <div class="o-snippets-tabs d-grid gap-1 px-2 mb-1">
                 <button data-name="blocks" class="btn px-0" t-att-class="{'btn-success active pe-none': state.activeTab === 'blocks'}" t-on-click="() => this.onTabClick('blocks')" t-att-disabled="props.isTranslation">
-                     <i class="oi oi-plus me-1" role="img"/>
+                     <i class="oi oi-plus text-success me-1" role="img"/>
                     <span class="text-white">Add</span>
                 </button>
                 <button data-name="customize" class="btn px-0" t-att-class="{' btn-info active pe-none': state.activeTab === 'customize'}" t-on-click="() => this.onTabClick('customize')">
-                    <i class="oi oi-settings-adjust me-1" role="img"/>
+                    <i class="oi oi-settings-adjust text-accent me-1" role="img"/>
                     <span class="text-white">Edit</span>
                 </button>
                 <button data-name="theme" class="btn px-0" t-att-class="{'btn-global active pe-none': state.activeTab === 'theme'}" t-on-click="() => this.onTabClick('theme')" t-att-disabled="props.isTranslation">
-                    <i class="fa fa-cog me-1" role="img"/>
+                    <i class="fa fa-cog text-global me-1" role="img"/>
                     <span class="text-white">Theme</span>
                 </button>
             </div>
