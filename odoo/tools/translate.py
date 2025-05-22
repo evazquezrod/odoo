@@ -489,7 +489,7 @@ def _get_uid(frame) -> int | None:
     if 'user' in frame.f_locals:
         return int(frame.f_locals['user'])      # user may be a record
     if (local_self := frame.f_locals.get('self')) is not None:
-        if hasattr(local_self, 'env') and (uid := local_self.env.uid):
+        if getattr(local_self, 'env') and (uid := local_self.env.uid):
             return uid
     return None
 

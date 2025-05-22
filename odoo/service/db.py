@@ -374,8 +374,17 @@ def exp_rename(old_name, new_name):
 
 @check_db_management_enabled
 def exp_change_admin_password(new_password):
-    odoo.tools.config.set_admin_password(new_password)
-    odoo.tools.config.save(['admin_passwd'])
+    config = odoo.tools.config
+    config.set_admin_password(new_password)
+    # Try to save.
+    # To check save errors, pop the password and reload it from the
+    # configuration. If not correct, log.
+    config.save(['admin_passwd'])
+    config._runtime_options.pop('admin_passwd', None)
+    config._parse_config()
+    if not config.verify_admin_password(new_password):
+        _logger.error("Failed to save admin_passwd in configuration")
+        config.set_admin_password(new_password)
     return True
 
 @check_db_management_enabled

@@ -193,7 +193,7 @@ class configmanager:
         version = "%s %s" % (release.description, release.version)
         parser = optparse.OptionParser(version=version, option_class=OdooOption)
 
-        parser.add_option(FileOnlyOption(dest='admin_passwd', my_default='admin'))
+        parser.add_option(FileOnlyOption(dest='admin_passwd', my_default='admin', env_name=''))
         parser.add_option(FileOnlyOption(dest='bin_path', type='path', my_default='', file_exportable=False))
         parser.add_option(FileOnlyOption(dest='csv_internal_sep', my_default=','))
         parser.add_option(FileOnlyOption(dest='default_productivity_apps', type='bool', my_default=False, file_exportable=False))
@@ -1009,10 +1009,9 @@ class configmanager:
             # empty password/hash => authentication forbidden
             return False
         result, updated_hash = crypt_context.verify_and_update(password, stored_hash)
-        if result:
-            if updated_hash:
-                self.options['admin_passwd'] = updated_hash
-            return True
+        if result and updated_hash:
+            self.options['admin_passwd'] = updated_hash
+        return result
 
     @classmethod
     def _normalize(cls, path):
