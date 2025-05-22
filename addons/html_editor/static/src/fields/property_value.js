@@ -8,7 +8,7 @@ import { HtmlUpgradeManager } from "@html_editor/html_migrations/html_upgrade_ma
 import { normalizeHTML } from "@html_editor/utils/html";
 import { Wysiwyg } from "@html_editor/wysiwyg";
 import { user } from "@web/core/user";
-import { useState, onWillStart, onWillUpdateProps } from "@odoo/owl";
+import { useState, onWillStart, onWillUpdateProps, markup } from "@odoo/owl";
 
 patch(PropertyValue.prototype, {
     setup() {
@@ -68,7 +68,7 @@ patch(PropertyValue.prototype, {
         }
 
         return {
-            content: this.propertyValue,
+            content: markup(this.propertyValue),
             debug: !!this.env.debug,
             direction: localization.direction || "ltr",
             onChange: this.onWysiwygChange.bind(this),

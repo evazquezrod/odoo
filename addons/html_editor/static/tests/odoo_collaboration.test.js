@@ -5,7 +5,7 @@ import { normalizeHTML } from "@html_editor/utils/html";
 import { Wysiwyg } from "@html_editor/wysiwyg";
 import { beforeEach, describe, expect, test } from "@odoo/hoot";
 import { advanceTime, animationFrame, tick, waitUntil } from "@odoo/hoot-dom";
-import { Component, xml } from "@odoo/owl";
+import { Component, markup, xml } from "@odoo/owl";
 import { mountWithCleanup, onRpc } from "@web/../tests/web_test_helpers";
 import { Mutex } from "@web/core/utils/concurrency";
 import { patch } from "@web/core/utils/patch";
@@ -163,7 +163,7 @@ class Wysiwygs extends Component {
         };
         return {
             Plugins: [...MAIN_PLUGINS, ...COLLABORATION_PLUGINS],
-            content: content.replaceAll("[]", ""),
+            content: markup(content.replaceAll("[]", "")),
             collaboration: {
                 peerId,
                 busService,

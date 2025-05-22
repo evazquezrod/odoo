@@ -57,7 +57,7 @@ export class HtmlUpgradeManager {
         }
         this.originalValue = value;
         this.upgradedValue = value;
-        this.element = this.parser.parseFromString(fixInvalidHTML(value.toString()), "text/html")[
+        this.element = this.parser.parseFromString(fixInvalidHTML(value), "text/html")[
             this.containsComplexHTML ? "documentElement" : "body"
         ];
         const versionNode = this.element.querySelector(VERSION_SELECTOR);

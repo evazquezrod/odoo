@@ -1,7 +1,7 @@
 import { Wysiwyg } from "@html_editor/wysiwyg";
 import { expect, getFixture } from "@odoo/hoot";
 import { queryOne } from "@odoo/hoot-dom";
-import { Component, xml } from "@odoo/owl";
+import { Component, markup, xml } from "@odoo/owl";
 import { mountWithCleanup } from "@web/../tests/web_test_helpers";
 import { getContent, getSelection, setContent } from "./selection";
 import { animationFrame, tick } from "@odoo/hoot-mock";
@@ -95,7 +95,7 @@ export async function setupEditor(content, options = {}) {
     const styleContent = options.styleContent || "";
     await mountWithCleanup(TestEditor, {
         props: {
-            content,
+            content: markup(content),
             wysiwygProps,
             styleContent,
             onMounted: options.onMounted,
@@ -212,6 +212,9 @@ export async function testEditor(config) {
 export async function setupWysiwyg(props = {}) {
     const content = props.content;
     delete props.content;
+    if (props.config && props.config.content) {
+        props.config.content = markup(props.config.content);
+    }
     const wysiwyg = await mountWithCleanup(Wysiwyg, { props });
     const el = /** @type {HTMLElement} **/ (
         queryOne(`${props.iframe ? ":iframe " : ""}.odoo-editor-editable`)
