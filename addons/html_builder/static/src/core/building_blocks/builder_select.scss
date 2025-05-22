@@ -12,7 +12,7 @@
 
     .dropdown-toggle.btn-secondary.show {
         color: var(--btn-active-color);
-        background-color: var(--btn-active-bg);
+        background-color: transparent;
         border-color: var(--btn-active-border-color);
     }
 }
