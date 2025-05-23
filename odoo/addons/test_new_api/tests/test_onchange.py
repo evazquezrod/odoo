@@ -709,6 +709,22 @@ class TestOnchange(SavepointCaseWithUserDemo):
         self.assertEqual(move.payment_ids.move_id, move)
         self.assertEqual(move.payment_ids.tag_repeat, 1)
 
+    def test_onchange_inherited_computed(self):
+        # 'test_new_api.payment' inherits from 'test_new_api.move', which has a
+        #  computed field that depends on the corresponding payment's amount
+        view = self.env['ir.ui.view'].create({
+            'name': 'Payment form view',
+            'model': 'test_new_api.payment',
+            'arch': '<form><field name="amount"/><field name="payment_amount"/></form>',
+        })
+        with Form(self.env['test_new_api.payment'], view) as form:
+            self.assertEqual(form.amount, 0)
+            self.assertEqual(form.payment_amount, 0)
+            form.amount = 10
+            self.assertEqual(form.payment_amount, 10)
+            form.amount = 0
+            self.assertEqual(form.payment_amount, 0)
+
     def test_display_name(self):
         self.env['ir.ui.view'].create({
             'name': 'test_new_api.multi.tag form view',

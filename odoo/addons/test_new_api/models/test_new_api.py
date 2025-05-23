@@ -525,6 +525,7 @@ class Move(models.Model):
     # `move_id`, it uses it.  If that field was not initialized properly, the
     # ORM determines its value to be... empty (instead of the payment record.)
     payment_ids = fields.One2many('test_new_api.payment', 'move_id')
+    payment_amount = fields.Integer(compute='_compute_payment_amount')
 
     @api.depends('line_ids.quantity')
     def _compute_quantity(self):
@@ -535,6 +536,11 @@ class Move(models.Model):
     def _compute_tag_string(self):
         for record in self:
             record.tag_string = (record.tag_name or "") * record.tag_repeat
+
+    @api.depends('payment_ids.amount')
+    def _compute_payment_amount(self):
+        for record in self:
+            record.payment_amount = sum(payment.amount for payment in record.payment_ids)
 
 
 class MoveLine(models.Model):
@@ -552,6 +558,7 @@ class Payment(models.Model):
     _inherits = {'test_new_api.move': 'move_id'}
 
     move_id = fields.Many2one('test_new_api.move', required=True, ondelete='cascade')
+    amount = fields.Integer()
 
 
 class Order(models.Model):
