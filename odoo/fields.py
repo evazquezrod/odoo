@@ -4197,7 +4197,6 @@ class _RelationalMulti(_Relational):
     def _update(self, records, value):
         """ Update the cached value of ``self`` for ``records`` with ``value``. """
         records.env.cache.patch(records, self, value.id)
-        records.modified([self.name])
 
     def convert_to_cache(self, value, record, validate=True):
         # cache format: tuple(ids)
