@@ -104,3 +104,8 @@ class WebclientController(ThreadController):
                 ("group_ids", "in", request.env.user.all_group_ids.ids),
             ]
             store.add(request.env["mail.canned.response"].search(domain))
+        if name == "avatar_card":
+            if user := request.env["res.users"].with_context(active_test=False).search([("id", "=", params["user_id"])]):
+                company_ids = list(request.env.user._get_company_ids())
+                user = user.with_context(allowed_company_ids=company_ids)
+                store.add(user, user._get_store_avatar_card_fields())

@@ -25,6 +25,7 @@ class TestDiscussFullPerformance(HttpCase, MailCommon):
     #       - search employee (_compute_im_status hr_homeworking override)
     #       - fetch employee (_compute_im_status hr_homeworking override)
     #       - fetch res_users (_read_format)
+    #       - fetch hr_employee (res.users _to_store)
     #   5: settings:
     #       - search res_users_settings (_find_or_create_for_user)
     #       - fetch res_users_settings (_format_settings)
@@ -34,9 +35,10 @@ class TestDiscussFullPerformance(HttpCase, MailCommon):
     #   2: hasCannedResponses
     #       - fetch res_groups_users_rel
     #       - search mail_canned_response
-    _query_count_init_store = 17
+    _query_count_init_store = 18
     # Queries for _query_count_init_messaging (in order):
     #   1: insert res_device_log
+    #   1: search res_company (for context all_companies_ids)
     #   3: _search_is_member (for current user, first occurence _search_is_member for chathub given channel ids)
     #       - fetch res_users
     #       - search discuss_channel_member
@@ -70,6 +72,7 @@ class TestDiscussFullPerformance(HttpCase, MailCommon):
     #                   - _get_on_leave_ids (_compute_im_status override)
     #                   - search hr_employee (_compute_im_status override)
     #                   - fetch hr_employee (_compute_im_status override)
+    #                   - search hr_employee (res.users._to_store override)
     #                   - fetch res_users (_compute_main_user_id)
     #                   - search hr_leave (leave_date_to)
     #           - search bus_bus (_bus_last_id)
@@ -78,9 +81,10 @@ class TestDiscussFullPerformance(HttpCase, MailCommon):
     #           - _compute_message_needaction
     #           - search discuss_channel_res_groups_rel (group_ids)
     #           - fetch res_groups (group_public_id)
-    _query_count_init_messaging = 34
+    _query_count_init_messaging = 36
     # Queries for _query_count_discuss_channels (in order):
     #   1: insert res_device_log
+    #   1: search res_company (for context all_companies_ids)
     #   3: _search_is_member (for current user, first occurence _get_channels_as_member)
     #       - fetch res_users
     #       - search discuss_channel_member
@@ -106,6 +110,7 @@ class TestDiscussFullPerformance(HttpCase, MailCommon):
     #               - _get_on_leave_ids (_compute_im_status override)
     #               - search hr_employee (_compute_im_status override)
     #               - fetch hr_employee (_compute_im_status override)
+    #               - search hr_employee (res.users._to_store override)
     #               - fetch res_users (_compute_main_user_id)
     #               - search hr_leave (leave_date_to)
     #               - search res_users_settings (livechat username)
@@ -407,7 +412,11 @@ class TestDiscussFullPerformance(HttpCase, MailCommon):
                 },
             ),
             "res.users": self._filter_users_fields(
-                {"id": self.user_root.id, "leave_date_to": False, "share": False},
+                {
+                    "id": self.user_root.id,
+                    "share": False,
+                    "employee_ids": [],
+                },
                 {
                     "id": self.users[0].id,
                     "is_admin": False,
@@ -478,6 +487,10 @@ class TestDiscussFullPerformance(HttpCase, MailCommon):
                 self._res_for_user(self.users[0]),
                 self._res_for_user(self.users[14]),
             ),
+            "hr.employee": [
+                self._res_for_employee(self.users[0].employee_ids[0]),
+                self._res_for_employee(self.users[14].employee_ids[0]),
+            ],
             "Store": {
                 "inbox": {
                     "counter": 1,
@@ -610,6 +623,14 @@ class TestDiscussFullPerformance(HttpCase, MailCommon):
                 self._res_for_user(self.user_root),
                 self._res_for_user(self.users[1]),
             ),
+            "hr.employee": [
+                self._res_for_employee(self.users[0].employee_ids[0]),
+                self._res_for_employee(self.users[12].employee_ids[0]),
+                self._res_for_employee(self.users[14].employee_ids[0]),
+                self._res_for_employee(self.users[15].employee_ids[0]),
+                self._res_for_employee(self.users[2].employee_ids[0]),
+                self._res_for_employee(self.users[3].employee_ids[0]),
+            ],
         }
 
     def _expected_result_for_channel(self, channel):
@@ -1825,19 +1846,25 @@ class TestDiscussFullPerformance(HttpCase, MailCommon):
 
     def _res_for_user(self, user):
         if user == self.users[0]:
-            return {"id": user.id, "leave_date_to": False, "share": False}
+            return {"id": user.id, "employee_ids": user.employee_ids.ids, "share": False}
         if user == self.users[1]:
             return {"id": user.id, "share": False}
         if user == self.users[2]:
-            return {"id": user.id, "leave_date_to": False, "share": False}
+            return {"id": user.id, "employee_ids": user.employee_ids.ids, "share": False}
         if user == self.users[3]:
-            return {"id": user.id, "leave_date_to": False, "share": False}
+            return {"id": user.id, "employee_ids": user.employee_ids.ids, "share": False}
         if user == self.users[12]:
-            return {"id": user.id, "leave_date_to": False, "share": False}
+            return {"id": user.id, "employee_ids": user.employee_ids.ids, "share": False}
         if user == self.users[14]:
-            return {"id": user.id, "leave_date_to": False, "share": False}
+            return {"id": user.id, "employee_ids": user.employee_ids.ids, "share": False}
         if user == self.users[15]:
-            return {"id": user.id, "leave_date_to": False, "share": False}
+            return {"id": user.id, "employee_ids": user.employee_ids.ids, "share": False}
         if user == self.user_root:
             return {"id": user.id, "share": False}
         return {}
+
+    def _res_for_employee(self, employee):
+        return {
+            "id": employee.id,
+            "leave_date_to": False,
+        }
