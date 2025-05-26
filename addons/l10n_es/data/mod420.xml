@@ -4,7 +4,6 @@
         <record id="mod_420" model="account.report">
             <field name="name">Tax Report (Mod 420) Canary Islands</field>
             <field name="sequence">420</field>
-            <field name="filter_analytic" eval="False"/>
             <field name="filter_date_range" eval="True"/>
             <field name="filter_period_comparison" eval="True"/>
             <field name="filter_unfold_all" eval="True"/>
