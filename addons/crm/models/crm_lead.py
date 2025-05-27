@@ -12,6 +12,7 @@ from odoo.addons.iap.tools import iap_tools
 from odoo.addons.mail.tools import mail_validation
 from odoo.addons.phone_validation.tools import phone_validation
 from odoo.exceptions import UserError, AccessError, ValidationError
+from odoo.orm.domains import Domain
 from odoo.osv import expression
 from odoo.tools.translate import _
 from odoo.tools import date_utils, email_normalize_all, is_html_empty, groupby, parse_contact_from_email, SQL
@@ -97,6 +98,7 @@ class CrmLead(models.Model):
     _primary_email = 'email_from'
     _check_company_auto = True
     _track_duration_field = 'stage_id'
+    _stage_day_rot_field = 'day_rot'
 
     # Description
     name = fields.Char(
@@ -388,6 +390,27 @@ class CrmLead(models.Model):
             date_create = fields.Datetime.from_string(lead.create_date)
             date_close = fields.Datetime.from_string(lead.date_closed)
             lead.day_close = abs((date_close - date_create).days)
+
+    @api.depends('won_status', 'type')
+    def _compute_rotting(self):
+        super()._compute_rotting()
+
+    @api.depends('stage_id.day_rot')
+    def _compute_date_rot(self):
+        return super()._compute_date_rot()
+
+    def _resource_is_not_rotting_hook(self, resource):
+        if resource.won_status != 'pending' or resource.type != 'opportunity':
+            return True
+        return super()._resource_is_not_rotting_hook(resource)
+
+    def _search_is_rotting(self, operator, value):
+        sup = super()._search_is_rotting(operator, value)
+        dom = [
+            ('won_status', '=', 'pending'),
+            ('type', '=', 'opportunity'),
+        ]
+        return Domain.AND([sup, dom])
 
     @api.depends('partner_id')
     def _compute_name(self):
@@ -1169,18 +1192,18 @@ class CrmLead(models.Model):
         query = """
             SELECT
                 SUM(CASE WHEN user_id = %(user_id)s THEN 1 ELSE 0 END) as count_user_closed_year,
-                MAX(CASE WHEN date_closed >= CURRENT_DATE - INTERVAL '30 days' AND user_id = %(user_id)s THEN expected_revenue ELSE 0 END) as max_user_30,
-                MAX(CASE WHEN date_closed >= CURRENT_DATE - INTERVAL '7 days' AND user_id = %(user_id)s THEN expected_revenue ELSE 0 END) as max_user_7,
-                MAX(CASE WHEN date_closed >= CURRENT_DATE - INTERVAL '30 days' AND team_id = %(team_id)s THEN expected_revenue ELSE 0 END) as max_team_30,
-                MAX(CASE WHEN date_closed >= CURRENT_DATE - INTERVAL '7 days' AND team_id = %(team_id)s THEN expected_revenue ELSE 0 END) as max_team_7,
-                SUM(CASE WHEN date_closed::date = %(today)s::date AND user_id = %(user_id)s THEN 1 ELSE 0 END) as count_user_closed_today,
+                MAX(CASE WHEN date_closed >= %(today)s - INTERVAL '30 days' AND user_id = %(user_id)s THEN expected_revenue ELSE 0 END) as max_user_30,
+                MAX(CASE WHEN date_closed >= %(today)s - INTERVAL '7 days' AND user_id = %(user_id)s THEN expected_revenue ELSE 0 END) as max_user_7,
+                MAX(CASE WHEN date_closed >= %(today)s - INTERVAL '30 days' AND team_id = %(team_id)s THEN expected_revenue ELSE 0 END) as max_team_30,
+                MAX(CASE WHEN date_closed >= %(today)s - INTERVAL '7 days' AND team_id = %(team_id)s THEN expected_revenue ELSE 0 END) as max_team_7,
+                SUM(CASE WHEN date_closed >= %(today)s AND user_id = %(user_id)s THEN 1 ELSE 0 END) as count_user_closed_today,
                 SUM(CASE WHEN country_id = %(country_id)s AND team_id = %(team_id)s THEN 1 ELSE 0 END) as count_country_closed_year,
                 SUM(CASE WHEN source_id = %(source_id)s AND team_id = %(team_id)s THEN 1 ELSE 0 END) as count_source_closed_year,
-                MIN(CASE WHEN date_closed >= %(today)s - INTERVAL '30 days' AND team_id = %(team_id)s THEN day_close ELSE 1000000 END) as min_day_close_30,
+                MIN(CASE WHEN date_closed >= %(today)s - INTERVAL '30 days' AND team_id = %(team_id)s THEN day_close ELSE 30 END) as min_day_close_30,
 
-                SUM(CASE WHEN date_closed::date = (%(today)s - INTERVAL '1 day')  AND user_id = %(user_id)s THEN 1 ELSE 0 END) as count_user_closed_yesterday,
-                SUM(CASE WHEN date_closed::date = (%(today)s - INTERVAL '2 days') AND user_id = %(user_id)s THEN 1 ELSE 0 END) as count_user_closed_minus2day,
-                SUM(CASE WHEN date_closed::date = (%(today)s - INTERVAL '3 days') AND user_id = %(user_id)s THEN 1 ELSE 0 END) as count_user_closed_minus3day
+                SUM(CASE WHEN date_closed >= (%(today)s - INTERVAL '1 day')  AND date_closed < %(today)s AND user_id = %(user_id)s THEN 1 ELSE 0 END) as count_user_closed_yesterday,
+                SUM(CASE WHEN date_closed >= (%(today)s - INTERVAL '2 days') AND date_closed < (%(today)s - INTERVAL '1 day')  AND user_id = %(user_id)s THEN 1 ELSE 0 END) as count_user_closed_minus2day,
+                SUM(CASE WHEN date_closed >= (%(today)s - INTERVAL '3 days') AND date_closed < (%(today)s - INTERVAL '2 days') AND user_id = %(user_id)s THEN 1 ELSE 0 END) as count_user_closed_minus3day
             FROM crm_lead
             WHERE
                 type='opportunity'

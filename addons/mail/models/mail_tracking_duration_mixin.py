@@ -1,12 +1,17 @@
 from collections import defaultdict
+from datetime import timedelta
 
-from odoo import _, fields, models
+from dateutil.relativedelta import relativedelta
+
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 from odoo.tools import SQL
 
 
 class MailTrackingDurationMixin(models.AbstractModel):
     _name = 'mail.tracking.duration.mixin'
     _description = "Mixin to compute the time a record has spent in each value a many2one field can take"
+    _inherit = ['mail.thread']
 
     duration_tracking = fields.Json(
         string="Status time", compute="_compute_duration_tracking",
@@ -110,3 +115,122 @@ class MailTrackingDurationMixin(models.AbstractModel):
             previous_date = tracking['create_date']
 
         return json
+
+    """
+    Rotting logic
+
+    The rotting feature enables resources to mark themselves as stale if enough time has passed since they were last updated
+    by an user.
+    To enable this behavior, the following must be done:
+    - The model pointed to by _track_duration_field must have a "Days to rot" integer field, representing the number of days before
+    the resource is considered stale. That field must be identified on the inheriting model by setting _stage_day_rot_field:
+        on the inheriting model:
+            self._stage_day_rot_field = "day_rot"
+        on the model pointed to by _track_duraton_field:
+            day_rot = fields.Integer('Days to rot', default=5)
+
+    - Several methods must be extended/overriden:
+
+      - _compute_date_rot() must be overriden to update its @depends to trigger if the "days to rot" field is updated:
+            @api.depends('stage_id.day_rot')
+            def _compute_date_rot(self):
+                return super()._compute_date_rot()
+      - _resource_is_not_rotting_hook(task) must be overriden to add additional conditions for which a stage IS NOT rotting
+        (e.g. a task that has been closed):
+            def _resource_is_not_rotting_hook(self, task):
+                if task.is_closed:
+                    return True
+                return super()._resource_is_not_rotting_hook(task)
+      - _search_is_rotting() must be overriden to update the returned domain with additional conditions for which a stage COULD BE rotting
+        (and condition, all need to be true):
+            def _search_is_rotting(self, operator, value):
+                sup = super()._search_is_rotting(operator, value)
+                return Domain.AND([sup, [('is_closed', '=', True)]])
+
+    - The date_rot, is_rotting, day_rotting, last_activity fields need to be added to the relevant views
+        (as well as the "days to rot" field on the tracking model).
+        You may want to use the rotting_form and rotting_kanban field widgets to display the fields visually on form and kanban view
+        (please note- these widgets need both day_rotting and is_rotting fields on the view to function).
+
+
+    Note that if _stage_day_rot_field is not set, or if the value stored by the field pointed by _stage_day_rot_field is 0,
+    then the resource will never rot.
+    """
+
+    date_rot = fields.Date('Date on which this resource will start rotting', compute="_compute_date_rot", store=True)
+    is_rotting = fields.Boolean('Rotting', compute='_compute_rotting', search='_search_is_rotting')
+    day_rotting = fields.Integer('Days Rotting', help='Day count since this resource was last updated',
+        compute='_compute_rotting')
+    last_activity = fields.Date('Date of last activity', compute="_compute_last_activity", store=True, readonly=False)
+
+    @api.depends('write_date')
+    def _compute_last_activity(self):
+        for resource in self:
+            resource.last_activity = self.env.cr.now()
+
+    def _get_day_count_to_rotting(self) -> int:
+        """
+        :return: day count before the resource is considered to be rotting
+        """
+        self.ensure_one()
+        rotting_stage = self[self._track_duration_field]
+        if not rotting_stage or not hasattr(self, '_stage_day_rot_field'):
+            # If _stage_day_rot_field has not been set, the rotting feature is not enabled for this model
+            return 0
+        if not self._stage_day_rot_field in rotting_stage:
+            raise UserError(_('Models using the rotting feature need to declare a "day_rot" field on their stage model. Please refer to the help present in the mail/models/mail_tracking_duration_mixin.py file for implementation details'))
+        day_rot = rotting_stage[self._stage_day_rot_field]
+        return day_rot
+
+    @api.depends('last_activity', 'write_date')
+    def _compute_date_rot(self):
+        for resource in self:
+            day_rot = resource._get_day_count_to_rotting()
+            if not day_rot:
+                continue
+            last_activity = resource.last_activity or resource.write_date or self.env.cr.now()
+            resource.date_rot = last_activity + timedelta(days=day_rot)
+
+    def _message_post_after_hook(self, message, msg_values):
+        if msg_values['message_type'] in ['email_outgoing', 'comment', 'notification']:
+            self.write({'last_activity': self.env.cr.now()})
+        return super()._message_post_after_hook(message, msg_values)
+
+    @api.depends('date_rot', 'last_activity')
+    def _compute_rotting(self):
+        for resource in self:
+            if self._resource_is_not_rotting_hook(resource):
+                resource.is_rotting = False
+                resource.day_rotting = 0
+            else:
+                resource.is_rotting = True
+                resource.day_rotting = (fields.Date.today() - resource.last_activity).days
+
+    def _resource_is_not_rotting_hook(self, resource) -> bool:
+        """
+        :param resource
+        :return: True if the resource is fresh
+
+        Override this hook to add new conditions for which the resource is not rotting
+        (e.g. the resource not being of a type that can rot, or being in a "finish" condition.)
+        Don't forget to also override _compute_rotting with the new @api.depends, based on the fields you use
+        """
+        return resource._get_day_count_to_rotting() == 0 or fields.Date.today() < resource.last_activity + relativedelta(days=resource._get_day_count_to_rotting())
+
+    def _search_is_rotting(self, operator, value):
+        """
+        :param operator
+        :param value
+        :return domain
+
+        Override this search method to complete the search domain for is_rotting field
+        """
+        if operator != 'in':
+            raise UserError(_('Operation not supported'))
+
+        return [
+            (f'{self._track_duration_field}.{self._stage_day_rot_field}', '!=', 0),
+            ('date_rot', '<=', fields.Date.context_today(self)),
+            # todo: no sum in domain, so how to replace that so as to not need the date_rot field anymore?
+            # ('last_activity', '<=', fields.Date.context_today(self) - relativedelta(days=self._get_day_count_to_rotting()))
+        ]
