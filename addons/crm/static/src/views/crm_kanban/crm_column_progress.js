@@ -1,7 +1,5 @@
 import { onWillStart } from "@odoo/owl";
-import { user } from "@web/core/user";
-import { session } from "@web/session";
-import { getCurrency } from "@web/core/currency";
+import { user } from "@web/core/user";  
 import { RottingColumnProgress } from "@mail/js/rotting_mixin/rotting_column_progress";
 
 export class CrmColumnProgress extends RottingColumnProgress {
@@ -19,11 +17,6 @@ export class CrmColumnProgress extends RottingColumnProgress {
 
     getRecurringRevenueGroupAggregate(group) {
         const rrField = this.props.progressBarState.progressAttributes.recurring_revenue_sum_field;
-        const aggregatedValue = this.props.progressBarState.getAggregateValue(group, rrField);
-        let currency = false;
-        if (aggregatedValue.value && rrField.currency_field) {
-            currency = getCurrency(session.company_currency_id);
-        }
-        return { ...aggregatedValue, currency };
+        return this.props.progressBarState.getAggregateValue(group, rrField);
     }
 }

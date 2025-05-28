@@ -8,10 +8,11 @@
             <t t-if="showRecurringRevenue">
                 <t t-set="rrmAggregate" t-value="getRecurringRevenueGroupAggregate(props.group)"/>
                 <AnimatedNumber
+                    t-if="rrmAggregate.value"
                     value="rrmAggregate.value"
                     title="rrmAggregate.title"
                     duration="1000"
-                    currency="props.aggregate.currency"
+                    currency="rrmAggregate.currency"
                     animationClass="'o_animated_grow_huge'"
                 >
                     <t t-set-slot="prefix">
@@ -20,5 +21,8 @@
                 </AnimatedNumber>
             </t>
         </b>
+        <AnimatedNumber position="before">
+            <div class="ms-auto"/>
+        </AnimatedNumber>
     </t>
 </templates>
