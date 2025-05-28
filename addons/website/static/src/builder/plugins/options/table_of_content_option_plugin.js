@@ -19,7 +19,7 @@ function getTocAndHeadingId(headingEl) {
 
 class TableOfContentOptionPlugin extends Plugin {
     static id = "tableOfContentOption";
-    static dependencies = ["clone"];
+    static dependencies = ["clone", "remove"];
     resources = {
         builder_options: [
             {
@@ -43,6 +43,7 @@ class TableOfContentOptionPlugin extends Plugin {
             selector: ".s_table_of_content",
             excludeAncestor: ".s_table_of_content",
         },
+        is_unremovable_selector: ".s_table_of_content_navbar_wrap, .s_table_of_content_main",
     };
 
     normalize(root) {
@@ -64,7 +65,7 @@ class TableOfContentOptionPlugin extends Plugin {
 
         if (tableOfContentMain.children.length === 0) {
             // Remove the table of content if empty content.
-            tableOfContent.remove();
+            this.dependencies.remove.removeElement(tableOfContent)
             return;
         }
 

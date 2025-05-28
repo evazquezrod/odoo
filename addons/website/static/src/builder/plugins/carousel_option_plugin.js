@@ -10,6 +10,8 @@ const carouselWrapperSelector =
 const carouselControlsSelector =
     ".carousel-control-prev, .carousel-control-next, .carousel-indicators";
 
+const carouselItemOptionSelector = ".s_carousel .carousel-item, .s_quotes_carousel .carousel-item, .s_carousel_intro .carousel-item, .s_carousel_cards .carousel-item";
+
 export class CarouselOptionPlugin extends Plugin {
     static id = "carouselOption";
     static dependencies = ["clone", "builderOptions", "builderActions"];
@@ -37,8 +39,7 @@ export class CarouselOptionPlugin extends Plugin {
         ],
         builder_header_middle_buttons: {
             Component: CarouselItemHeaderMiddleButtons,
-            selector:
-                ".s_carousel .carousel-item, .s_quotes_carousel .carousel-item, .s_carousel_intro .carousel-item, .s_carousel_cards .carousel-item",
+            selector: carouselItemOptionSelector,
             props: {
                 addSlide: (editingElement) => this.addSlide(editingElement.closest(".carousel")),
                 removeSlide: (editingElement) =>
@@ -47,8 +48,7 @@ export class CarouselOptionPlugin extends Plugin {
             },
         },
         container_title: {
-            selector:
-                ".s_carousel .carousel-item, .s_quotes_carousel .carousel-item, .s_carousel_intro .carousel-item, .s_carousel_cards .carousel-item",
+            selector: carouselItemOptionSelector,
             getTitleExtraInfo: (editingElement) => this.getTitleExtraInfo(editingElement),
         },
         builder_actions: {
@@ -73,6 +73,7 @@ export class CarouselOptionPlugin extends Plugin {
             }
             return Promise.all(proms);
         },
+        is_unremovable_selector: carouselItemOptionSelector,
     };
 
     getTitleExtraInfo(editingElement) {

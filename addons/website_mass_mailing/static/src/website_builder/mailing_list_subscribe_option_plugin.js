@@ -57,7 +57,7 @@ class MailingListSubscribeOptionPlugin extends Plugin {
                         "/odoo/action-mass_mailing.action_view_mass_mailing_lists";
                 },
                 cancel: () => {
-                    this.dependencies.remove.removeElementAndUpdateContainers(elementToAdd);
+                    this.dependencies.remove.removeElement(elementToAdd);
                 },
             });
         }
