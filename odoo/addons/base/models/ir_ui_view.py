@@ -28,6 +28,8 @@ from odoo.tools.template_inheritance import apply_inheritance_specs, locate_node
 from odoo.tools.translate import xml_translate, TRANSLATED_ATTRS
 from odoo.tools.view_validation import valid_view, get_domain_value_names, get_expression_field_names, get_dict_asts
 
+from odoo.models import check_method_name
+
 _logger = logging.getLogger(__name__)
 
 MOVABLE_BRANDING = ['data-oe-model', 'data-oe-id', 'data-oe-field', 'data-oe-xpath', 'data-oe-source-id']
@@ -1723,7 +1725,8 @@ actual arch.
                     )
                     self._raise_view_error(msg, node)
                 try:
-                    get_public_method(name_manager.model, name)
+                    check_method_name(name)
+                    # get_public_method(name_manager.model, name)
                 except (AttributeError, AccessError):
                     msg = _(
                         "%(method)s on %(model)s is private and cannot be called from a button",
