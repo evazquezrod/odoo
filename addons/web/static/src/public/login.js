@@ -7,6 +7,7 @@ export class Login extends Interaction {
     static selector = ".oe_login_form";
     dynamicContent = {
         _root: { "t-on-submit": this.onSubmit },
+        "button": { "t-on-click": this.onClick },
     };
 
     /**
@@ -27,6 +28,16 @@ export class Login extends Interaction {
                 removeLoadingEffect();
                 oldPreventDefault();
             };
+        }
+    }
+
+    // Check if we are inside an iframe. If so, it means we are in the website app
+    // We don't want the user to be able to click login while being in the website app
+    // because it leads to a traceback
+    onClick(ev) {
+        let inEditPage = window.self !== window.top; 
+        if (inEditPage) {
+            ev.preventDefault();
         }
     }
 }
