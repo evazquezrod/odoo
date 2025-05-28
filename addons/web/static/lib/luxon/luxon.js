@@ -887,12 +887,21 @@ var luxon = (function (exports) {
     }
 
     static create(locale, numberingSystem, outputCalendar, defaultToEN = false) {
-      const specifiedLocale = locale || Settings.defaultLocale;
+      const specifiedLocale = this.parseLocal(locale || Settings.defaultLocale);
       // the system locale is useful for human readable strings but annoying for parsing/formatting known formats
       const localeR = specifiedLocale || (defaultToEN ? "en-US" : systemLocale());
       const numberingSystemR = numberingSystem || Settings.defaultNumberingSystem;
       const outputCalendarR = outputCalendar || Settings.defaultOutputCalendar;
       return new Locale(localeR, numberingSystemR, outputCalendarR, specifiedLocale);
+    }
+
+    static parseLocal(localeStr) {
+      try {
+        new Intl.Locale(localeStr);
+        return localeStr;
+      } catch (e) {
+        return null; // fallback or default locale
+      }
     }
 
     static resetCache() {
