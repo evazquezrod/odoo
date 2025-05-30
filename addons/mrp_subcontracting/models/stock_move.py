@@ -34,6 +34,13 @@ class StockMove(models.Model):
        subcontracted_moves = self.filtered(lambda m: m.is_subcontract)
        super(StockMove, self - subcontracted_moves)._compute_picked()
 
+    @api.depends('is_subcontract')
+    def _compute_show_info(self):
+        super()._compute_show_info()
+        subcontract_moves = self.filtered(lambda m: m.is_subcontract and m.show_lots_text)
+        subcontract_moves.show_lots_text = False
+        subcontract_moves.show_lots_m2o = True
+
     def _set_quantity_done(self, qty):
         to_set_moves = self
         for move in self:
@@ -139,6 +146,8 @@ class StockMove(models.Model):
         subcontracted product. Otherwise use standard behavior.
         """
         self.ensure_one()
+        if self.is_subcontract:
+            return super(StockMove, self.with_context(force_lot_m2o=True)).action_show_details()
         return super().action_show_details()
         if self.state != 'done' and (self._subcontrating_should_be_record() or self._subcontrating_can_be_record()):
             return self._action_record_components()

@@ -1062,7 +1062,7 @@ Please change the quantity done or the rounding precision in your settings.""",
                             })
         if default_vals.get('picking_type_id'):
             picking_type = self.env['stock.picking.type'].browse(default_vals['picking_type_id'])
-            if picking_type.use_existing_lots:
+            if picking_type.use_existing_lots or context.get('force_lot_m2o'):
                 self._create_lot_ids_from_move_line_vals(
                     vals_list, default_vals['product_id'], default_vals['company_id']
                 )
