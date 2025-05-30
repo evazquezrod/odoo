@@ -258,9 +258,9 @@ class Picking(models.Model):
     l10n_ro_edi_stock_available_operation_scopes = fields.Char(compute='_compute_l10n_ro_edi_stock_available_operation_scopes')
     l10n_ro_edi_stock_operation_scope = fields.Selection(selection=OPERATION_SCOPES, string="Operation Scope")
 
-    l10n_ro_edi_stock_vehicle_number = fields.Char(string="Vehicle Number", size=20)
-    l10n_ro_edi_stock_trailer_1_number = fields.Char(string="Trailer 1 Number", size=20)
-    l10n_ro_edi_stock_trailer_2_number = fields.Char(string="Trailer 2 Number", size=20)
+    l10n_ro_edi_stock_vehicle_number = fields.Char(string="Vehicle Number")
+    l10n_ro_edi_stock_trailer_1_number = fields.Char(string="Trailer 1 Number")
+    l10n_ro_edi_stock_trailer_2_number = fields.Char(string="Trailer 2 Number")
 
     l10n_ro_edi_stock_available_start_loc_types = fields.Char(compute='_compute_l10n_ro_edi_stock_available_location_types')
     l10n_ro_edi_stock_start_loc_type = fields.Selection(

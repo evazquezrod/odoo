@@ -11,13 +11,12 @@ class AccountJournal(models.Model):
     )
     l10n_ec_entity = fields.Char(
         string="Emission Entity",
-        size=3,
         copy=False,
         help="Ecuador: Emission entity number that is given by the SRI."
     )
     l10n_ec_emission = fields.Char(
         string="Emission Point",
-        size=3, copy=False,
+        copy=False,
         help="Ecuador: Emission point number that is given by the SRI."
     )
     l10n_ec_emission_address_id = fields.Many2one(

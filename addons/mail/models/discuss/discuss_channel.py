@@ -88,7 +88,7 @@ class DiscussChannel(models.Model):
              "Note that they will be able to manage their subscription manually "
              "if necessary.")
     # access
-    uuid = fields.Char('UUID', size=50, default=_generate_random_token, copy=False)
+    uuid = fields.Char('UUID', default=_generate_random_token, copy=False)
     group_public_id = fields.Many2one('res.groups', string='Authorized Group', compute='_compute_group_public_id', recursive=True, readonly=False, store=True)
     invitation_url = fields.Char('Invitation URL', compute='_compute_invitation_url')
     _channel_type_not_null = models.Constraint(

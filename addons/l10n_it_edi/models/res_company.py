@@ -28,7 +28,7 @@ TAX_SYSTEM = [
 class ResCompany(models.Model):
     _inherit = 'res.company'
 
-    l10n_it_codice_fiscale = fields.Char(string="Codice Fiscale", size=16, related='partner_id.l10n_it_codice_fiscale',
+    l10n_it_codice_fiscale = fields.Char(string="Codice Fiscale", related='partner_id.l10n_it_codice_fiscale',
         store=True, readonly=False, help="Fiscal code of your company")
     l10n_it_tax_system = fields.Selection(selection=TAX_SYSTEM, string="Tax System",
         help="Please select the Tax system to which you are subjected.")
@@ -53,7 +53,7 @@ class ResCompany(models.Model):
         Civil Code)")
     l10n_it_eco_index_office = fields.Many2one('res.country.state', domain="[('country_id','=','IT')]",
         string="Province of the register-of-companies office")
-    l10n_it_eco_index_number = fields.Char(string="Number in register of companies", size=20,
+    l10n_it_eco_index_number = fields.Char(string="Number in register of companies",
         help="This field must contain the number under which the\
         seller/provider is listed on the register of companies.")
     l10n_it_eco_index_share_capital = fields.Float(string="Share capital actually paid up",

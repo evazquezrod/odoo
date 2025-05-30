@@ -47,7 +47,6 @@ class HrApplicant(models.Model):
     partner_name = fields.Char("Applicant's Name")
     email_from = fields.Char(
         string="Email",
-        size=128,
         compute='_compute_partner_phone_email',
         inverse='_inverse_partner_email',
         copy=True,
@@ -57,7 +56,6 @@ class HrApplicant(models.Model):
     email_normalized = fields.Char(index='trigram')  # inherited via mail.thread.blacklist
     partner_phone = fields.Char(
         string="Phone",
-        size=32,
         compute='_compute_partner_phone_email',
         inverse='_inverse_partner_email',
         copy=True,

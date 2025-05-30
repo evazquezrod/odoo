@@ -43,7 +43,7 @@ class FleetVehicleLogContract(models.Model):
     has_open_contract = fields.Boolean(compute='_compute_has_open_contract')
     insurer_id = fields.Many2one('res.partner', 'Vendor')
     purchaser_id = fields.Many2one(related='vehicle_id.driver_id', string='Driver')
-    ins_ref = fields.Char('Reference', size=64, copy=False)
+    ins_ref = fields.Char('Reference', copy=False)
     state = fields.Selection(
         [('futur', 'New'),
          ('open', 'Running'),

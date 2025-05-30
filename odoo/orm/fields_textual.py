@@ -25,15 +25,12 @@ from .utils import COLLECTION_TYPES, SQL_OPERATORS
 if typing.TYPE_CHECKING:
     from .models import BaseModel
     from odoo.tools import Query
-
-if typing.TYPE_CHECKING:
     from collections.abc import Callable
 
 
 class BaseString(Field[str | typing.Literal[False]]):
     """ Abstract class for string fields. """
     translate: bool | Callable[[Callable[[str], str], str], str] = False  # whether the field is translated
-    size = None                         # maximum size of values (deprecated)
     is_text = True
     falsy_value = ''
 
@@ -104,10 +101,9 @@ class BaseString(Field[str | typing.Literal[False]]):
             return None
 
         if isinstance(value, bytes):
-            s = value.decode()
+            value = value.decode()
         else:
-            s = str(value)
-        value = s[:self.size]
+            value = str(value)
         if validate and callable(self.translate):
             # pylint: disable=not-callable
             value = self.translate(lambda t: None, value)
@@ -442,8 +438,6 @@ class Char(BaseString):
     """ Basic string field, can be length-limited, usually displayed as a
     single-line string in clients.
 
-    :param int size: the maximum size of values stored for that field
-
     :param bool trim: states whether the value is trimmed or not (by default,
         ``True``). Note that the trim operation is applied only by the web client.
 
@@ -457,28 +451,20 @@ class Char(BaseString):
     type = 'char'
     trim: bool = True                   # whether value is trimmed (only by web client)
 
-    def _setup_attrs__(self, model_class, name):
-        super()._setup_attrs__(model_class, name)
-        assert self.size is None or isinstance(self.size, int), \
-            "Char field %s with non-integer size %r" % (self, self.size)
-
     @property
     def _column_type(self):
-        return ('varchar', pg_varchar(self.size))
+        return ('varchar', pg_varchar())
 
     def update_db_column(self, model, column):
         if (
-            column and self.column_type[0] == 'varchar' and
-            column['udt_name'] == 'varchar' and column['character_maximum_length'] and
-            (self.size is None or column['character_maximum_length'] < self.size)
+            column and self.column_type[0] == 'varchar'
+            and column['udt_name'] == 'varchar' and column['character_maximum_length']
         ):
-            # the column's varchar size does not match self.size; convert it
+            # the column's varchar size does not match; convert it
             sql.convert_column(model._cr, model._table, self.name, self.column_type[1])
         super().update_db_column(model, column)
 
-    _related_size = property(attrgetter('size'))
     _related_trim = property(attrgetter('trim'))
-    _description_size = property(attrgetter('size'))
     _description_trim = property(attrgetter('trim'))
 
     def get_depends(self, model):

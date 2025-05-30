@@ -24,7 +24,7 @@ class ResCurrency(models.Model):
     _order = 'active desc, name'
 
     # Note: 'code' column was removed as of v6.0, the 'name' should now hold the ISO code.
-    name = fields.Char(string='Currency', size=3, required=True, help="Currency Code (ISO 4217)")
+    name = fields.Char(string='Currency', required=True, help="Currency Code (ISO 4217)")
     iso_numeric = fields.Integer(string="Currency numeric code.", help="Currency Numeric Code (ISO 4217).")
     full_name = fields.Char(string='Name')
     symbol = fields.Char(help="Currency sign, to be used when printing amounts.", required=True)

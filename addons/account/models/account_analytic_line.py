@@ -40,7 +40,7 @@ class AccountAnalyticLine(models.Model):
         index=True,
         check_company=True,
     )
-    code = fields.Char(size=8)
+    code = fields.Char()
     ref = fields.Char(string='Ref.')
     category = fields.Selection(selection_add=[('invoice', 'Customer Invoice'), ('vendor_bill', 'Vendor Bill')])
 

@@ -14,7 +14,7 @@ class L10n_FrFecExportWizard(models.TransientModel):
 
     date_from = fields.Date(string='Start Date', required=True, default=lambda self: self._context.get('report_dates', {}).get('date_from'))
     date_to = fields.Date(string='End Date', required=True, default=lambda self: self._context.get('report_dates', {}).get('date_to'))
-    filename = fields.Char(string='Filename', size=256, readonly=True)
+    filename = fields.Char(string='Filename', readonly=True)
     test_file = fields.Boolean()
     exclude_zero = fields.Boolean(string="Exclude lines at 0")
     export_type = fields.Selection([

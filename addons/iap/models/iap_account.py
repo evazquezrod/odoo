@@ -27,8 +27,7 @@ class IapAccount(models.Model):
     description = fields.Char(related='service_id.description')
     account_token = fields.Char(
         default=lambda s: uuid.uuid4().hex,
-        help="Account token is your authentication key for this service. Do not share it.",
-        size=43)
+        help="Account token is your authentication key for this service. Do not share it.")
     company_ids = fields.Many2many('res.company')
 
     # Dynamic fields, which are received from iap server and set when loading the view

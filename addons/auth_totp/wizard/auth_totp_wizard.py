@@ -29,7 +29,7 @@ class Auth_TotpWizard(models.TransientModel):
         attachment=False, store=True, readonly=True,
         compute='_compute_qrcode',
     )
-    code = fields.Char(string="Verification Code", size=7, store=False)
+    code = fields.Char(string="Verification Code", store=False)
 
     @api.depends('user_id.login', 'user_id.company_id.display_name', 'secret')
     def _compute_qrcode(self):

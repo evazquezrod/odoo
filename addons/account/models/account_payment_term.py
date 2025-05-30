@@ -293,7 +293,6 @@ class AccountPaymentTermLine(models.Model):
         string='Days on the next month',
         readonly=False,
         default='10',
-        size=2,
     )
     nb_days = fields.Integer(string='Days', readonly=False, store=True, compute='_compute_days')
     payment_id = fields.Many2one('account.payment.term', string='Payment Terms', required=True, index=True, ondelete='cascade')
