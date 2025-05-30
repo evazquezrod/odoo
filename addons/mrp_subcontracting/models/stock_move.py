@@ -17,46 +17,18 @@ class StockMove(models.Model):
         compute='_compute_show_subcontracting_details_visible'
     )
 
-    def _compute_display_assign_serial(self):
-        super(StockMove, self)._compute_display_assign_serial()
-        for move in self:
-            if not move.is_subcontract:
-                continue
-            productions = move._get_subcontract_production()
-            if not productions or move.has_tracking == 'none':
-                continue
-            if productions._has_tracked_component() or productions[:1].consumption != 'strict':
-                move.display_assign_serial = False
-
     def _compute_show_subcontracting_details_visible(self):
         """ Compute if the action button in order to see moves raw is visible """
         self.show_subcontracting_details_visible = False
         for move in self:
             if not move.is_subcontract:
                 continue
-            if not move.picked or move.product_uom.is_zero(move.quantity):
+            if not move.move_line_ids or move.product_uom.is_zero(move.quantity):
                 continue
             productions = move._get_subcontract_production()
             if not productions or (productions[:1].consumption == 'strict' and not productions[:1]._has_tracked_component()):
                 continue
             move.show_subcontracting_details_visible = True
-
-    def _compute_show_details_visible(self):
-        """ If the move is subcontract and the components are tracked. Then the
-        show details button is visible.
-        """
-        res = super(StockMove, self)._compute_show_details_visible()
-        for move in self:
-            if not move.is_subcontract:
-                continue
-            if self.env.user._is_portal():
-                move.show_details_visible = any(not p._has_been_recorded() for p in move._get_subcontract_production())
-                continue
-            productions = move._get_subcontract_production()
-            if not productions._has_tracked_component() and productions[:1].consumption == 'strict':
-                continue
-            move.show_details_visible = True
-        return res
 
     def _compute_picked(self):
        subcontracted_moves = self.filtered(lambda m: m.is_subcontract)
@@ -140,6 +112,11 @@ class StockMove(models.Model):
                 lambda m: m.is_subcontract and m.state not in ['draft', 'cancel', 'done']
                 and m.product_uom.compare(m.product_uom_qty, values['product_uom_qty']) != 0
             )._update_subcontract_order_qty(values['product_uom_qty'])
+        # CLPI TODO: do the sync between the MO and move lines
+        # 1. make a link between move line and SBC MO
+        # 2. if move line deleted -> delete the MO
+        # 3. if move line added -> do split on
+        # 4. modify a move line -> modify SBC MO
         res = super().write(values)
         if 'date' in values:
             for move in self:
@@ -162,6 +139,7 @@ class StockMove(models.Model):
         subcontracted product. Otherwise use standard behavior.
         """
         self.ensure_one()
+        return super().action_show_details()
         if self.state != 'done' and (self._subcontrating_should_be_record() or self._subcontrating_can_be_record()):
             return self._action_record_components()
         action = super(StockMove, self).action_show_details()
@@ -177,6 +155,32 @@ class StockMove(models.Model):
 
     def action_show_subcontract_details(self):
         """ Display moves raw for subcontracted product self. """
+        productions = self._get_subcontract_production().filtered(lambda m: m.state != 'cancel')
+        # ctx = dict(self._context, search_default_by_product=True)
+        # if self.env.user._is_portal():
+        #     form_view = self.env.ref('mrp_subcontracting.mrp_subcontracting_portal_move_form_view')
+        #     ctx.update(no_breadcrumbs=False)
+        action = {
+            'type': 'ir.actions.act_window',
+            'res_model': 'mrp.production',
+            'target': 'current',
+            # 'context': ctx
+        }
+        if len(productions) > 1:
+            action.update({
+                'name': _('Subcontracting MOs'),
+                'views': [
+                    (self.env.ref('mrp_subcontracting.mrp_production_subcontracting_tree_view').id, 'list'),
+                    (self.env.ref('mrp_subcontracting.mrp_production_subcontracting_form_view').id, 'form'),
+                ],
+                'domain': [('id', 'in', productions.ids)],
+            })
+        else:
+            action.update({
+                'views': [(self.env.ref('mrp_subcontracting.mrp_production_subcontracting_form_view').id, 'form')],
+                'res_id': productions.id,
+            })
+        return action
         moves = self._get_subcontract_production().move_raw_ids.filtered(lambda m: m.state != 'cancel')
         list_view = self.env.ref('mrp_subcontracting.mrp_subcontracting_move_tree_view')
         form_view = self.env.ref('mrp_subcontracting.mrp_subcontracting_move_form_view')
