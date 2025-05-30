@@ -202,7 +202,7 @@ class ResConfigSettings(models.TransientModel):
                 ('cash_rounding', '=', True)
             ]).cash_rounding = False
 
-    def action_create_new_pos_config(self):
+    def action_pos_config_create_new(self):
         return {
             'name': _('Create Point of Sale'),
             'view_mode': 'form',

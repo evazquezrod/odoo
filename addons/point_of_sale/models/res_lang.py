@@ -9,4 +9,5 @@ class ResLang(models.Model):
 
     @api.model
     def _load_pos_data_fields(self, config_id):
-        return ['id', 'name', 'code', 'flag_image_url', 'display_name']
+        # TODO: `flag_image_url` is available in the POS data, but it not used in the frontend.
+        return ['id', 'name', 'code', 'display_name']

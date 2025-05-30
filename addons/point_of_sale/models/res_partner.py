@@ -13,7 +13,7 @@ class ResPartner(models.Model):
         groups="point_of_sale.group_pos_user",
     )
     # TODO: need to remove pos_order_ids field as it is not used anymore
-    pos_order_ids = fields.One2many('pos.order', 'partner_id', readonly=True)
+    # pos_order_ids = fields.One2many('pos.order', 'partner_id', readonly=True)
     pos_contact_address = fields.Char('PoS Address', compute='_compute_pos_contact_address')
     invoice_emails = fields.Char(compute='_compute_invoice_emails', readonly=True)
     fiscal_position_id = fields.Many2one(
@@ -81,6 +81,7 @@ class ResPartner(models.Model):
         ]
 
     def _compute_pos_order(self):
+        # TODO: need to check why count and data is mismatched from v16
         # retrieve all children partners and prefetch 'parent_id' on them
         all_partners = self.with_context(active_test=False).search_fetch(
             [('id', 'child_of', self.ids)],
@@ -112,10 +113,8 @@ class ResPartner(models.Model):
         '''
         self.ensure_one()
         action = self.env['ir.actions.act_window']._for_xml_id('point_of_sale.action_pos_pos_form')
-        if self.is_company:
-            action['domain'] = [('partner_id.commercial_partner_id', '=', self.id)]
-        else:
-            action['domain'] = [('partner_id', '=', self.id)]
+        partner_field = 'partner_id.commercial_partner_id' if self.is_company else 'partner_id'
+        action['domain'] = [(partner_field, '=', self.id)]
         return action
 
     def open_commercial_entity(self):
