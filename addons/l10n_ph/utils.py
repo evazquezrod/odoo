@@ -54,7 +54,7 @@ def _export_bir_2307(sheet_title, moves, file_format='xlsx'):
             'invoice_date': format_date(move.env, move.invoice_date, date_format="MM/dd/yyyy"),
             'vat': re.sub(r'-', '', partner.vat)[:9] if partner.vat else '',
             'branch_code': partner.branch_code or '000',
-            'company_name': partner.commercial_partner_id.name,
+            'company_name': partner.parent_id.name,
             'first_name': partner.first_name or '',
             'middle_name': partner.middle_name or '',
             'last_name': partner.last_name or '',

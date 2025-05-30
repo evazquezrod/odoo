@@ -697,8 +697,8 @@ class CrmLead(models.Model):
         partner_name = partner.parent_id.name
         if not partner_name and partner.vat:
             partner_name = partner.name
-        elif not partner_name and partner.company_name:
-            partner_name = partner.company_name
+        elif not partner_name and partner.parent_name:
+            partner_name = partner.parent_name
         return {'partner_name': partner_name or self.partner_name}
 
     def _get_partner_email_update(self, force_void=True):
@@ -1948,7 +1948,6 @@ class CrmLead(models.Model):
             'website': self.website,
             # company / hierarchy
             'parent_id': parent_id,
-            'company_name': not parent_id and self.partner_name or self.partner_id.company_name,
             'type': 'contact'
         }
         if self.lang_id.active:

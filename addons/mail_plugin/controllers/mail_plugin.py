@@ -304,7 +304,7 @@ class MailPluginController(http.Controller):
         if partner_iap:
             return partner_iap.partner_id.sudo(False)
 
-        return request.env["res.partner"].search([("vat", "!=", False), ("email_normalized", "=ilike", "%" + search)], limit=1)
+        return request.env["res.partner"].search([('parent_id', '=', False),("vat", "!=", False), ("email_normalized", "=ilike", "%" + search)], limit=1)
 
     def _get_company_data(self, company):
         if not company:

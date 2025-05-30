@@ -84,7 +84,6 @@ class NewLeadNotification(TestCrmCommon):
                     'email': 'new.customer.format@test.example.com',
                     'partner_id': False,
                     'create_values': {
-                        'company_name': 'Format Name',
                         'type': 'contact',
                         'user_id': self.user_sales_leads.id,
                     },
@@ -96,7 +95,6 @@ class NewLeadNotification(TestCrmCommon):
                     'email': 'new.customer.multi.1@test.example.com',  # only first found normalized email is kept
                     'partner_id': False,
                     'create_values': {
-                        'company_name': 'Multi Name',
                         'type': 'contact',
                         'user_id': self.user_sales_leads.id,
                     },
@@ -218,11 +216,6 @@ class NewLeadNotification(TestCrmCommon):
                 self.assertEqual(create_values['comment'], description)  # description -> comment
                 # parent company not created even if partner_name is set
                 self.assertFalse(create_values.get('parent_id'))  # not supported, even if partner_name set
-                # company_name set only for contacts with partner_name (and no contact_name nor name in email)
-                if partner_name:
-                    self.assertEqual(create_values['company_name'], partner_name)  # partner_name -> company_name
-                else:
-                    self.assertFalse('company_name' in create_values)
 
     def test_new_lead_notification(self):
         """ Test newly create leads like from the website. People and channels

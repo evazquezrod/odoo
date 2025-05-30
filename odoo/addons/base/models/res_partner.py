@@ -290,9 +290,7 @@ class ResPartner(models.Model):
         'res.partner', string='Commercial Entity',
         compute='_compute_commercial_partner', store=True,
         recursive=True, index=True)
-    commercial_company_name = fields.Char('Company Name Entity', compute='_compute_commercial_company_name',
-                                          store=True)
-    company_name = fields.Char('Company Name')
+
     barcode = fields.Char(help="Use a barcode to identify this contact.", copy=False, company_dependent=True)
 
     # hack to allow using plain browse record in qweb views, and used in ir.qweb.field.contact
@@ -369,14 +367,14 @@ class ResPartner(models.Model):
         type_description = dict(self._fields['type']._description_selection(self.env))
 
         name = self.name or ''
-        if self.company_name or self.parent_id:
+        if self.parent_id:
             if not name and self.type in displayed_types:
                 name = type_description[self.type]
             if not self.env.context.get('partner_display_name_hide_company'):
-                name = f"{self.commercial_company_name or self.sudo().parent_id.name}, {name}"
+                name = f"{self.sudo().parent_id.name}, {name}"
         return name.strip()
 
-    @api.depends('name', 'parent_id.name', 'type', 'company_name', 'commercial_company_name')
+    @api.depends('name', 'parent_id.name', 'type')
     def _compute_complete_name(self):
         for partner in self:
             partner.complete_name = partner.with_context({})._get_complete_name()
@@ -482,11 +480,6 @@ class ResPartner(models.Model):
                 partner.commercial_partner_id = partner
             else:
                 partner.commercial_partner_id = partner.parent_id.commercial_partner_id
-
-    @api.depends('company_name', 'commercial_partner_id.name')
-    def _compute_commercial_company_name(self):
-        for partner in self:
-            partner.commercial_company_name = partner.company_name or partner.commercial_partner_id.name
 
     def _compute_company_registry(self):
         # exists to allow overrides
@@ -819,8 +812,6 @@ class ResPartner(models.Model):
                                             'Linked active users :\n%(names)s', names=", ".join([u.display_name for u in users])))
         if vals.get('website'):
             vals['website'] = self._clean_website(vals['website'])
-        if vals.get('parent_id'):
-            vals['company_name'] = False
 
         # filter to keep only really updated values -> field synchronize goes through
         # partner tree and we should avoid infinite loops in case same value is
@@ -861,8 +852,6 @@ class ResPartner(models.Model):
         for vals in vals_list:
             if vals.get('website'):
                 vals['website'] = self._clean_website(vals['website'])
-            if vals.get('parent_id'):
-                vals['company_name'] = False
         partners = super().create(vals_list)
         # due to ir.default, compute is not called as there is a default value
         # hence calling the compute manually
@@ -941,7 +930,7 @@ class ResPartner(models.Model):
                 'target': 'current',
                 }
 
-    @api.depends('complete_name', 'email', 'vat', 'state_id', 'country_id', 'commercial_company_name')
+    @api.depends('complete_name', 'email', 'vat', 'state_id', 'country_id')
     @api.depends_context(
         'show_address', 'partner_show_db_id',
         'show_email', 'show_vat', 'lang', 'formatted_display_name'
@@ -950,8 +939,8 @@ class ResPartner(models.Model):
         for partner in self:
             if partner._context.get("formatted_display_name"):
                 name = partner.name or ''
-                if partner.parent_id or partner.company_name:
-                    name = f"{partner.company_name or partner.parent_id.name} \t --{partner.name}--"
+                if partner.parent_id:
+                    name = f"{partner.parent_id.name} \t --{partner.name}--"
 
                 if partner._context.get('show_email') and partner.email:
                     name = f"{name} \t --{partner.email}--"
@@ -1090,13 +1079,13 @@ class ResPartner(models.Model):
             'state_name': self.state_id.name or '',
             'country_code': self.country_id.code or '',
             'country_name': self._get_country_name(),
-            'company_name': self.commercial_company_name or '',
+            'company_name': self.parent_name or '',
         })
         for field in self._formatting_address_fields():
             args[field] = self[field] or ''
         if without_company:
             args['company_name'] = ''
-        elif self.commercial_company_name:
+        elif self.parent_id:
             address_format = '%(company_name)s\n' + address_format
         return address_format, args
 
@@ -1116,7 +1105,7 @@ class ResPartner(models.Model):
     def _display_address_depends(self):
         # field dependencies of method _display_address()
         return self._formatting_address_fields() + [
-            'country_id', 'company_name', 'state_id',
+            'country_id', 'parent_id', 'state_id',
         ]
 
     @api.model
