@@ -12,10 +12,9 @@ registry.category("web_tour.tours").add('website_sale_reorder_from_portal', {
             run: "click",
             expectUnloadPage: true,
         },
-        clickOnElement('Reorder Again', '.o_wsale_reorder_button'),
         {
-            content: "Confirm",
-            trigger: ".o_wsale_reorder_confirm",
+            content: 'Reorder Again',
+            trigger: '.o_wsale_reorder_button',
             run: "click",
             expectUnloadPage: true,
         },
@@ -42,11 +41,6 @@ registry.category("web_tour.tours").add('website_sale_reorder_from_portal', {
             expectUnloadPage: true,
         },
         clickOnElement('Reorder Again', '.o_wsale_reorder_button'),
-        {
-            content: "Confirm",
-            trigger: ".modal .o_wsale_reorder_confirm",
-            run: "click",
-        },
         {
             content: "No",
             trigger: ".modal button:contains(No)",
@@ -76,11 +70,6 @@ registry.category("web_tour.tours").add('website_sale_reorder_from_portal', {
             expectUnloadPage: true,
         },
         clickOnElement('Reorder Again', '.o_wsale_reorder_button'),
-        {
-            content: "Confirm",
-            trigger: ".o_wsale_reorder_confirm",
-            run: "click",
-        },
         {
             content: "Yes",
             trigger: ".modal button:contains(Yes)",
@@ -141,10 +130,9 @@ registry.category("web_tour.tours").add('website_sale_reorder_from_portal', {
             run: "click",
             expectUnloadPage: true,
         },
-        clickOnElement('Reorder Again', '.o_wsale_reorder_button'),
         {
-            content: "Confirm",
-            trigger: ".o_wsale_reorder_confirm",
+            content: "Reorder Again",
+            trigger: '.o_wsale_reorder_button',
             run: "click",
             expectUnloadPage: true,
         },
