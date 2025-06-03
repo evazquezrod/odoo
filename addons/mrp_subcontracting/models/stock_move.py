@@ -55,7 +55,7 @@ class StockMove(models.Model):
         to_set_moves = self
         for move in self:
             if move.is_subcontract and move._subcontracting_possible_record():
-                move_line_quantities = sum(move.move_line_ids.filtered(lambda ml: ml.picked).mapped('quantity'))
+                move_line_quantities = sum(move.move_line_ids.mapped('quantity'))
                 delta_qty = move.quantity - move_line_quantities
                 if move.product_uom.compare(delta_qty, 0) > 0:
                     move._auto_record_components(delta_qty)
@@ -119,11 +119,6 @@ class StockMove(models.Model):
                 lambda m: m.is_subcontract and m.state not in ['draft', 'cancel', 'done']
                 and m.product_uom.compare(m.product_uom_qty, values['product_uom_qty']) != 0
             )._update_subcontract_order_qty(values['product_uom_qty'])
-        # CLPI TODO: do the sync between the MO and move lines
-        # 1. make a link between move line and SBC MO
-        # 2. if move line deleted -> delete the MO
-        # 3. if move line added -> do split on
-        # 4. modify a move line -> modify SBC MO
         res = super().write(values)
         if 'date' in values:
             for move in self:
@@ -133,6 +128,10 @@ class StockMove(models.Model):
                     'date_start': move.date,
                     'date_finished': move.date,
                 })
+        subc_tracked_moves = self.filtered(lambda m: m.is_subcontract and m.has_tracking != 'none')
+        if 'move_line_ids' in values and subc_tracked_moves:
+            for move in self:
+                move._sync_subcontracting_productions()
         return res
 
     @api.model_create_multi
@@ -367,3 +366,51 @@ class StockMove(models.Model):
                 and self.origin_returned_move_id.is_subcontract
                 and self.location_dest_id.id == subcontracting_location.id
         )
+
+    def _sync_subcontracting_productions(self):
+        self.ensure_one()
+        qty_by_lot = dict(self.move_line_ids._read_group([('move_id', '=', self.id)], ['lot_id'], ['quantity:sum']))
+        productions = self._get_subcontract_production()
+        open_mo = productions.filtered(lambda p: not p.lot_producing_id and not p._has_been_recorded())
+        if open_mo and qty_by_lot:
+            # No MOs created yet for the lots, split them from the default 'open' MO
+            productions = open_mo.sudo().with_context(allow_more=True)._split_productions({open_mo: list(qty_by_lot.values())}, cancel_remaining_qty=True)
+            for production, lot_id in zip(productions, qty_by_lot.keys()):
+                production.lot_producing_id = lot_id
+                production.subcontracting_has_been_recorded = True
+        else:
+            # MOs already created for lots, update to enforce sync:
+
+            # 1. Delete 'orphan' MOs with lot not linked to any move line
+            orphan_productions = productions.filtered(lambda p: p.lot_producing_id not in qty_by_lot)
+            if len(productions) == len(orphan_productions):
+                # Make sure not to delete all MOs, leave 1 subcontracting MO as 'open' MO for splitting later
+                production_to_keep = orphan_productions[-1]
+                production_to_keep.subcontracting_has_been_recorded = False
+                production_to_keep.lot_producing_id = False
+                orphan_productions = orphan_productions[:-1]
+            if orphan_productions:
+                orphan_productions.unlink()
+                productions -= orphan_productions
+
+            # 2. Ensure sure quantities of linked MOs still match the quantities on the move
+            mos_to_create = {}  # lot -> qty
+            for lot_id, ml_qty in qty_by_lot.items():
+                lot_mo = productions.filtered(lambda p: p.lot_producing_id == lot_id)
+                if not lot_mo:
+                    mos_to_create[lot_id] = ml_qty
+                elif lot_mo.product_uom_id.compare(lot_mo.product_qty, ml_qty) != 0:
+                    self.env['change.production.qty'].with_context(skip_activity=True).create({
+                        'mo_id': lot_mo.id,
+                        'product_qty': ml_qty
+                    }).change_prod_qty()
+
+            # 3. Create new MOs where needed, by splitting them from an existing subcontracting MO
+            if mos_to_create:
+                production_to_split = self._get_subcontract_production()[0]
+                new_mos = production_to_split.sudo().with_context(allow_more=True)._split_productions({
+                    production_to_split: [production_to_split.product_qty] + list(mos_to_create.values())
+                }, cancel_remaining_qty=True)[1:]
+                for mo, lot_id in zip(new_mos, mos_to_create.keys()):
+                    mo.lot_producing_id = lot_id
+                    mo.subcontracting_has_been_recorded = True
