@@ -144,11 +144,11 @@ class AccountMoveLine(models.Model):
 
     def _sale_can_be_reinvoice(self):
         self.ensure_one()
-        return self.move_type != 'entry' and self.display_type != 'cogs' and super(AccountMoveLine, self)._sale_can_be_reinvoice()
+        return self.move_type != 'entry' and self.display_type != 'cogs' and super()._sale_can_be_reinvoice()
 
     def _stock_account_get_anglo_saxon_price_unit(self):
         self.ensure_one()
-        price_unit = super(AccountMoveLine, self)._stock_account_get_anglo_saxon_price_unit()
+        price_unit = super()._stock_account_get_anglo_saxon_price_unit()
 
         so_line = self.sale_line_ids and self.sale_line_ids[-1] or False
         move_is_downpayment = self.env.context.get("move_is_downpayment")
