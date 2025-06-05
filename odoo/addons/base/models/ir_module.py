@@ -450,6 +450,11 @@ class IrModuleModule(models.Model):
 
     @assert_log_admin_access
     def button_install_cancel(self):
+        modules_to_remove = self.env['ir.module.module.dependency'].search([
+            ('depend_id', 'in', self.ids)
+        ]).module_id.filtered(lambda m:m.state=='installed').mapped('name')
+        if modules_to_remove:
+            self.env['ir.model.data']._module_data_uninstall(modules_to_remove)
         self.write({'state': 'uninstalled', 'demo': False})
         return True
 
