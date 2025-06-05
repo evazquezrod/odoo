@@ -1,4 +1,5 @@
 from odoo.tests import TransactionCase, tagged
+from unittest.mock import patch
 
 
 @tagged('-at_install', 'post_install')
@@ -66,3 +67,14 @@ class TestResCountryState(TransactionCase):
                     self.env['res.country.state'].name_search(name, operator='in'),
                     [(altan.id, altan.display_name)]
                 )
+
+    def test_vat_label_clear_cache(self):
+        """Verify clear_cache is called when the vat_label is changed"""
+
+        glorious_arstotzka = self.env['res.country'].create({
+            'name': 'Arstotzka',
+            'code': 'AA',
+        })
+        with patch.object(self.env.registry, "clear_cache", return_value=None) as clear_cache:
+            glorious_arstotzka.vat_label = 'blabla'
+        clear_cache.assert_called_once()
