@@ -61,9 +61,8 @@ class PosCategory(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_session_open(self):
-        if self.search_count([('id', 'in', self.ids)]):
-            if self.env['pos.session'].sudo().search_count([('state', '!=', 'closed')]):
-                raise UserError(_('You cannot delete a point of sale category while a session is still opened.'))
+        if self.env['pos.session'].search_count([('state', '!=', 'closed')], limit=1):
+            raise UserError(_('You cannot delete a point of sale category while a session is still opened.'))
 
     @api.depends('has_image')
     def _compute_has_image(self):
@@ -72,19 +71,18 @@ class PosCategory(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        for vals in vals_list:
-            if vals.get("parent_id"):
-                vals["color"] = self.search_read([("id", "=", vals["parent_id"])])[0][
-                    "color"
-                ]
-        return super().create(vals_list)
+        pos_categories = super().create(vals_list)
+        pos_categories_with_parent = pos_categories.filtered('parent_id')
+        for pos_categ in pos_categories_with_parent:
+            pos_categ.color = pos_categ.parent_id.color
+        return pos_categories
 
     def write(self, vals):
-        if vals.get('parent_id') and not ("color" in vals):
-            vals["color"] = self.search_read([("id", "=", vals["parent_id"])])[0][
-                "color"
-            ]
-        return super().write(vals)
+        res = super().write(vals)
+        if 'parent_id' in vals and 'color' not in vals:
+            for pos_categ in self:
+                pos_categ.color = pos_categ.parent_id.color
+        return res
 
     def _get_descendants(self):
         available_categories = self
