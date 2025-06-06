@@ -1,6 +1,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 import re
+from geoip2.models import Domain
 from pytz import UTC
 from collections import defaultdict
 from datetime import timedelta, datetime, time
@@ -98,6 +99,7 @@ class ProjectTask(models.Model):
     _primary_email = 'email_from'
     _systray_view = 'list'
     _track_duration_field = 'stage_id'
+    _stage_day_rot_field = 'day_rot'
 
     def _get_versioned_fields(self):
         return [ProjectTask.description.name]
@@ -393,6 +395,23 @@ class ProjectTask(models.Model):
         else:
             return NotImplemented
         return [('state', 'in', searched_states)]
+
+    @api.depends('state')
+    def _compute_rotting(self):
+        super()._compute_rotting()
+
+    @api.depends('stage_id.day_rot')
+    def _compute_date_rot(self):
+        return super()._compute_date_rot()
+
+    def _resource_is_not_rotting_hook(self, task):
+        if task.is_closed:
+            return True
+        return super()._resource_is_not_rotting_hook(task)
+
+    def _search_is_rotting(self, operator, value):
+        sup = super()._search_is_rotting(operator, value)
+        return Domain.AND([sup, [('is_closed', '=', False)]])
 
     @property
     def OPEN_STATES(self):
