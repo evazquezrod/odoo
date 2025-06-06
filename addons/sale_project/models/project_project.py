@@ -550,7 +550,9 @@ class ProjectProject(models.Model):
             '|', ('product_id', '!=', False), ('is_downpayment', '=', True),
             ('is_expense', '=', False),
             ('state', '=', 'sale'),
-            '|', ('qty_to_invoice', '>', 0), ('qty_invoiced', '>', 0),
+                '|',
+                    '|', ('qty_to_invoice', '>', 0), ('qty_invoiced', '>', 0),
+                    ('product_id.invoice_policy', '=', 'delivery'),
         ]) & domain
 
     def _get_revenues_items_from_sol(self, domain=None, with_action=True):
@@ -576,6 +578,12 @@ class ProjectProject(models.Model):
                     downpayment_amount_invoiced += currency._convert(untaxed_amount_invoiced, convert_company.currency_id, convert_company, round=False)
                     downpayment_sol_ids += sol_ids
                 else:
+                    if product and product.invoice_policy == 'delivery':
+                        related_sols = self.env['sale.order.line'].browse(sol_ids)
+                        if related_sols:
+                            if all(sol.qty_delivered == 0 for sol in related_sols):
+                                untaxed_amount_to_invoice = sum(sol.price_subtotal for sol in related_sols)
+
                     sols_per_product[product.id][0] += currency._convert(untaxed_amount_to_invoice, convert_company.currency_id, convert_company)
                     sols_per_product[product.id][1] += currency._convert(untaxed_amount_invoiced, convert_company.currency_id, convert_company)
                     sols_per_product[product.id][2] += sol_ids
