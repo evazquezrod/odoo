@@ -41,6 +41,15 @@ class StockMove(models.Model):
         subcontract_moves.show_lots_text = False
         subcontract_moves.show_lots_m2o = True
 
+    @api.depends('is_subcontract', 'has_tracking')
+    def _compute_is_quantity_done_editable(self):
+        done_moves = self.env['stock.move']
+        for move in self:
+            if move.is_subcontract:
+                move.is_quantity_done_editable = move.has_tracking == 'none'
+                done_moves |= move
+        return super(StockMove, self - done_moves)._compute_is_quantity_done_editable()
+
     def _set_quantity_done(self, qty):
         to_set_moves = self
         for move in self:
@@ -391,3 +400,10 @@ class StockMove(models.Model):
                 for mo, lot_id in zip(new_mos, mos_to_create.keys()):
                     mo.lot_producing_id = lot_id
                     mo.subcontracting_has_been_recorded = True
+
+    def _split(self, qty, restrict_partner_id=False):
+        # Make sure that backordered subcontracting moves are disconnected from the sbc production linked to the original move
+        res = super()._split(qty, restrict_partner_id)
+        if self.is_subcontract:
+            res[0]['move_orig_ids'] = False
+        return res
