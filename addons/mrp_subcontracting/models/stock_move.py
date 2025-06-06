@@ -146,65 +146,42 @@ class StockMove(models.Model):
         """
         self.ensure_one()
         if self.is_subcontract:
-            return super(StockMove, self.with_context(force_lot_m2o=True)).action_show_details()
+            action = super(StockMove, self.with_context(force_lot_m2o=True)).action_show_details()
+            if self.env.user._is_portal():
+                action['views'] = [(self.env.ref('mrp_subcontracting.mrp_subcontracting_view_stock_move_operations').id, 'form')]
+            return action
         return super().action_show_details()
-        if self.state != 'done' and (self._subcontrating_should_be_record() or self._subcontrating_can_be_record()):
-            return self._action_record_components()
-        action = super(StockMove, self).action_show_details()
-        if self.is_subcontract and all(p._has_been_recorded() for p in self._get_subcontract_production()):
-            action['views'] = [(self.env.ref('stock.view_stock_move_operations').id, 'form')]
-            action['context'].update({
-                'show_lots_m2o': self.has_tracking != 'none',
-                'show_lots_text': False,
-            })
-        elif self.env.user._is_portal():
-            action['views'] = [(self.env.ref('mrp_subcontracting.mrp_subcontracting_view_stock_move_operations').id, 'form')]
-        return action
 
     def action_show_subcontract_details(self):
         """ Display moves raw for subcontracted product self. """
         productions = self._get_subcontract_production().filtered(lambda m: m.state != 'cancel')
-        # ctx = dict(self._context, search_default_by_product=True)
-        # if self.env.user._is_portal():
-        #     form_view = self.env.ref('mrp_subcontracting.mrp_subcontracting_portal_move_form_view')
-        #     ctx.update(no_breadcrumbs=False)
+        ctx = dict(self._context, search_default_by_product=True)
+        if self.env.user._is_portal():
+            form_view_id = self.env.ref('mrp_subcontracting.mrp_production_subcontracting_portal_form_view')
+            ctx.update(no_breadcrumbs=False)
+        else:
+            form_view_id = self.env.ref('mrp_subcontracting.mrp_production_subcontracting_form_view')
         action = {
             'type': 'ir.actions.act_window',
             'res_model': 'mrp.production',
             'target': 'current',
-            # 'context': ctx
+            'context': ctx
         }
         if len(productions) > 1:
             action.update({
                 'name': _('Subcontracting MOs'),
                 'views': [
                     (self.env.ref('mrp_subcontracting.mrp_production_subcontracting_tree_view').id, 'list'),
-                    (self.env.ref('mrp_subcontracting.mrp_production_subcontracting_form_view').id, 'form'),
+                    (form_view_id.id, 'form'),
                 ],
                 'domain': [('id', 'in', productions.ids)],
             })
         else:
             action.update({
-                'views': [(self.env.ref('mrp_subcontracting.mrp_production_subcontracting_form_view').id, 'form')],
+                'views': [(form_view_id.id, 'form')],
                 'res_id': productions.id,
             })
         return action
-        moves = self._get_subcontract_production().move_raw_ids.filtered(lambda m: m.state != 'cancel')
-        list_view = self.env.ref('mrp_subcontracting.mrp_subcontracting_move_tree_view')
-        form_view = self.env.ref('mrp_subcontracting.mrp_subcontracting_move_form_view')
-        ctx = dict(self._context, search_default_by_product=True)
-        if self.env.user._is_portal():
-            form_view = self.env.ref('mrp_subcontracting.mrp_subcontracting_portal_move_form_view')
-            ctx.update(no_breadcrumbs=False)
-        return {
-            'name': _('Raw Materials for %s', self.product_id.display_name),
-            'type': 'ir.actions.act_window',
-            'res_model': 'stock.move',
-            'views': [(list_view.id, 'list'), (form_view.id, 'form')],
-            'target': 'current',
-            'domain': [('id', 'in', moves.ids)],
-            'context': ctx
-        }
 
     def _action_cancel(self):
         productions_to_cancel_ids = OrderedSet()
@@ -400,7 +377,7 @@ class StockMove(models.Model):
                 if not lot_mo:
                     mos_to_create[lot_id] = ml_qty
                 elif lot_mo.product_uom_id.compare(lot_mo.product_qty, ml_qty) != 0:
-                    self.env['change.production.qty'].with_context(skip_activity=True).create({
+                    self.sudo().env['change.production.qty'].with_context(skip_activity=True).create({
                         'mo_id': lot_mo.id,
                         'product_qty': ml_qty
                     }).change_prod_qty()
