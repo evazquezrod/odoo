@@ -43,6 +43,26 @@
                     </div>
                 </setting>
             </xpath>
+            <block id="website_shop_checkout" position="inside">
+                <setting id="allow_spontaneous_returns_setting" help="Allow users to return products">
+                    <field name="allow_spontaneous_returns"/>
+                    <div class="content-group" invisible="not allow_spontaneous_returns">
+                        <div class="row mt16">
+                            <div>
+                                <field name="return_validity_days" class="w-25 text-center" nolabel="1"/>
+                                <span class="ms-2">days after delivery</span>
+                            </div>
+                        </div>
+                        <button
+                            string="Manage Return Reasons"
+                            type="action"
+                            name="%(website_sale_stock.action_manage_return_reasons)d"
+                            class="btn-link"
+                            icon="oi-arrow-right"
+                        />
+                    </div>
+                </setting>
+            </block>
         </field>
     </record>
 

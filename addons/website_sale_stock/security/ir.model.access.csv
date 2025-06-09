@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_return_reason_public_public,return.reason public,model_return_reason,base.group_public,1,0,0,0
+access_return_reason_public_portal,return.reason portal,model_return_reason,base.group_portal,1,0,0,0
+access_return_reason_public_employee,return.reason user,model_return_reason,base.group_user,1,0,0,0
+access_return_reason_sale_manager,return.reason sale manager,model_return_reason,sales_team.group_sale_manager,1,1,1,1

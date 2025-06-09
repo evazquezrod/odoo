@@ -1,6 +1,8 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import models
+from dateutil.relativedelta import relativedelta
+
+from odoo import fields, models
 from odoo.exceptions import ValidationError
 
 
@@ -73,6 +75,22 @@ class SaleOrder(models.Model):
         product.ensure_one()
 
         return self._get_cart_qty(product.id), self._get_free_qty(product)
+
+    def _display_return_button(self):
+        self.ensure_one()
+        today = fields.Date.today()
+        return (
+            self.website_id.allow_spontaneous_returns
+            and self.state == 'sale'
+            and self.effective_date
+            and self.effective_date.date() >= (
+                today - relativedelta(days=self.website_id.return_validity_days)
+            )
+            and any(
+                line.product_id.type == 'consu'
+                for line in self.order_line
+            )
+        )
 
     def _get_free_qty(self, product):
         return product.with_context(warehouse_id=self._get_shop_warehouse_id()).free_qty

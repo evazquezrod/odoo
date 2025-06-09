@@ -16,8 +16,13 @@ Then it can be made specific at the product level.
         'stock_delivery',
     ],
     'data': [
+        # Security
+        'security/ir.model.access.csv',
+
         'views/product_template_views.xml',
+        'views/return_reason_views.xml',  # used in res_config_settings_views.xml file
         'views/res_config_settings_views.xml',
+        'views/sale_portal_templates.xml',
         'views/website_sale_stock_templates.xml',
         'views/stock_picking_views.xml',
         'views/website_pages_views.xml',
@@ -25,6 +30,7 @@ Then it can be made specific at the product level.
         'data/ir_cron_data.xml',
     ],
     'demo': [
+        'data/return_reason_demo.xml',
         'data/website_sale_stock_demo.xml',
     ],
     'auto_install': True,
@@ -32,6 +38,7 @@ Then it can be made specific at the product level.
         'web.assets_frontend': [
             ('before', 'website_sale/static/src/js/website_sale.js', 'website_sale_stock/static/src/js/variant_mixin.js'),
             'website_sale_stock/static/src/js/combo_configurator_dialog/*',
+            'website_sale_stock/static/src/interactions/*',
             'website_sale_stock/static/src/js/models/*',
             'website_sale_stock/static/src/js/product/*',
             'website_sale_stock/static/src/js/product_card/*',
@@ -39,6 +46,8 @@ Then it can be made specific at the product level.
             'website_sale_stock/static/src/js/website_sale.js',
             'website_sale_stock/static/src/js/website_sale_reorder.js',
             'website_sale_stock/static/src/xml/**/*',
+            'website_sale_stock/static/src/js/return_order_dialog/*',
+
         ],
         'web.assets_tests': [
             'website_sale_stock/static/tests/tours/*',

@@ -10,9 +10,11 @@ class ResConfigSettings(models.TransientModel):
     allow_out_of_stock_order = fields.Boolean(
         string='Continue selling when out-of-stock',
         default=True)
+    allow_spontaneous_returns = fields.Boolean(related='website_id.allow_spontaneous_returns', readonly=False)
     available_threshold = fields.Float(
         string='Show Threshold',
         default=5.0)
+    return_validity_days = fields.Integer(related="website_id.return_validity_days", readonly=False)
     show_availability = fields.Boolean(
         string='Show availability Qty',
         default=False)

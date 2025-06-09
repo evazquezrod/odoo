@@ -6,6 +6,8 @@ from odoo import fields, models
 class Website(models.Model):
     _inherit = 'website'
 
+    allow_spontaneous_returns = fields.Boolean(string="Allow Spontaneous Returns")
+    return_validity_days = fields.Integer(string="Return Validity days", default=15)
     warehouse_id = fields.Many2one('stock.warehouse', string='Warehouse')
 
     def _get_product_available_qty(self, product, **kwargs):
