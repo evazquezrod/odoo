@@ -5,8 +5,16 @@ from odoo.tests.common import tagged
 from odoo.addons.base.tests.common import HttpCaseWithUserPortal, HttpCaseWithUserDemo
 
 
+<<<<<<< 610e6629f8df54fefbb394defb1d0f5e606851d4:addons/mail/tests/discuss/test_discuss_channel_as_guest.py
 @tagged("post_install", "-at_install")
 class TestMailPublicPage(HttpCaseWithUserPortal, HttpCaseWithUserDemo):
+||||||| 65ab487978e930ed8e6d549f4161263683d5be55:addons/mail/tests/test_mail_channel_as_guest.py
+@odoo.tests.tagged('-at_install', 'post_install')
+class TestMailPublicPage(HttpCaseWithUserDemo, HttpCaseWithUserPortal):
+=======
+@odoo.tests.tagged('-at_install', 'post_install', 'is_tour')
+class TestMailPublicPage(HttpCaseWithUserDemo, HttpCaseWithUserPortal):
+>>>>>>> c94fddc2fef815cf495fe9a9eeab120c76389890:addons/mail/tests/test_mail_channel_as_guest.py
     """Checks that the invite page redirects to the channel and that all
     modules load correctly on the welcome and channel page when authenticated as various users"""
 

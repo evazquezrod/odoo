@@ -87,12 +87,14 @@ class BaseTestUi(odoo.tests.HttpCase):
 
         self.start_tour("/web", 'main_flow_tour', login="admin", timeout=180)
 
-@odoo.tests.tagged('post_install', '-at_install')
+
+@odoo.tests.tagged('post_install', '-at_install', 'is_tour')
 class TestUi(BaseTestUi):
 
     def test_01_main_flow_tour(self):
         self.main_flow_tour()
 
+<<<<<<< 610e6629f8df54fefbb394defb1d0f5e606851d4
     def test_company_switch_access_error(self):
         company1 = self.env.company
         company2 = self.env["res.company"].create({"name":"second company"})
@@ -126,6 +128,12 @@ class TestUi(BaseTestUi):
 
 
 @odoo.tests.tagged('post_install', '-at_install')
+||||||| 65ab487978e930ed8e6d549f4161263683d5be55
+@odoo.tests.tagged('post_install', '-at_install')
+=======
+
+@odoo.tests.tagged('post_install', '-at_install', 'is_tour')
+>>>>>>> c94fddc2fef815cf495fe9a9eeab120c76389890
 class TestUiMobile(BaseTestUi):
 
     browser_size = '375x667'
