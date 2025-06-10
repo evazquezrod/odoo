@@ -836,9 +836,9 @@ class IrActionsReport(models.Model):
         # Call 'wkhtmltopdf' to generate the missing streams.
         res_ids_wo_stream = [res_id for res_id, stream_data in collected_streams.items() if not stream_data['stream']]
         all_res_ids_wo_stream = res_ids if has_duplicated_ids else res_ids_wo_stream
-        is_whtmltopdf_needed = not res_ids or res_ids_wo_stream
+        is_engine_needed = not res_ids or res_ids_wo_stream
 
-        if is_whtmltopdf_needed:
+        if is_engine_needed:
 
             if self.get_wkhtmltopdf_state() == 'install':
                 # wkhtmltopdf is not installed
