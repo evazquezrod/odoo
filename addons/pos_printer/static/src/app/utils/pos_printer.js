@@ -1,6 +1,5 @@
 import { BasePrinter } from "@point_of_sale/app/utils/printer/base_printer";
 import { _t } from "@web/core/l10n/translation";
-import { rpc } from "@web/core/network/rpc";
 
 /**
  * Sends print request to ePos printer that is directly connected to the local network.
@@ -39,7 +38,7 @@ export class PosPrinter extends BasePrinter {
      */
     async sendPrintingJob(print_data) {
         try {
-            const response = await rpc("/pos/print-receipt/", {
+            const response = await this.posPrintReceipt({
                 ...print_data,
                 printer_ip: this.ip,
             });
@@ -52,6 +51,37 @@ export class PosPrinter extends BasePrinter {
                 result: false,
                 printerErrorCode: "Not found, the printer is not reachable",
             };
+        }
+    }
+
+    async posPrintReceipt({ raster_base64, width, height, printer_ip, cash_drawer = false }) {
+        const payload = {
+            raster_base64,
+            width,
+            height,
+            printer_ip,
+            cash_drawer,
+        };
+
+        try {
+            // const printerHost = printer_ip.split(":")[0];
+            const response = await fetch(`https://${printer_ip}/pos/print/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            return result;
+        } catch (error) {
+            console.error("Error printing receipt:", error);
+            return { status: "error", message: error.message };
         }
     }
 
