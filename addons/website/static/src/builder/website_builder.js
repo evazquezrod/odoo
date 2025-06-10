@@ -16,6 +16,7 @@ import { PopupVisibilityPlugin } from "./plugins/popup_visibility_plugin";
 import { SaveTranslationPlugin } from "./plugins/save_translation_plugin";
 import { TranslationPlugin } from "./plugins/translation_plugin";
 import { WebsiteVisibilityPlugin } from "./plugins/website_visibility_plugin";
+import { CustomizeTranslationTabPlugin } from './translation_components/customize_translation_tab_plugin';
 
 const TRANSLATION_PLUGINS = [
     BuilderOptionsPlugin,
@@ -29,6 +30,7 @@ const TRANSLATION_PLUGINS = [
     WebsiteVisibilityPlugin,
     HighlightPlugin,
     OperationPlugin,
+    CustomizeTranslationTabPlugin,
 ];
 
 export class WebsiteBuilder extends Component {
@@ -57,14 +59,19 @@ export class WebsiteBuilder extends Component {
             "SearchPowerboxPlugin",
             "YoutubePlugin",
             "ImagePlugin",
+            "AlignPlugin",
+            "ListPlugin",
+            "FontPlugin",
+            "FontFamilyPlugin"
         ];
         const pluginsToRemove = this.props.translation
             ? [...mainEditorPluginsToRemove, ...pluginsBlockedInTranslationMode]
             : mainEditorPluginsToRemove;
         const mainEditorPlugins = removePlugins([...MAIN_EDITOR_PLUGINS], pluginsToRemove);
-        const coreBuilderPlugins = this.props.translation ? [] : CORE_BUILDER_PLUGINS;
-        const Plugins = [...mainEditorPlugins, ...coreBuilderPlugins, ...(websitePlugins || [])];
-        builderProps.Plugins = Plugins;
+        const Plugins = [...mainEditorPlugins, ...CORE_BUILDER_PLUGINS, ...(websitePlugins || [])];
+        builderProps.Plugins = [
+            ...new Map(Plugins.map(plugin => [plugin.id, plugin])).values()
+        ];
         builderProps.onEditorLoad = (editor) => {
             this.editor = editor;
         };
