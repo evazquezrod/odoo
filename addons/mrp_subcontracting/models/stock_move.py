@@ -407,3 +407,8 @@ class StockMove(models.Model):
         if self.is_subcontract:
             res[0]['move_orig_ids'] = False
         return res
+
+    def _generate_serial_numbers(self, next_serial, next_serial_count=False, location_id=False):
+        if self.is_subcontract:
+            return super(StockMove, self.with_context(force_lot_m2o=True))._generate_serial_numbers(next_serial, next_serial_count, location_id)
+        return super()._generate_serial_numbers(next_serial, next_serial_count, location_id)
