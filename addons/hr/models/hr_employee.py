@@ -1093,9 +1093,19 @@ class HrEmployee(models.Model):
             # Empty links to this employees (example: manager, coach, time off responsible, ...)
             employee_fields_to_empty = self._get_employee_m2o_to_empty_on_archived_employees()
             user_fields_to_empty = self._get_user_m2o_to_empty_on_archived_employees()
+<<<<<<< 935d2c932e90d4b233316034026c4c04f49539e9
             employee_domain = Domain.OR(Domain(field, 'in', archived_employees.ids) for field in employee_fields_to_empty)
             user_domain = Domain.AND(Domain(field, 'in', archived_employees.user_id.ids) for field in user_fields_to_empty)
             employees = self.env['hr.employee'].search(employee_domain | user_domain)
+||||||| c43b865324d9e7bb713b3fe4edeede52b0bef495
+            employee_domain = [[(field, 'in', archived_employees.ids)] for field in employee_fields_to_empty]
+            user_domain = [[(field, 'in', archived_employees.user_id.ids) for field in user_fields_to_empty]]
+            employees = self.env['hr.employee'].search(expression.OR(employee_domain + user_domain))
+=======
+            employee_domain = [[(field, 'in', archived_employees.ids)] for field in employee_fields_to_empty]
+            user_domain = [[(field, 'in', archived_employees.user_id.ids)] for field in user_fields_to_empty]
+            employees = self.env['hr.employee'].search(expression.OR(employee_domain + user_domain))
+>>>>>>> 185d37fbe4eca06d27a1ae618219051550d22595
             for employee in employees:
                 for field in employee_fields_to_empty:
                     if employee[field] in archived_employees:
