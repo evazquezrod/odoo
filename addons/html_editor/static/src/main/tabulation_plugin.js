@@ -52,8 +52,8 @@ export class TabulationPlugin extends Plugin {
             },
         ],
         shortcuts: [
-            { hotkey: "tab", commandId: "tab" },
-            { hotkey: "shift+tab", commandId: "shiftTab" },
+            { hotkey: "tab", commandId: "tab", restricted: true },
+            { hotkey: "shift+tab", commandId: "shiftTab", restricted: true },
         ],
 
         /** Handlers */
