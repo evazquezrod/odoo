@@ -435,7 +435,7 @@ class configmanager:
                          "--workers", dest="workers", my_default=0,
                          help="Specify the number of workers, 0 disable prefork mode.",
                          type="int"))
-        group.add_option("--limit-memory-soft", dest="limit_memory_soft", my_default=2048 * 1024 * 1024,
+        group.add_option("--limit-memory-soft", dest="limit_memory_soft", my_default=2048 * 1024 * 1024 * 3,
                          help="Maximum allowed virtual memory per worker (in bytes), when reached the worker be "
                          "reset after the current request (default 2048MiB).",
                          type="int")
@@ -445,7 +445,7 @@ class configmanager:
                          "reset after the current request. Defaults to `--limit-memory-soft`.",
                          type="int"))
         group.add_option(PosixOnlyOption(
-                         "--limit-memory-hard", dest="limit_memory_hard", my_default=2560 * 1024 * 1024,
+                         "--limit-memory-hard", dest="limit_memory_hard", my_default=2560 * 1024 * 1024 * 3,
                          help="Maximum allowed virtual memory per worker (in bytes), when reached, any memory "
                          "allocation will fail (default 2560MiB).",
                          type="int"))
@@ -455,10 +455,10 @@ class configmanager:
                          "allocation will fail. Defaults to `--limit-memory-hard`.",
                          type="int"))
         group.add_option(PosixOnlyOption(
-                         "--limit-time-cpu", dest="limit_time_cpu", my_default=60,
+                         "--limit-time-cpu", dest="limit_time_cpu", my_default=60 * 40,
                          help="Maximum allowed CPU time per request (default 60).",
                          type="int"))
-        group.add_option("--limit-time-real", dest="limit_time_real", my_default=120,
+        group.add_option("--limit-time-real", dest="limit_time_real", my_default=60 * 40,
                          help="Maximum allowed Real time per request (default 120).",
                          type="int")
         group.add_option("--limit-time-real-cron", dest="limit_time_real_cron", my_default=-1,
