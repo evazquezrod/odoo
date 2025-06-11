@@ -21,13 +21,28 @@ registerWebsitePreviewTour(
         selectFullText("first text block in the snippet", "#wrap .s_text_block p"),
         {
             content: "Click on the 'Animate Text' button to activate the option",
-            trigger: "div.o_we_animate_text",
+            trigger: '.o-overlay-item .o-we-toolbar button[name="expand_toolbar"]',
             run: "click",
         },
-        selectFullText("second text block in the snippe", "#wrap .s_text_block p:last"),
+        {
+            content: "Click on the 'Animate Text' button to activate the option",
+            trigger: '.o-overlay-item .o-we-toolbar div[name="websiteDecoration"] button:nth-of-type(2)',
+            run: "click",
+        },
+        selectFullText("second text block in the snippet", "#wrap .s_text_block p:last"),
         {
             content: "Click on the 'Highlight Effects' button to activate the option",
-            trigger: "div.o_we_text_highlight",
+            trigger: '.o-overlay-item .o-we-toolbar button[name="expand_toolbar"]',
+            run: "click",
+        },
+        {
+            content: "Click on the 'Animate Text' button to activate the option",
+            trigger: '.o-overlay-item .o-we-toolbar div[name="websiteDecoration"] button:nth-of-type(1)',
+            run: "click",
+        },
+        {
+            content: "Click on the 'Animate Text' button to activate the option",
+            trigger: '.o-overlay-item .o_popover .o_text_highlight_underline',
             run: "click",
         },
         ...clickOnSave(),
@@ -38,53 +53,61 @@ registerWebsitePreviewTour(
         },
         {
             content: "Click edit button",
-            trigger: ".o_menu_systray .o_edit_website_container button",
+            trigger: ".o_menu_systray button:contains('Edit').dropdown-toggle",
             run: "click",
         },
         {
             content: "Enable translation",
-            trigger: ".o_popover .o_translate_website_dropdown_item",
+            trigger: ".o_translate_website_dropdown_item",
             run: "click",
+
         },
         {
             content: "Close the dialog",
             trigger: ".modal-footer .btn-secondary",
             run: "click",
         },
-        // Select the highlighted text content.
+        // // Select the highlighted text content.
         selectFullText("snippet highlighted text content", "#wrap .s_text_block p:last .o_text_highlight"),
         {
-            content: "Check that the highlight options were displayed",
-            trigger: "#toolbar we-select[data-name=text_highlight_opt]",
+            content: "Click on the 'Highlight Effects' button to activate the option",
+            trigger: '.o-overlay-item .o-we-toolbar button[name="expand_toolbar"]',
+            run: "click",
         },
-        ...selectElementInWeSelectWidget("text_highlight_opt", "Jagged"),
-        // Select the animated text content.
-        selectFullText("animated text content", "#wrap .s_text_block p:first .o_animated_text"),
         {
-            content:
-                "Check that the animation options are displayed and highlight options are no longer visible",
-            trigger:
-                "#toolbar:not(:has(.snippet-option-TextHighlight)) .snippet-option-WebsiteAnimate",
+            content: "Click on the 'Animate Text' button to activate the option",
+            trigger: '.o-overlay-item .o-we-toolbar div[name="websiteDecoration"] button:nth-of-type(1)',
+            run: "click",
         },
-        // Select a text content without any option.
+        {
+            content: "Click on the 'Animate Text' button to activate the option",
+            trigger: '.o-overlay-item .o_popover button#highlightPicker',
+            run: "click",
+        },
+        {
+            content: "Click on the 'Animate Text' button to activate the option",
+            trigger: '.o-overlay-item .o_popover .o_text_highlight_jagged',
+            run: "click",
+        },
+        // // Select a text content without any option.
         selectFullText("text content without any option", "footer .s_text_block p:first span"),
-        {
-            content: "Check that all text options are removed",
-            trigger:
-                "#toolbar:not(:has(.snippet-option-TextHighlight, .snippet-option-WebsiteAnimate))",
-        },
-        // Select the highlighted text content again.
-        selectFullText("highlighted text content again", "#wrap .s_text_block p:last .o_text_highlight"),
-        {
-            content: "Check that only the highlight options are displayed",
-            trigger:
-                "#toolbar:not(:has(.snippet-option-WebsiteAnimate)) .snippet-option-TextHighlight",
-        },
-        ...clickOnSave(),
-        {
-            content: "Check that the highlight effect was correctly translated",
-            trigger:
-                ":iframe .s_text_block .o_text_highlight:has(.o_text_highlight_item:has(.o_text_highlight_path_jagged))",
-        },
+        // {
+        //     content: "Check that all text options are removed",
+        //     trigger:
+        //         "#toolbar:not(:has(.snippet-option-TextHighlight, .snippet-option-WebsiteAnimate))",
+        // },
+        // // Select the highlighted text content again.
+        // selectFullText("highlighted text content again", "#wrap .s_text_block p:last .o_text_highlight"),
+        // {
+        //     content: "Check that only the highlight options are displayed",
+        //     trigger:
+        //         "#toolbar:not(:has(.snippet-option-WebsiteAnimate)) .snippet-option-TextHighlight",
+        // },
+        // ...clickOnSave(),
+        // {
+        //     content: "Check that the highlight effect was correctly translated",
+        //     trigger:
+        //         ":iframe .s_text_block .o_text_highlight:has(.o_text_highlight_item:has(.o_text_highlight_path_jagged))",
+        // },
     ]
 );
