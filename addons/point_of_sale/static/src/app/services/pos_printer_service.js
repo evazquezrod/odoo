@@ -3,6 +3,7 @@ import { registry } from "@web/core/registry";
 import { RetryPrintPopup } from "@point_of_sale/app/components/popups/retry_print_popup/retry_print_popup";
 import { PrinterService } from "@point_of_sale/app/services/printer_service";
 import { AlertDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
+import { ServerPrinter } from "@point_of_sale/app/utils/printer/server_printer";
 
 export const posPrinterService = {
     dependencies: ["hardware_proxy", "dialog", "renderer"],
@@ -33,8 +34,23 @@ export class PosPrinterService extends PrinterService {
             return false;
         }
     }
+
+    selectPrinterToUse() {
+        if (this.useServerPrinter) {
+            this.setPrinter(new ServerPrinter({
+                orm: undefined,
+                posConfigId: this.posConfigId,
+            })
+            );
+
+        }
+        else {
+            this.setPrinter(this.hardware_proxy.printer);
+        }
+    }
+
     async printHtml() {
-        this.setPrinter(this.hardware_proxy.printer);
+        this.selectPrinterToUse();
         try {
             return await super.printHtml(...arguments);
         } catch (error) {

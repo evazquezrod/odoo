@@ -20,6 +20,7 @@ export class BasePrinter {
      * @returns {{ successful: boolean; message?: { title: string; body?: string }}}
      */
     async printReceipt(receipt) {
+        debugger;
         if (receipt) {
             this.receiptQueue.push(receipt);
         }

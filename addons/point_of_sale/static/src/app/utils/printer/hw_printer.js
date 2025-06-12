@@ -31,6 +31,7 @@ export class HWPrinter extends BasePrinter {
      * @override
      */
     sendPrintingJob(img) {
+        debugger;
         return this.sendAction({ action: "print_receipt", receipt: img });
     }
 }

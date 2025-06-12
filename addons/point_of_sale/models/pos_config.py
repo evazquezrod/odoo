@@ -172,6 +172,14 @@ class PosConfig(models.Model):
     company_has_template = fields.Boolean(string="Company has chart of accounts", compute="_compute_company_has_template")
     current_user_id = fields.Many2one('res.users', string='Current Session Responsible', compute='_compute_current_session_user')
     other_devices = fields.Boolean(string="Other Devices", help="Connect devices to your PoS without an IoT Box.")
+    use_server_printer = fields.Boolean(string="Use Server Printer", help="Configure your printer to retrieve receipts from the server")
+    server_printer_url = fields.Char(
+        string="Epson Cloud Printing URL",
+        help="This URL needs to be pasted in the printer's configuration to enable cloud printing.",
+        readonly=True,
+        store=False,
+        default=lambda self: f"{self.get_base_url()}/point_of_sale/epson_cloud_print/{self.id}/notification",
+    )
     rounding_method = fields.Many2one('account.cash.rounding', string="Cash rounding")
     cash_rounding = fields.Boolean(string="Cash Rounding")
     only_round_cash_method = fields.Boolean(string="Only apply rounding on cash")

@@ -50,8 +50,13 @@
                                 </div>
                             </div>
                         </setting>
-                        <setting id="other_devices" string="ePos Printer" help="Connect device to your PoS without an IoT Box">
+                        <setting id="other_devices" string="Epson Printer" help="Connect device to your PoS without an IoT Box">
                             <field name="other_devices" />
+                        </setting>
+                        <!-- Use server printer for receipts (the printer will poll a controller to retreive the receipt) -->
+                        <setting id="server_printer" string="Server Printer URL" help="Configure a printer which will retreive receipts from your database">
+                            <field name="use_server_printer"/>
+                            <field name="server_printer_url" widget="CopyClipboardChar" invisible="not use_server_printer"/>
                         </setting>
                         <setting string="IoT Box" help="Connect devices using an IoT Box">
                                 <field name="is_posbox" />

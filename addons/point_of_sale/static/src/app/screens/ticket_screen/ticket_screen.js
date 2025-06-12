@@ -131,6 +131,7 @@ export class TicketScreen extends Component {
         }
     }
     async print(order) {
+        debugger;
         await this.pos.printReceipt({ order: order });
     }
     async onFilterSelected(selectedFilter) {

@@ -38,6 +38,7 @@ import { openProxyCustomerDisplay } from "@point_of_sale/customer_display/utils"
 import { ProductInfoPopup } from "@point_of_sale/app/components/popups/product_info_popup/product_info_popup";
 import { PresetSlotsPopup } from "@point_of_sale/app/components/popups/preset_slots_popup/preset_slots_popup";
 import { DebugWidget } from "../utils/debug/debug_widget";
+import { ServerPrinter } from "../utils/printer/server_printer";
 
 const { DateTime } = luxon;
 
@@ -1078,8 +1079,12 @@ export class PosStore extends WithLazyGetterTrap {
     }
 
     createPrinter(config) {
-        const url = deduceUrl(config.proxy_ip || "");
-        return new HWPrinter({ url });
+        debugger;
+        //if (config.)
+        if (config.proxy_ip) {
+            const url = deduceUrl(config.proxy_ip || "");
+            return new HWPrinter({ url });
+        }
     }
     async _loadFonts() {
         return new Promise(function (resolve, reject) {
@@ -1646,6 +1651,8 @@ export class PosStore extends WithLazyGetterTrap {
         order = this.getOrder(),
         printBillActionTriggered = false,
     } = {}) {
+        debugger;
+        console.log("Printing receipt", this.printer)
         const result = await this.printer.print(
             OrderReceipt,
             {
