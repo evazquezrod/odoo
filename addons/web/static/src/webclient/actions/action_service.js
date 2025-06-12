@@ -1,4 +1,5 @@
 import { _t } from "@web/core/l10n/translation";
+import { Domain } from "@web/core/domain";
 import { browser } from "@web/core/browser/browser";
 import { makeContext } from "@web/core/context";
 import { useDebugCategory } from "@web/core/debug/debug_context";
@@ -1506,7 +1507,6 @@ export function makeActionManager(env, router = _router) {
             context.active_ids = params.resIds;
             context.active_model = params.resModel;
             action = await keepLast.add(_loadAction(params.name, context));
-            debugger
             if (params.domain) {
                 const originalDomain = action.domain || [];
                 action.domain = Domain.and([originalDomain, params.domain]).toList();
