@@ -74,6 +74,7 @@ export const datetimePickerService = {
                             restoreTargetMargin();
                             restoreTargetMargin = null;
                         }
+                        hookParams.onClose?.call();
                     },
                 });
                 // Hook methods
@@ -278,7 +279,6 @@ export const datetimePickerService = {
                     const options = { tz: pickerProps.tz, format: hookParams.format };
                     if (operation === "format") {
                         options.showSeconds = hookParams.showSeconds ?? true;
-                        options.condensed = hookParams.condensed || false;
                     }
                     try {
                         return [convertFn(value, options), null];

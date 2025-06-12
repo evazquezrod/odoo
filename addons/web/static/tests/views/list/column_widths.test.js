@@ -471,8 +471,8 @@ test(`width computation: date and datetime with fancy formats`, async () => {
         arch: `
             <list>
                 <field name="foo"/>
-                <field name="date"/>
-                <field name="datetime"/>
+                <field name="date" options="{'date_format': true}"/>
+                <field name="datetime" options="{'date_format': true}"/>
             </list>`,
     });
 
@@ -504,8 +504,8 @@ test(`width computation: date and datetime with fancy formats (2)`, async () => 
         arch: `
             <list>
                 <field name="foo"/>
-                <field name="date"/>
-                <field name="datetime" options="{'show_seconds': true}"/>
+                <field name="date" options="{'date_format': true}"/>
+                <field name="datetime" options="{'show_seconds': true, 'date_format': true}"/>
             </list>`,
     });
 

@@ -1461,7 +1461,7 @@ def format_datetime(
     :param env:
     :param str|datetime value: naive datetime to format either in string or in datetime
     :param str tz: name of the timezone  in which the given datetime should be localized
-    :param str dt_format: one of “full”, “long”, “medium”, or “short”, or a custom date/time pattern compatible with `babel` lib
+    :param str dt_format: custom date/time pattern compatible with `babel` lib
     :param str lang_code: ISO code of the language to use to render the given datetime
     :rtype: str
     """
@@ -1484,14 +1484,10 @@ def format_datetime(
     lang = get_lang(env, lang_code)
 
     locale = babel_locale_parse(lang.code or lang_code)  # lang can be inactive, so `lang`is empty
-    if not dt_format or dt_format == 'medium':
+    if not dt_format:
         date_format = posix_to_ldml(lang.date_format, locale=locale)
         time_format = posix_to_ldml(lang.time_format, locale=locale)
         dt_format = '%s %s' % (date_format, time_format)
-    elif dt_format == 'short':
-        short_date_format = posix_to_ldml(lang.short_date_format, locale=locale)
-        short_time_format = posix_to_ldml(lang.short_time_format, locale=locale)
-        dt_format = '%s %s' % (short_date_format, short_time_format)
 
     # Babel allows to format datetime in a specific language without change locale
     # So month 1 = January in English, and janvier in French
@@ -1506,7 +1502,7 @@ def format_time(
     env: Environment,
     value: datetime.time | datetime.datetime | str,
     tz: str | typing.Literal[False] = False,
-    time_format: str = 'medium',
+    time_format: str | None = None,
     lang_code: str | None = None,
 ) -> str:
     """ Format the given time (hour, minute and second) with the current user preference (language, format, ...)
@@ -1515,7 +1511,7 @@ def format_time(
         :param value: the time to format
         :type value: `datetime.time` instance. Could be timezoned to display tzinfo according to format (e.i.: 'full' format)
         :param tz: name of the timezone  in which the given datetime should be localized
-        :param time_format: one of “full”, “long”, “medium”, or “short”, or a custom time pattern
+        :param time_format: a custom time pattern
         :param lang_code: ISO
 
         :rtype str
@@ -1540,10 +1536,8 @@ def format_time(
 
     lang = get_lang(env, lang_code)
     locale = babel_locale_parse(lang.code)
-    if not time_format or time_format == 'medium':
+    if not time_format:
         time_format = posix_to_ldml(lang.time_format, locale=locale)
-    elif time_format == 'short':
-        time_format = posix_to_ldml(lang.short_time_format, locale=locale)
 
     return babel.dates.format_time(localized_time, format=time_format, locale=locale)
 
