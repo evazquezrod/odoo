@@ -561,11 +561,11 @@ class TestSubcontractingFlows(TestMrpSubcontractingCommon):
 
         action = picking_receipt.move_ids.action_show_subcontract_details()
         mo = self.env['mrp.production'].browse(action['res_id'])
-        mo_form = Form(mo.with_context(**action['context']), view=action['view_id'])
-        with mo_form.move_line_raw_ids.edit(0) as ml:
-            self.assertEqual(ml.product_id, self.comp1)
-            self.assertEqual(ml.quantity, 1)
-            ml.quantity = 2
+        mo_form = Form(mo.with_context(**action['context']), view=action['views'][0][0])
+        with mo_form.move_raw_ids.edit(0) as move:
+            self.assertEqual(move.product_id, self.comp1)
+            self.assertEqual(move.quantity, 0)
+            move.quantity = 2
         mo = mo_form.save()
         self.assertEqual(mo.move_raw_ids[0].move_line_ids.quantity, 2)
 
@@ -573,66 +573,6 @@ class TestSubcontractingFlows(TestMrpSubcontractingCommon):
         self.assertEqual(mo.state, 'done')
         avail_qty_comp1 = self.env['stock.quant']._get_available_quantity(self.comp1, self.subcontractor_partner1.property_stock_subcontractor, allow_negative=True)
         self.assertEqual(avail_qty_comp1, -2)
-
-    def test_flow_warning_bom_1(self):
-        """ Record Component for a bom subcontracted with a flexible and flexible + warning consumption """
-        self.bom.consumption = 'warning'
-        # Create a receipt picking from the subcontractor
-        picking_form = Form(self.env['stock.picking'])
-        picking_form.picking_type_id = self.env.ref('stock.picking_type_in')
-        picking_form.partner_id = self.subcontractor_partner1
-        with picking_form.move_ids_without_package.new() as move:
-            move.product_id = self.finished
-            move.product_uom_qty = 2
-        picking_receipt = picking_form.save()
-        picking_receipt.action_confirm()
-
-        action = picking_receipt.action_record_components()
-        mo = self.env['mrp.production'].browse(action['res_id'])
-        mo_form = Form(mo.with_context(**action['context']), view=action['view_id'])
-        mo_form.qty_producing = 1
-        with mo_form.move_line_raw_ids.edit(0) as ml:
-            self.assertEqual(ml.product_id, self.comp1)
-            self.assertEqual(ml.quantity, 1)
-            ml.quantity = 2
-        mo = mo_form.save()
-        action_warning = mo.subcontracting_record_component()
-        warning = Form(self.env['mrp.consumption.warning'].with_context(**action_warning['context']))
-        warning = warning.save()
-        warning.action_cancel()
-
-        action_warning = mo.subcontracting_record_component()
-        warning = Form(self.env['mrp.consumption.warning'].with_context(**action_warning['context']))
-        warning = warning.save()
-        action = warning.action_confirm()
-
-        self.assertEqual(mo.move_raw_ids[0].move_line_ids.quantity, 2)
-
-        # Record another over-consumption for the remaining components
-        mo_2 = self.env['mrp.production'].browse(action['res_id'])
-        with Form(mo_2.with_context(**action['context']), view=action['view_id']) as mo_form:
-            mo_form.qty_producing = 1
-            with mo_form.move_line_raw_ids.edit(0) as ml:
-                self.assertEqual(ml.product_id, self.comp1)
-                self.assertEqual(ml.quantity, 1)
-                ml.quantity = 3
-            mo_2 = mo_form.save()
-
-        action_warning_2 = mo_2.subcontracting_record_component()
-        self.assertEqual(action_warning_2.get('res_model'), 'mrp.consumption.warning')
-        warning = Form(self.env['mrp.consumption.warning'].with_context(**action_warning_2['context']))
-        warning = warning.save()
-        warning.action_confirm()
-
-        self.assertEqual(mo_2.move_raw_ids[0].move_line_ids.quantity, 3)
-
-        # We should not be able to call the 'record_components' button
-        self.assertEqual(picking_receipt.display_action_record_components, 'hide')
-
-        picking_receipt.button_validate()
-        self.assertEqual(mo.state, 'done')
-        avail_qty_comp1 = self.env['stock.quant']._get_available_quantity(self.comp1, self.subcontractor_partner1.property_stock_subcontractor, allow_negative=True)
-        self.assertEqual(avail_qty_comp1, -5)
 
     def test_backorder_with_subcontracting(self):
         """Test that a subcontracted move is not marked as picked when its quantity is updated.
@@ -672,46 +612,6 @@ class TestSubcontractingFlows(TestMrpSubcontractingCommon):
         self.assertEqual(backorder.state, 'done')
         self.assertEqual(backorder.move_ids.mapped('quantity'), [3.0, 1.0])
         self.assertEqual(backorder.move_ids.mapped('picked'), [True, True])
-
-    def test_flow_warning_bom_2(self):
-        """ For an initial demand of 10 subcontracted products
-            - The production of 3 is recorded, with an over-consumption of its components
-            After the picking is validated, check that the over-consumption stays as-is.
-        """
-        self.bom.consumption = 'warning'
-        # Create reception picking
-        with Form(self.env['stock.picking']) as picking_form:
-            picking_form.picking_type_id = self.warehouse.in_type_id
-            picking_form.partner_id = self.subcontractor_partner1
-            with picking_form.move_ids_without_package.new() as move:
-                move.product_id = self.finished
-                move.product_uom_qty = 10
-            receipt = picking_form.save()
-        receipt.action_confirm()
-
-        # Record the over-consumption of a component
-        self.assertTrue(receipt._get_subcontract_production())
-        action_record = receipt.action_record_components()
-        sbc_mo = self.env['mrp.production'].browse(action_record['res_id'])
-        with Form(sbc_mo.with_context(**action_record['context']), view=action_record['view_id']) as mo_form:
-            mo_form.qty_producing = 3
-            with mo_form.move_line_raw_ids.edit(0) as ml:
-                self.assertEqual(ml.product_id, self.comp1)
-                self.assertEqual(ml.quantity, 3)
-                ml.quantity = 5
-            sbc_mo = mo_form.save()
-        # Confirm the over-consumption through the warning
-        action_warning = sbc_mo.subcontracting_record_component()
-        wizard_warning = Form(self.env['mrp.consumption.warning'].with_context(**action_warning['context'])).save()
-        wizard_warning.action_confirm()
-
-        self.assertEqual(sbc_mo.move_raw_ids[0].move_line_ids.quantity, 5)
-
-        # Validate the picking without backorders
-        Form.from_action(self.env, receipt.button_validate()).save().process_cancel_backorder()
-
-        # Check that the over-consumption is still present
-        self.assertEqual(sbc_mo.move_raw_ids[0].move_line_ids.quantity, 5)
 
     def test_mrp_report_bom_structure_subcontracting(self):
         self.comp2_bom.write({'type': 'subcontract', 'subcontractor_ids': [Command.link(self.subcontractor_partner1.id)]})
@@ -985,45 +885,6 @@ class TestSubcontractingFlows(TestMrpSubcontractingCommon):
         subcontracted_mo = subcontract_move._get_subcontract_production()
         self.assertEqual(len(subcontracted_mo.filtered(lambda p: p.lot_producing_id == new_lot)), 1)
         self.assertEqual(len(subcontracted_mo.filtered(lambda p: p.lot_producing_id != new_lot)), 2)
-
-    def test_multiple_component_records_for_incomplete_move(self):
-        self.bom.consumption = 'flexible'
-        with Form(self.env['stock.picking']) as picking_form:
-            picking_form.picking_type_id = self.env.ref('stock.picking_type_in')
-            picking_form.partner_id = self.subcontractor_partner1
-            with picking_form.move_ids_without_package.new() as move:
-                move.product_id = self.finished
-                move.product_uom_qty = 10
-            picking_receipt = picking_form.save()
-        picking_receipt.action_confirm()
-        move = picking_receipt.move_ids_without_package
-
-        # Register the five first finished products
-        action = move.action_show_details()
-        mo = self.env['mrp.production'].browse(action['res_id'])
-        with Form(mo.with_context(action['context']), view=action['view_id']) as mo_form:
-            mo_form.qty_producing = 5
-            mo_form.save()
-        mo.subcontracting_record_component()
-        self.assertEqual(move.quantity, 5)
-
-        # Register two other finished products
-        action = move.action_show_details()
-        mo = self.env['mrp.production'].browse(action['res_id'])
-        with Form(mo.with_context(action['context']), view=action['view_id']) as mo_form:
-            mo_form.qty_producing = 2
-            mo_form.save()
-        mo.subcontracting_record_component()
-        self.assertEqual(move.quantity, 7)
-
-        # Validate picking without backorder
-        Form.from_action(self.env, picking_receipt.button_validate()).save().process_cancel_backorder()
-
-        self.assertRecordValues(move._get_subcontract_production(), [
-            {'product_qty': 5, 'state': 'done'},
-            {'product_qty': 2, 'state': 'done'},
-            {'product_qty': 3, 'state': 'cancel'},
-        ])
 
     def test_decrease_quantity_done(self):
         self.bom.consumption = 'flexible'

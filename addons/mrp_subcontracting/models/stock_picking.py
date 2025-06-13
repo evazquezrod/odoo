@@ -36,16 +36,14 @@ class StockPicking(models.Model):
         res = super(StockPicking, self)._action_done()
         for picking in self:
             productions_to_done = picking._get_subcontract_production().sudo()
-            production_ids_backorder = []
-            if not self.env.context.get('cancel_backorder'):
-                production_ids_backorder = productions_to_done.filtered(lambda mo: mo.state == "progress").ids
-            productions_to_done.with_context(mo_ids_to_backorder=production_ids_backorder).button_mark_done()
+            productions_to_done.button_mark_done()
             # For concistency, set the date on production move before the date
             # on picking. (Traceability report + Product Moves menu item)
-            minimum_date = min(picking.move_line_ids.mapped('date'))
             production_moves = productions_to_done.move_raw_ids | productions_to_done.move_finished_ids
-            production_moves.write({'date': minimum_date - timedelta(seconds=1)})
-            production_moves.move_line_ids.write({'date': minimum_date - timedelta(seconds=1)})
+            if production_moves:
+                minimum_date = min(picking.move_line_ids.mapped('date'))
+                production_moves.write({'date': minimum_date - timedelta(seconds=1)})
+                production_moves.move_line_ids.write({'date': minimum_date - timedelta(seconds=1)})
 
         return res
 
