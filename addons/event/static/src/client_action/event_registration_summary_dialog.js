@@ -82,8 +82,10 @@ export class EventRegistrationSummaryDialog extends Component {
     }
 
     async onRegistrationConfirm() {
-        await this.orm.call("event.registration", "action_set_done", [this.registration.id]);
-        this.registrationStatus.value = "confirmed_registration";
+        if (this.registrationStatus.value !== "confirmed_registration") {
+            await this.orm.call("event.registration", "action_set_done", [this.registration.id]);
+            this.registrationStatus.value = "confirmed_registration";
+        }
         this.props.close();
         if (this.props.model) {
             this.props.model.load();
