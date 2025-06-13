@@ -40,6 +40,7 @@ export class Operation {
             cancelTime = 50,
             withLoadingEffect = true,
             loadingEffectDelay = 500,
+            loadingFunction = undefined,
         } = {}
     ) {
         this.cancelPrevious?.();
@@ -70,7 +71,8 @@ export class Operation {
 
             const removeLoadingElement = this.addLoadingElement(
                 withLoadingEffect,
-                loadingEffectDelay
+                loadingEffectDelay,
+                loadingFunction
             );
             const applyOperation = async () => {
                 const loadResult = await load();
@@ -108,9 +110,11 @@ export class Operation {
      * @param {Boolean} withLoadingEffect if true, adds a loading effect
      * @param {Number} loadingEffectDelay delay after which the loading effect
      *   should appear
+     * @param {Function} loadingFunction - function to apply while the loading
+     *   element is present.
      * @returns {Function}
      */
-    addLoadingElement(withLoadingEffect, loadingEffectDelay) {
+    addLoadingElement(withLoadingEffect, loadingEffectDelay, loadingFunction) {
         const loadingScreenEl = document.createElement("div");
         loadingScreenEl.classList.add(
             ...["o_loading_screen", "d-flex", "justify-content-center", "align-items-center"]
@@ -119,6 +123,7 @@ export class Operation {
         spinnerEl.setAttribute("src", "/web/static/img/spin.svg");
         loadingScreenEl.appendChild(spinnerEl);
         this.editableDocument.body.appendChild(loadingScreenEl);
+        const loadingRes = loadingFunction?.();
 
         // If specified, add a loading effect on that element after a delay.
         let loadingTimeout;
@@ -133,6 +138,7 @@ export class Operation {
             if (loadingTimeout) {
                 clearTimeout(loadingTimeout);
             }
+            loadingRes?.();
             loadingScreenEl.remove();
         };
     }

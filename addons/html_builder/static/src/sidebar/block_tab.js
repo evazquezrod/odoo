@@ -45,6 +45,19 @@ export class BlockTab extends Component {
         return this.env.editor.shared;
     }
 
+    retargetClickAfterDrop() {
+        const onEditIframeClick = (ev) => {
+            const trueTargetEl = this.document.elementsFromPoint(ev.clientX, ev.clientY)[1];
+            this.shared.operation.next(() => {
+                trueTargetEl.click();
+            });
+        };
+        this.document.addEventListener("click", onEditIframeClick);
+        return () => {
+            this.document.removeEventListener("click", onEditIframeClick);
+        };
+    }
+
     /**
      * Opens and manages the snippet dialog after clicking on a snippet group,
      * and inserts the selected snippet in the page.
@@ -110,7 +123,10 @@ export class BlockTab extends Component {
                 this.state.ongoingInsertion = false;
                 delete this.cancelDragAndDrop;
             },
-            { withLoadingEffect: false }
+            {
+                withLoadingEffect: false,
+                loadingFunction: this.retargetClickAfterDrop.bind(this),
+            }
         );
     }
 
@@ -382,7 +398,10 @@ export class BlockTab extends Component {
                             async () => {
                                 await this.onSnippetGroupDrop(snippet, snippetEl);
                             },
-                            { withLoadingEffect: false }
+                            {
+                                withLoadingEffect: false,
+                                loadingFunction: this.retargetClickAfterDrop.bind(this),
+                            }
                         );
                     }
                 } else {
