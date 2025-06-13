@@ -9,10 +9,6 @@ from collections import defaultdict
 class AccountMoveLine(models.Model):
     _inherit = 'account.move.line'
 
-    def _get_valued_in_moves(self):
-        self.ensure_one()
-        return self.purchase_line_id.move_ids.filtered(lambda m: m.is_in)
-
     def _get_out_and_not_invoiced_qty(self, in_moves):
         self.ensure_one()
         if not in_moves:

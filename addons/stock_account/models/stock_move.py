@@ -22,6 +22,7 @@ class StockMove(models.Model):
     price_unit = fields.Float("Price Unit")
     is_in = fields.Boolean(string='Is Incoming (valued)', compute='_compute_is_in', store=True)
     is_out = fields.Boolean(string='Is Outgoing (valued)', compute='_compute_is_out', store=True)
+    is_valued = fields.Boolean(string='Is Valued', compute='_compute_is_valued')
 
     @api.depends('state', 'move_line_ids')
     def _compute_is_in(self):
@@ -39,10 +40,16 @@ class StockMove(models.Model):
                 continue
             move.is_out = move._is_out()
 
+    def _compute_is_valued(self):
+        for move in self:
+            move.is_valued = move.is_in or move.is_out
+
     def _action_done(self, cancel_backorder=False):
         moves = super()._action_done(cancel_backorder=cancel_backorder)
         moves_in = moves.filtered(lambda m: m.is_in)
         moves_in.product_id._update_standard_price()
+        moves_out = moves.filtered(lambda m: m.is_out)
+        moves_out._set_value()
         return moves
 
     def _action_create_accounting_entries(self):
@@ -96,6 +103,15 @@ class StockMove(models.Model):
         :rtype: list
         """
         return ['in', 'out', 'dropshipped', 'dropshipped_returned']
+
+    def _set_value(self):
+        """Set the value of the move"""
+        self.ensure_one()
+        quantity = self.quantity
+        if self.cost_method != 'fifo':
+            self.value = quantity * self.product_id.standard_price
+            return
+        self.value = self._run_fifo(quantity)
 
     def _get_value(self, forced_std_price=False):
         """Returns the value and the quantity valued on the move

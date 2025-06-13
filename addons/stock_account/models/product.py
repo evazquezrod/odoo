@@ -164,6 +164,11 @@ class ProductProduct(models.Model):
     # Private
     # -------------------------------------------------------------------------
 
+    def _get_cogs_value(self, quantity):
+        if self.cost_method in ['standard', 'average']:
+            return self.standard_price * quantity
+        return self._run_fifo(quantity)
+
     def _run_avco(self):
         """ Recompute the average cost of the product base on the last closing
         inventory value and all the incoming moves during the period."""
@@ -198,21 +203,36 @@ class ProductProduct(models.Model):
                 quantity -= out_qty
         return avco_value
 
-    def _run_fifo(self, qty):
+    def _run_fifo(self, quantity):
         """ Returns the value for the next outgoing product base on the qty give as argument."""
         self.ensure_one()
         fifo_cost = 0
-        fifo_qty = qty
+        fifo_stack = []
+        fifo_stack_size = self.qty_available  # Problem: Missing qty out but not invoiced
+
         moves_in = self.env['stock.move'].search([
             ('product_id', '=', self.id),
             ('is_in', '=', True),
-        ], order='date asc', limit=fifo_qty)
-        for move in moves_in:
+        ], order='date asc', limit=fifo_stack_size)
+
+        # Go to the bottom of the stack
+        while fifo_stack_size >= 0 and moves_in:
+            move = moves_in[0]
+            moves_in = moves_in[1:]
+            in_qty = sum(move._get_in_move_lines().mapped('quantity'))
+            fifo_stack.append(move)
+            fifo_stack_size -= in_qty
+
+        # Going up to get the quantity in the argument
+        while quantity >= 0 and fifo_stack:
+            move = fifo_stack.pop()
             in_value, in_qty = move._get_value()
+            if in_qty > quantity:
+                in_value = in_value * quantity / in_qty
+                in_qty = quantity
             fifo_cost += in_value
-            fifo_qty -= in_qty
-            if fifo_qty <= 0:
-                break
+            quantity -= in_qty
+
         return fifo_cost
 
     def _update_standard_price(self):
