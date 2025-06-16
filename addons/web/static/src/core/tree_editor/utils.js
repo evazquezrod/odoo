@@ -172,12 +172,16 @@ export function useMakeGetConditionDescription(fieldService, nameService) {
 
 function _getConditionDescription(node, getFieldDef, getPathDescription, displayNames) {
     let { operator, negate, value, path } = node;
+    const fieldDef = getFieldDef(path);
     if (["=", "!="].includes(operator) && value === false) {
         operator = operator === "=" ? "not_set" : "set";
     } else if (["in", "not in"].includes(operator) && Array.isArray(value) && value.length === 0) {
-        operator = operator === "in" ? "not_set" : "set";
+        return {
+            pathDescription: getPathDescription(path),
+            operatorDescription: getOperatorLabel(operator, fieldDef?.type, negate),
+            valueDescription: { values: [], join: _t("or"), addParenthesis: true },
+        };
     }
-    const fieldDef = getFieldDef(path);
     const operatorLabel = getOperatorLabel(operator, fieldDef?.type, negate, (operator) => {
         switch (operator) {
             case "=":
