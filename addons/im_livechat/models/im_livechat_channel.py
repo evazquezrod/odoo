@@ -86,20 +86,27 @@ class Im_LivechatChannel(models.Model):
         "CHECK(max_sessions > 0)", "Concurrent session number should be greater than zero."
     )
 
+    def web_read(self, specification: dict[str, dict]) -> list[dict]:
+        if len(self) == 1 and 'user_ids' in specification and 'get_channel' in specification['user_ids'].get('context', {}):
+            specification['user_ids']['context']['channel_id'] = self.id
+        return super().web_read(specification)
+
     def _are_you_inside(self):
         for channel in self:
             channel.are_you_inside = self.env.user in channel.user_ids
 
     @api.depends("channel_ids.livechat_end_dt")
     def _compute_ongoing_sessions_count(self):
-        count_by_channel = self.env["discuss.channel"]._read_group(
-            [
-                ("channel_type", "=", "livechat"),
-                ("livechat_end_dt", "=", False),
-                ("livechat_channel_id", "in", self.ids),
-            ],
-            ["livechat_channel_id"],
-            ["__count"],
+        count_by_channel = dict(
+            self.env["discuss.channel"]._read_group(
+                [
+                    ("channel_type", "=", "livechat"),
+                    ("livechat_end_dt", "=", False),
+                    ("livechat_channel_id", "in", self.ids),
+                ],
+                ["livechat_channel_id"],
+                ["__count"],
+            )
         )
         for channel in self:
             channel.ongoing_session_count = count_by_channel.get(channel, 0)
@@ -113,11 +120,22 @@ class Im_LivechatChannel(models.Model):
     def _compute_remaining_session_capacity(self):
         for channel in self:
             total_capacity = channel.max_sessions * len(channel.user_ids)
-            capacity = total_capacity - sum(channel.user_ids.mapped("livechat_ongoing_session_count"))
+            count_by_operator = dict(
+                self.env["discuss.channel"]._read_group(
+                    [
+                        ("livechat_end_dt", "=", False),
+                        ("livechat_channel_id", "=", channel.ids),
+                        ("livechat_operator_id", "in", channel.user_ids.partner_id.ids),
+                    ],
+                    ["livechat_operator_id"],
+                    ["__count"],
+                )
+            )
+            capacity = total_capacity - sum(count_by_operator.values())
             if channel.block_assignment_during_call:
                 users_in_call = channel.user_ids.filtered(lambda u: u.livechat_is_in_call)
                 for user in users_in_call:
-                    capacity -= channel.max_sessions - user.livechat_ongoing_session_count
+                    capacity -= channel.max_sessions - count_by_operator.get(user.partner_id, 0)
             channel.remaining_session_capacity = max(capacity, 0)
 
     @api.depends(
