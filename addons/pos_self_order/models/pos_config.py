@@ -57,16 +57,20 @@ class PosConfig(models.Model):
         help="Languages available for the kiosk mode",
         default=_self_order_kiosk_default_languages,
     )
-    self_ordering_image_home_ids = fields.Many2many(
+    self_ordering_image_home_ids = fields.One2many(
         'ir.attachment',
+        'res_id',
         string="Add images",
         help="Image to display on the self order screen",
+        domain=[('res_field', '=', 'self_ordering_image_home_ids')],
     )
-    self_ordering_image_background_ids = fields.Many2many(
+    self_ordering_image_background_ids = fields.One2many(
         'ir.attachment',
+        'res_id',
         string="Set background image",
         help="Image to be displayed in the background",
-        relation="pos_self_order_background_rels",
+        # XXX relation="pos_self_order_background_rels",
+        domain=[('res_field', '=', 'self_ordering_image_background_ids')],
     )
     self_ordering_default_user_id = fields.Many2one(
         "res.users",
