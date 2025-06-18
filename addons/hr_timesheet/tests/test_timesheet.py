@@ -807,6 +807,7 @@ class TestTimesheet(TestCommonTimesheet):
         create_timesheet(self.task2, 10)
         project_update_vals_list = create_project_update()
         self.assertListEqual(project_update_vals_list, [12, 15, 125])
+<<<<<<< 6c04e426d8f320d35251ec39d9e490d884099b60
 
     def test_calendar_display_name(self):
         timesheet = self.env['account.analytic.line'].create({
@@ -879,3 +880,69 @@ class TestTimesheet(TestCommonTimesheet):
         self.assertEqual(len(timesheets), 2)
         self.assertEqual(fields.Date.to_string(timesheets[0].date), '2025-05-26', "The timesheet creation should skip non-working days")
         self.assertEqual(fields.Date.to_string(timesheets[1].date), '2025-05-26', "The timesheet creation should skip non-working days")
+||||||| de21d07d0f4b9b5b070a86132a340d07beb3a79d
+=======
+
+    def test_keep_create_account_values_at_timesheet_creation(self):
+        field_name = self.analytic_plan._column_name()
+        analytic_account, another_account = self.env['account.analytic.account'].create([
+            {
+                'name': 'Analytic Account',
+                'partner_id': self.partner.id,
+                'plan_id': self.analytic_plan.id,
+                'code': 'TEST',
+            },
+            {
+                 'name': 'Another Analytic Account',
+                 'partner_id': self.partner.id,
+                 'plan_id': self.analytic_plan.id,
+                 'code': 'TEST2',
+            },
+       ])
+
+        self.project_customer.write({
+            field_name: another_account.id,
+        })
+
+        line = self.env['account.analytic.line'].create({
+            'name': 'Timesheet',
+            'unit_amount': 1,
+            'project_id': self.project_customer.id,
+            field_name: analytic_account.id,
+            'employee_id': self.empl_employee.id,
+        })
+        self.assertEqual(line[field_name].id, analytic_account.id, f"The value of {field_name} shouldn't get overwritten by the project's account")
+
+    def test_keep_write_account_values_at_timesheet_update(self):
+        field_name = self.analytic_plan._column_name()
+        analytic_account, another_account = self.env['account.analytic.account'].create([
+            {
+                'name': 'Analytic Account',
+                'partner_id': self.partner.id,
+                'plan_id': self.analytic_plan.id,
+                'code': 'TEST',
+            },
+            {
+                'name': 'Another Analytic Account',
+                'partner_id': self.partner.id,
+                'plan_id': self.analytic_plan.id,
+                'code': 'TEST2',
+            },
+        ])
+
+        self.project_customer.write({
+            field_name: another_account.id,
+        })
+
+        line = self.env['account.analytic.line'].create({
+            'name': 'Timesheet',
+            'unit_amount': 1,
+            'employee_id': self.empl_employee.id,
+        })
+
+        line.write({
+            'project_id': self.project_customer.id,
+            field_name: analytic_account.id
+        })
+        self.assertEqual(line[field_name].id, analytic_account.id, f"The value of {field_name} shouldn't get overwritten by the project's account")
+>>>>>>> 56aa255f05b0a33a9b6094af85f4a790eee3a035
