@@ -2630,6 +2630,8 @@ class AccountMoveLine(models.Model):
                 line_values = self._prepare_analytic_distribution_line(float(distribution), account_id, distribution_on_each_plan)
                 if not self.currency_id.is_zero(line_values.get('amount')):
                     analytic_line_vals.append(line_values)
+
+            self._round_analytic_distribution_line(analytic_line_vals)
         return analytic_line_vals
 
     def _prepare_analytic_distribution_line(self, distribution, account_id, distribution_on_each_plan):
@@ -2663,6 +2665,29 @@ class AccountMoveLine(models.Model):
             'company_id': account.company_id.id or self.company_id.id or self.env.company.id,
             'category': 'invoice' if self.move_id.is_sale_document() else 'vendor_bill' if self.move_id.is_purchase_document() else 'other',
         }
+
+    def _round_analytic_distribution_line(self, analytic_lines):
+        """ Round the analytic lines amount, and cancel the rounding error. """
+        if not analytic_lines:
+            return
+
+        rounding_error = 0
+        for line in analytic_lines:
+            rounded_amount = self.currency_id.round(line['amount'])
+            rounding_error += rounded_amount - line['amount']
+            line['amount'] = rounded_amount
+
+        # distributing the rounding error
+        sign = -1 if rounding_error < 0.0 else 1
+        for line in analytic_lines:
+            if self.currency_id.is_zero(rounding_error):
+                break
+            amt = max(
+                self.currency_id.rounding,
+                self.currency_id.round(rounding_error / len(analytic_lines))
+            )
+            line['amount'] -= sign * amt
+            rounding_error -= sign * amt
 
     # -------------------------------------------------------------------------
     # MISC
