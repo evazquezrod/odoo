@@ -4,6 +4,7 @@ from dateutil.relativedelta import relativedelta
 
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError, UserError
+from odoo.tools.date_utils import get_timedelta
 
 
 def _get_selection_days(self):
@@ -215,9 +216,9 @@ class HrLeaveAccrualLevel(models.Model):
 
         if self.frequency == 'bimonthly':
             first_date = last_call + relativedelta(day=int(self.first_day))
-            second_date = last_call + relativedelta(day=int(self.second_day))
             if last_call < first_date:
                 return first_date
+            second_date = last_call + relativedelta(day=int(self.second_day))
             if last_call < second_date:
                 return second_date
             return last_call + relativedelta(day=int(self.first_day), months=1)
@@ -230,9 +231,9 @@ class HrLeaveAccrualLevel(models.Model):
 
         if self.frequency == 'biyearly':
             first_date = last_call + relativedelta(month=int(self.first_month), day=int(self.first_month_day))
-            second_date = last_call + relativedelta(month=int(self.second_month), day=int(self.second_month_day))
             if last_call < first_date:
                 return first_date
+            second_date = last_call + relativedelta(month=int(self.second_month), day=int(self.second_month_day))
             if last_call < second_date:
                 return second_date
             return last_call + relativedelta(month=int(self.first_month), day=int(self.first_month_day), years=1)
@@ -299,3 +300,6 @@ class HrLeaveAccrualLevel(models.Model):
             return allocation_start + relativedelta(months=self.start_count)
         if self.start_type == 'year':
             return allocation_start + relativedelta(years=self.start_count)
+
+    def get_start_timedelta(self):
+        return get_timedelta(self.start_count, self.start_type)

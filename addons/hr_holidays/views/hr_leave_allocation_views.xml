@@ -93,6 +93,10 @@
             <form string="Allocation Request" duplicate="false">
                 <field name="can_approve" invisible="1"/>
                 <field name="validation_type" invisible="1"/>
+
+                <field name="actual_lastcall" invisible="1"/>
+                <field name="last_accruals" invisible="1"/>
+                <field name="nextcall" invisible="1"/>
                 <!--
                 The following two lines are required so that the two fields are sent as part of the `vals_list`
                 to the create method when the allocation is created. Otherwise, carried_over_days_expiration_date
@@ -119,8 +123,6 @@
                         <group id="alloc_left_col">
                             <field name="is_name_custom" invisible="1"/> <!-- needed for triggering reasons -->
                             <field name="type_request_unit" invisible="1"/>
-                            <!-- Save already_accrued when creating record to avoid double allocation when cron runs -->
-                            <field name="already_accrued" invisible="1"/>
                             <field name="holiday_status_id"
                                 context="{'employee_id':employee_id, 'default_date_from':current_date, 'request_type':'allocation'}"
                                 readonly="state == 'validate'"/>
