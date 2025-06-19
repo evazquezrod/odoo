@@ -107,7 +107,7 @@ class StockMove(models.Model):
     def action_show_subcontract_details(self):
         """ Display moves raw for subcontracted product self. """
         productions = self._get_subcontract_production().filtered(lambda m: m.state != 'cancel')
-        ctx = dict(self._context, search_default_by_product=True)
+        ctx = dict(self._context, mrp_subcontracting=True)
         if self.env.user._is_portal():
             form_view_id = self.env.ref('mrp_subcontracting.mrp_production_subcontracting_portal_form_view')
             ctx.update(no_breadcrumbs=False)
