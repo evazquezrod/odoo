@@ -376,6 +376,7 @@ export class Rtc extends Record {
              * Whether the network fell back to p2p mode in a SFU call.
              */
             fallbackMode: false,
+            isHwAccelerationEnabled: true,
             isPipMode: false,
         });
         this.blurManager = undefined;
@@ -519,6 +520,27 @@ export class Rtc extends Record {
             }
         );
         this.state.screenTrack.addEventListener("ended", trackEndedFn, { once: true });
+    }
+
+    checkHardwareAccelerationSupport() {
+        const canvas = document.createElement("canvas");
+        const gl =
+            canvas.getContext("webgl2") ||
+            canvas.getContext("webgl") ||
+            canvas.getContext("experimental-webgl");
+        if (!gl) {
+            // WebGL support is typically required for hardware acceleration.
+            this.state.isHwAccelerationEnabled = false;
+            return;
+        }
+        const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+        if (debugInfo) {
+            const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+            if (/swiftshader|llvmpipe|software/i.test(renderer)) {
+                // These renderers indicate software-based rendering instead of hardware acceleration.
+                this.state.isHwAccelerationEnabled = false;
+            }
+        }
     }
 
     setPttReleaseTimeout(duration = 200) {
@@ -1800,6 +1822,7 @@ export class Rtc extends Record {
         }
         if (this.store.settings.useBlur && type === "camera") {
             try {
+                this.checkHardwareAccelerationSupport();
                 this.blurManager?.close();
                 this.blurManager = new BlurManager(sourceStream, {
                     backgroundBlur: this.store.settings.backgroundBlurAmount,
