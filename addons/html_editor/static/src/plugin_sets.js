@@ -34,7 +34,6 @@ import { OdooLinkSelectionPlugin } from "./main/link/link_selection_odoo_plugin"
 import { LinkSelectionPlugin } from "./main/link/link_selection_plugin";
 import { ListPlugin } from "./main/list/list_plugin";
 import { LocalOverlayPlugin } from "./main/local_overlay_plugin";
-import { FilePlugin } from "./main/media/file_plugin";
 import { IconPlugin } from "./main/media/icon_plugin";
 import { ImageCropPlugin } from "./main/media/image_crop_plugin";
 import { ImagePlugin } from "./main/media/image_plugin";
@@ -69,6 +68,7 @@ import { EditorVersionPlugin } from "./core/editor_version_plugin";
 import { ImagePostProcessPlugin } from "./main/media/image_post_process_plugin";
 import { DoubleClickImagePreviewPlugin } from "./main/media/dblclick_image_preview_plugin";
 import { StylePlugin } from "./core/style_plugin";
+import { EmbeddedFilePlugin } from "./others/embedded_components/plugins/embedded_file_plugin/embedded_file_plugin";
 
 /**
  * @typedef { Object } SharedMethods
@@ -170,7 +170,6 @@ export const MAIN_PLUGINS = [
     TextDirectionPlugin,
     InlineCodePlugin,
     TableResizePlugin,
-    FilePlugin,
     PlaceholderPlugin,
 ];
 
@@ -187,6 +186,7 @@ export const EMBEDDED_COMPONENT_PLUGINS = [
     ToggleBlockPlugin,
     VideoPlugin,
     CaptionPlugin,
+    EmbeddedFilePlugin,
 ];
 
 export const EXTRA_PLUGINS = [
