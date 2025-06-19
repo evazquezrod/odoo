@@ -24,8 +24,8 @@ class SurveyInvite(models.TransientModel):
         return self.env.user.partner_id
 
     # composer content
-    attachment_ids = fields.Many2many(
-        'ir.attachment', 'survey_mail_compose_message_ir_attachments_rel', 'wizard_id', 'attachment_id',
+    attachment_ids = fields.Attachments(
+        relation='survey_mail_compose_message_ir_attachments_rel', column1='wizard_id',
         string='Attachments', compute='_compute_attachment_ids', store=True, readonly=False)
     # origin
     author_id = fields.Many2one(

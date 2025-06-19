@@ -77,10 +77,11 @@ class MailActivity(models.Model):
     automated = fields.Boolean(
         'Automated activity', readonly=True,
         help='Indicates this activity has been created automatically and not by any user.')
-    # Attachments are linked to a document through model / res_id and to the activity through this field.
-    attachment_ids = fields.Many2many(
-        'ir.attachment', 'activity_attachment_rel',
-        'activity_id', 'attachment_id',
+    # Attachments are linked to a document through res_model / res_id and to the activity through this field.
+    attachment_ids = fields.Attachments(
+        relation='activity_attachment_rel',
+        column1='activity_id',
+        owner=lambda recs: recs.env[recs[0].res_model].browse(recs[0].res_id),
         string='Attachments')
     # description
     user_id = fields.Many2one(

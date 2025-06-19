@@ -70,10 +70,10 @@ class MailTemplate(models.Model):
         'Body', render_engine='qweb', render_options={'post_process': True},
         prefetch=True, translate=True, sanitize='email_outgoing',
     )
-    attachment_ids = fields.Many2many('ir.attachment', 'email_template_attachment_rel', 'email_template_id',
-                                      'attachment_id', 'Attachments',
-                                      help="You may attach files to this template, to be added to all "
-                                           "emails created from this template")
+    attachment_ids = fields.Attachments(
+        relation='email_template_attachment_rel', column1='email_template_id', string='Attachments',
+        help="You may attach files to this template, to be added to all "
+            "emails created from this template")
     report_template_ids = fields.Many2many(
         'ir.actions.report', relation='mail_template_ir_actions_report_rel',
         column1='mail_template_id',
@@ -170,11 +170,6 @@ class MailTemplate(models.Model):
     # CRUD
     # ------------------------------------------------------------
 
-    def _fix_attachment_ownership(self):
-        for record in self:
-            record.attachment_ids.write({'res_model': record._name, 'res_id': record.id})
-        return self
-
     def _check_abstract_models(self, vals_list):
         model_names = self.sudo().env['ir.model'].browse(filter(None, (
             vals.get('model_id') for vals in vals_list
@@ -222,14 +217,12 @@ class MailTemplate(models.Model):
         self._check_abstract_models(vals_list)
         records = super().create(vals_list)
         records._check_can_be_rendered(fnames=None)
-        records._fix_attachment_ownership()
         return records
 
     def write(self, vals):
         self._check_abstract_models([vals])
         super().write(vals)
         self._check_can_be_rendered(fnames=vals.keys() if {'model', 'model_id'}.isdisjoint(vals.keys()) else None)
-        self._fix_attachment_ownership()
         return True
 
     def unlink(self):

@@ -14,7 +14,7 @@ from odoo.orm.fields_relational import Many2one, Many2many, One2many
 from odoo.orm.fields_reference import Many2oneReference, Reference
 
 from odoo.orm.fields_properties import Properties, PropertiesDefinition
-from odoo.orm.fields_binary import Binary, Image
+from odoo.orm.fields_binary import Binary, Image, Attachments
 
 from odoo.orm.commands import Command
 from odoo.orm.domains import Domain

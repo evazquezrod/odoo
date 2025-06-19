@@ -98,9 +98,9 @@ class AccountBankStatement(models.Model):
         compute='_compute_problem_description',
     )
 
-    attachment_ids = fields.Many2many(
-        comodel_name='ir.attachment',
+    attachment_ids = fields.Attachments(
         string="Attachments",
+        # XXX name
     )
 
     _journal_id_date_desc_id_desc_idx = models.Index("(journal_id, date DESC, id DESC)")

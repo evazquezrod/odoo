@@ -35,9 +35,9 @@ class MailScheduledMessage(models.Model):
     subject = fields.Char('Subject')
     body = fields.Html('Contents', sanitize_style=True)
     scheduled_date = fields.Datetime('Scheduled Date', required=True)
-    attachment_ids = fields.Many2many(
-        'ir.attachment', 'scheduled_message_attachment_rel',
-        'scheduled_message_id', 'attachment_id',
+    attachment_ids = fields.Attachments(
+        relation='scheduled_message_attachment_rel',
+        column1='scheduled_message_id',
         string='Attachments')
     composition_comment_option = fields.Selection(
         [('reply_all', 'Reply-All'), ('forward', 'Forward')],

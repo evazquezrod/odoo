@@ -118,9 +118,10 @@ class MailingMailing(models.Model):
         string='Body converted to be sent by mail', sanitize='email_outgoing',
         render_engine='qweb', render_options={'post_process': True})
     is_body_empty = fields.Boolean(compute="_compute_is_body_empty")
-    attachment_ids = fields.Many2many(
-        'ir.attachment', 'mass_mailing_ir_attachments_rel',
-        'mass_mailing_id', 'attachment_id', string='Attachments')
+    attachment_ids = fields.Attachments(
+        relation='mass_mailing_ir_attachments_rel',
+        column1='mass_mailing_id',
+        string='Attachments')
     keep_archives = fields.Boolean(string='Keep Archives')
     campaign_id = fields.Many2one('utm.campaign', string='UTM Campaign', index=True, ondelete='set null')
     medium_id = fields.Many2one(
@@ -525,7 +526,6 @@ class MailingMailing(models.Model):
                 ab_testing_cron._trigger(at=at)
         mailings = super().create(vals_list)
         mailings._create_ab_testing_utm_campaigns()
-        mailings._fix_attachment_ownership()
 
         for values, mailing in zip(vals_list, mailings):
             if values.get('body_arch'):
@@ -546,7 +546,6 @@ class MailingMailing(models.Model):
         result = super().write(values)
         if values.get('ab_testing_enabled'):
             self._create_ab_testing_utm_campaigns()
-        self._fix_attachment_ownership()
 
         if any(self.mapped('ab_testing_schedule_datetime')):
             schedule_date = min(m.ab_testing_schedule_datetime for m in self if m.ab_testing_schedule_datetime)
@@ -562,11 +561,6 @@ class MailingMailing(models.Model):
             for mailing in self.filtered(lambda mailing: mailing.ab_testing_enabled and not mailing.campaign_id)
         ]
         return self.env['utm.campaign'].create(campaign_vals)
-
-    def _fix_attachment_ownership(self):
-        for record in self:
-            record.attachment_ids.write({'res_model': record._name, 'res_id': record.id})
-        return self
 
     def copy_data(self, default=None):
         vals_list = super().copy_data(default)

@@ -6,19 +6,21 @@ import contextlib
 import functools
 import typing
 import warnings
+from collections import defaultdict
 from operator import attrgetter
 
 import psycopg2
 
 from odoo.exceptions import UserError
-from odoo.tools import SQL, human_size
+from odoo.tools import Query, SQL, human_size
 from odoo.tools.mimetypes import guess_mimetype
 
 from .fields import Field
+from .fields_relational import Many2many
 from .utils import SQL_OPERATORS
 
 if typing.TYPE_CHECKING:
-    from odoo.tools import Query
+    from collections.abc import Callable
 
     from .models import BaseModel
 
@@ -354,3 +356,47 @@ class Image(Binary):
             # Avoid the following `write` to fail if the related image was saved
             # invalid, which can happen for pre-existing databases.
             return False
+
+
+class Attachments(Many2many):
+    owner: Callable[[BaseModel], BaseModel] | None = None
+    auto_join = True
+
+    def __init__(self, **kwargs):
+        assert 'comodel_name' not in kwargs
+        # domain not in kwargs
+        # context not in kwargs
+        super().__init__(
+            comodel_name='ir.attachment',
+            column1=kwargs.pop('column1', 'res_id'),
+            column2=kwargs.pop('column2', 'attachment_id'),
+            **kwargs,
+        )
+
+    def _setup_attrs__(self, model_class, name):
+        super()._setup_attrs__(model_class, name)
+
+        if self.owner is None and self.store and not model_class._abstract:
+            self.owner = lambda records: records[:1]
+
+    def write_real(self, records_commands_list, create=False):
+        if not self.owner:
+            return super().write_real(records_commands_list, create)
+
+        # set the ownership on the model
+        # XXX m2m is not extensible, so we diff here
+        old_links = [self.__get__(records) for records, _cmd in records_commands_list]
+        super().write_real(records_commands_list, create)
+        new_links = [self.__get__(records) for records, _cmd in records_commands_list]
+        for (records, _cmd), old_att, new_att in zip(records_commands_list, old_links, new_links):
+            if (attachments := (new_att - old_att).sudo()) and (owner := self.owner(records)):
+                assert not any(attachments.mapped('res_field')), "attachment already used by binary field"
+                attachments.write({
+                    'res_model': owner._name,
+                    'res_id': owner.id,
+                    # must not set 'res_field' as it is used only for fields.Binary
+                })
+            if (attachments := (old_att - new_att).sudo().filtered(
+                lambda a: a.res_model == records._name and a.res_id in records._ids and not a.res_field
+            )):
+                attachments.write({'res_model': False, 'res_id': False})

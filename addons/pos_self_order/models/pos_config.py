@@ -57,13 +57,11 @@ class PosConfig(models.Model):
         help="Languages available for the kiosk mode",
         default=_self_order_kiosk_default_languages,
     )
-    self_ordering_image_home_ids = fields.Many2many(
-        'ir.attachment',
+    self_ordering_image_home_ids = fields.Attachments(
         string="Add images",
         help="Image to display on the self order screen",
     )
-    self_ordering_image_background_ids = fields.Many2many(
-        'ir.attachment',
+    self_ordering_image_background_ids = fields.Attachments(
         string="Set background image",
         help="Image to be displayed in the background",
         relation="pos_self_order_background_rels",

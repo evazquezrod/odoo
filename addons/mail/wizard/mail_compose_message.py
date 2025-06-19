@@ -90,9 +90,10 @@ class MailComposeMessage(models.TransientModel):
         'mail.template', 'Use template',
         domain="[('model', '=', model), '|', ('user_id','=', False), ('user_id', '=', uid)]"
     )
-    attachment_ids = fields.Many2many(
-        'ir.attachment', 'mail_compose_message_ir_attachments_rel',
-        'wizard_id', 'attachment_id', string='Attachments',
+    attachment_ids = fields.Attachments(
+        relation='mail_compose_message_ir_attachments_rel',
+        column1='wizard_id',
+        string='Attachments',
         compute='_compute_attachment_ids', readonly=False, store=True)
     email_layout_xmlid = fields.Char(
         'Email Notification Layout',

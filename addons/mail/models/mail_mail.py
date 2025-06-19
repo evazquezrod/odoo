@@ -49,7 +49,7 @@ class MailMail(models.Model):
     references = fields.Text('References', help='Message references, such as identifiers of previous messages', readonly=True)
     headers = fields.Text('Headers', copy=False)
     restricted_attachment_count = fields.Integer('Restricted attachments', compute='_compute_restricted_attachments')
-    unrestricted_attachment_ids = fields.Many2many('ir.attachment', string='Unrestricted Attachments',
+    unrestricted_attachment_ids = fields.Attachments(string='Unrestricted Attachments',
         compute='_compute_restricted_attachments', inverse='_inverse_unrestricted_attachment_ids')
     # Auto-detected based on create() - if 'mail_message_id' was passed then this mail is a notification
     # and during unlink() we will not cascade delete the parent and its attachments

@@ -98,9 +98,10 @@ class MailMessage(models.Model):
         'mail.message.reaction', 'message_id', string="Reactions",
         groups="base.group_system")
     # Attachments are linked to a document through model / res_id and to the message through this field.
-    attachment_ids = fields.Many2many(
-        'ir.attachment', 'message_attachment_rel',
-        'message_id', 'attachment_id',
+    attachment_ids = fields.Attachments(
+        relation='message_attachment_rel',
+        column1='message_id',
+        owner=False,  # XXX owner=lambda recs: recs[0].model and recs.env[recs[0].model].browse(recs[0].res_id),
         string='Attachments')
     parent_id = fields.Many2one(
         'mail.message', 'Parent Message', index='btree_not_null', ondelete='set null')

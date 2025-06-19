@@ -195,8 +195,9 @@ class HrLeave(models.Model):
 
     attachment_ids = fields.One2many('ir.attachment', 'res_id', string="Attachments")
     # To display in form view
-    supported_attachment_ids = fields.Many2many(
-        'ir.attachment', string="Attach File", compute='_compute_supported_attachment_ids',
+    supported_attachment_ids = fields.Attachments(
+        string="Attach File",
+        compute='_compute_supported_attachment_ids',
         inverse='_inverse_supported_attachment_ids')
     supported_attachment_ids_count = fields.Integer(compute='_compute_supported_attachment_ids')
     # UX fields
