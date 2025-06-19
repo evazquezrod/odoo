@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<templates xml:space="preserve">
+    <t t-name="website_sale.s_categories_inline_template_list">
+        <t t-foreach="data" t-as="category" t-key="category.id">
+            <li class="s_categories_inline_item">
+                <a t-attf-href="/shop/category/{{category.id}}" t-att-title="category.name" t-out="category.name"/>
+            </li>
+        </t>
+    </t>
+
+    <t t-name="website_sale.s_categories_inline_template_nav" t-inherit="website_sale.s_categories_inline_template_list">
+        <xpath expr="//li" position="attributes">
+            <attribute name="class" add="nav-item" separator=" "/>
+        </xpath>
+        <xpath expr="//a" position="attributes">
+            <attribute name="class" add="nav-link" separator=" "/>
+        </xpath>
+    </t>
+
+    <t t-name="website_sale.s_categories_inline_template_listgroup" t-inherit="website_sale.s_categories_inline_template_list">
+        <xpath expr="//li" position="replace">
+            <a t-attf-href="/shop/category/{{category.id}}" class="s_categories_inline_item list-group-item list-group-item-action" t-att-title="category.name" t-out="category.name"/>
+        </xpath>
+    </t>
+
+    <t t-name="website_sale.s_categories_inline_template_thumbnails" t-inherit="website_sale.s_categories_inline_template_list">
+        <xpath expr="//li" position="replace" mode="inner">
+            <a t-attf-href="/shop/category/{{category.id}}" class="s_categories_inline_item d-flex align-items-center p-3 border rounded gap-2" t-att-title="category.name">
+                <img
+                    loading="lazy"
+                    t-attf-src="/web/image/product.public.category/{{category.id}}/image_1920"
+                    t-att-alt="category.name"
+                    class="s_categories_inline_item_img"
+                />
+                <span t-out="category.name"/>
+            </a>
+        </xpath>
+    </t>
+</templates>

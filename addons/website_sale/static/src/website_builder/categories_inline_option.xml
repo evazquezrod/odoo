@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="website_sale.CategoriesInlineOption" name="Categories Inline">
+        <BuilderRow label.translate="Filters">
+            <BuilderSelect dataAttributeAction="'filterId'">
+                <BuilderSelectItem dataAttributeActionValue="'0'" label.translate="All Categories">
+                    All Categories
+                </BuilderSelectItem>
+                <t t-foreach="this.state.categories" t-as="category" t-key="category.id">
+                    <BuilderSelectItem
+                        dataAttributeActionValue="`${category.id}`"
+                        label="category.name"
+                        t-out="category.name"
+                    />
+                </t>
+            </BuilderSelect>
+        </BuilderRow>
+        <BuilderRow label.translate="Layout">
+            <BuilderSelect dataAttributeAction="'layout'">
+                <BuilderSelectItem dataAttributeActionValue="'list'" label.translate="List">
+                    List
+                </BuilderSelectItem>
+                <BuilderSelectItem dataAttributeActionValue="'nav'" label.translate="Navigation">
+                    Navigation
+                </BuilderSelectItem>
+                <BuilderSelectItem dataAttributeActionValue="'listgroup'" label.translate="Grouped list">
+                    Grouped list
+                </BuilderSelectItem>
+                <BuilderSelectItem dataAttributeActionValue="'thumbnails'" label.translate="Thumbnails">
+                    Thumbnails
+                </BuilderSelectItem>
+            </BuilderSelect>
+        </BuilderRow>
+    </t>
+</templates>

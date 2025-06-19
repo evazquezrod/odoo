@@ -1,0 +1,65 @@
+import { _t } from '@web/core/l10n/translation';
+import { rpc } from '@web/core/network/rpc';
+import { registry } from '@web/core/registry';
+import { listenSizeChange, utils as uiUtils } from '@web/core/ui/ui_service';
+import { renderToFragment } from '@web/core/utils/render';
+import { Interaction } from '@web/public/interaction';
+
+
+export class CategoriesInline extends Interaction {
+    static selector = ".s_categories_inline";
+    dynamicContent = {
+        ".s_categories_inline_wrapper": {
+            "t-att-class": () => ({
+                "list-unstyled": this.el.dataset.layout === "list",
+                "nav": this.el.dataset.layout === "nav",
+                "list-group": this.el.dataset.layout === "listgroup",
+                "thumbnails": this.el.dataset.layout === "o_categories_inline_thumbnails list-unstyled",
+            }),
+        },
+    };
+
+    async willStart() {
+        const filterId = this.el.dataset.filterId;
+        this.data = filterId
+            ? await this.waitFor(rpc('/shop/categories', { filter_id: parseInt(filterId) }))
+            : [];
+    }
+
+    start() {
+        this.render();
+    }
+
+    render() {
+        const snippetItemsEl = this.el.querySelectorAll(".s_categories_inline_item");
+        const layout = this.el.dataset.layout;
+        let snippetWrapperEl = this.el.querySelector(".s_categories_inline_wrapper");
+        let newWrapperEl = layout === "listgroup" ? document.createElement("div") : document.createElement("ul");
+
+        snippetItemsEl.forEach(el => {el.remove()});
+        // Adapt the tag of wrapper el to div or ul depending on the selected layout.
+        if(layout === "listgroup" || this.el.tagName.toLowerCase() === "div") {
+            const oldWrapperEl = snippetWrapperEl;
+            // Copy attributes
+            for (const attr of oldWrapperEl.attributes) {
+                newWrapperEl.setAttribute(attr.name, attr.value);
+            }
+            // Replace the old element with the new one in the DOM
+            oldWrapperEl.parentNode.replaceChild(newWrapperEl, oldWrapperEl);
+            snippetWrapperEl = newWrapperEl;
+        }
+        snippetWrapperEl.appendChild(
+            renderToFragment("website_sale.s_categories_inline_template_" + layout, {
+                data: this.data,
+            }
+        ));
+    }
+}
+
+registry
+    .category("public.interactions")
+    .add("website_sale.categories_inline", CategoriesInline);
+
+registry
+    .category("public.interactions.edit")
+    .add("website_sale.categories_inline", {Interaction: CategoriesInline});
