@@ -1129,6 +1129,7 @@ class CalendarEvent(models.Model):
                         deadline = pytz.utc.localize(deadline)
                         deadline = deadline.astimezone(pytz.timezone(user_tz))
                     activity_values['date_deadline'] = deadline.date()
+                    print('-> from event: write', deadline, deadline.date())
                 if 'user_id' in fields:
                     activity_values['user_id'] = event.user_id.id
                 if activity_values.keys():

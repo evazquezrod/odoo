@@ -25,9 +25,10 @@ class MailActivity(models.Model):
             for event in events:
                 # allday is easy, dates match
                 if event.allday and event.start.date() != date_deadline:
+                    print('-> from activity: write', datetime.combine(date_deadline, event.start.time(), date_dealdine))
                     event.start = datetime.combine(date_deadline, event.start.time())
                 # otherwise: we have to check if day did change, based on TZ
-                else:
+                elif not event.allday:
                     # old start in user timezone
                     old_deadline_dt = pytz.utc.localize(event.start).astimezone(pytz.timezone(user_tz))
                     date_diff = date_deadline - old_deadline_dt.date()
