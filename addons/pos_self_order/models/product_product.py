@@ -125,9 +125,21 @@ class ProductProduct(models.Model):
         config_self = self.env['pos.config'].sudo().search([('self_ordering_mode', '!=', 'nothing')])
         for config in config_self:
             if config.current_session_id and config.access_token:
-                config._notify('PRODUCT_CHANGED', {
-                    'product.product': self.read(self._load_pos_self_data_fields(config.id), load=False)
-                })
+                payload = {
+                    'product.product': self.read(self._load_pos_self_data_fields(config.id), load=False),
+                    'product.template': self.product_tmpl_id.read(self.product_tmpl_id._load_pos_self_data_fields(config.id), load=False),
+                    'product.combo': self.product_tmpl_id.combo_ids.read(
+                        self.env['product.combo']._load_pos_data_fields(config.id),
+                        load=False),
+                    'product.combo.item': self.product_tmpl_id.combo_ids.combo_item_ids.read(
+                        self.env['product.combo.item']._load_pos_data_fields(config.id),
+                        load=False),
+                    'product.template.attribute.line': self.product_tmpl_id.attribute_line_ids.read(
+                        self.env['product.template.attribute.line']._load_pos_data_fields(config.id), load=False),
+                    'product.template.attribute.value': self.product_tmpl_id.attribute_line_ids.product_template_value_ids.read(
+                        self.env['product.template.attribute.value']._load_pos_data_fields(config.id), load=False),
+                }
+                config._notify('PRODUCT_CHANGED', payload)
 
     def _can_return_content(self, field_name=None, access_token=None):
         if field_name == "image_512" and self.sudo().self_order_available:
