@@ -8,7 +8,10 @@ export function isScrollableX(el) {
 export function couldBeScrollableX(el) {
     if (el) {
         const overflow = getComputedStyle(el).getPropertyValue("overflow-x");
-        if (/\bauto\b|\bscroll\b/.test(overflow)) {
+        if (
+            /\bauto\b|\bscroll\b/.test(overflow) ||
+            (overflow === "visible" && el === el.ownerDocument.scrollingElement)
+        ) {
             return true;
         }
     }
@@ -41,7 +44,10 @@ export function isScrollableY(el) {
 export function couldBeScrollableY(el) {
     if (el) {
         const overflow = getComputedStyle(el).getPropertyValue("overflow-y");
-        if (/\bauto\b|\bscroll\b/.test(overflow)) {
+        if (
+            /\bauto\b|\bscroll\b/.test(overflow) ||
+            (overflow === "visible" && el === el.ownerDocument.scrollingElement)
+        ) {
             return true;
         }
     }
@@ -191,4 +197,20 @@ export function getScrollingElement(document = window.document) {
         }
     }
     return baseScrollingElement;
+}
+
+export function getScrollingTarget(contextItem = window.document) {
+    const isElement = (obj) => obj && obj.nodeType === Node.ELEMENT_NODE;
+
+    let scrollingElement;
+    if (isElement(contextItem)) {
+        scrollingElement = contextItem;
+    } else {
+        scrollingElement = getScrollingElement(contextItem);
+    }
+    const documentEl = scrollingElement.ownerDocument;
+
+    return scrollingElement === documentEl.scrollingElement
+        ? documentEl.defaultView
+        : scrollingElement;
 }

@@ -1,7 +1,7 @@
 import { Interaction } from "@web/public/interaction";
 import { registry } from "@web/core/registry";
 
-import { getScrollingElement } from "@web/core/utils/scrolling";
+import { getScrollingElement, getScrollingTarget } from "@web/core/utils/scrolling";
 
 export class SharedPopup extends Interaction {
     static selector = ".s_popup";
@@ -43,7 +43,9 @@ export class SharedPopup extends Interaction {
             // '_hideBottomFixedElements' method and re-display any bottom fixed
             // elements that may have been hidden (e.g. the live chat button
             // hidden when the cookies bar is open).
-            getScrollingElement().dispatchEvent(new Event("scroll"));
+            const scrollableEl = getScrollingElement();
+            const scrollableTarget = getScrollingTarget(scrollableEl);
+            scrollableTarget.dispatchEvent(new Event("scroll"));
         }
         this.popupShown = false;
     }
