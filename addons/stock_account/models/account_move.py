@@ -92,6 +92,7 @@ class AccountMove(models.Model):
         :return: A list of Python dictionary to be passed to env['account.move.line'].create.
         '''
         lines_vals_list = []
+
         price_unit_prec = self.env['decimal.precision'].precision_get('Product Price')
         for move in self:
 

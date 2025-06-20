@@ -25,7 +25,7 @@ class AccountMoveLine(models.Model):
 
             if line.product_id.valuation == 'real_time' and accounts['stock_valuation']:
                 line.account_id = accounts['stock_valuation']
-            if line.company_id.anglo_saxon_accounting and accounts['stock_variation']:
+            elif line.company_id.anglo_saxon_accounting and accounts['stock_variation']:
                 line.account_id = accounts['stock_variation']
 
     @api.onchange('product_id')
@@ -63,8 +63,15 @@ class AccountMoveLine(models.Model):
         if original_line:
             return original_line.price_unit
 
-        import pudb; pudb.set_trace()
-        return self.price_unit
+        if self.product_id.cost_method in ['standard', 'average']:
+            return self.product_id.standard_price
+
+        # FIFO
+        moves = self._get_moves()
+        moves_value = sum(moves.mapped('value'))
+        moves_quantity = sum(moves.mapped('quantity'))
+        # TODO handle returns ect
+        return moves_value / moves_quantity if moves_quantity else self.product_id.standard_price
 
     def _get_exchange_journal(self, company):
         if (

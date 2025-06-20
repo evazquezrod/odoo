@@ -45,10 +45,10 @@ class AccountMove(models.Model):
                     continue
 
                 # Retrieve accounts needed to generate the price difference.
+
                 debit_pdiff_account = False
                 if line.product_id.cost_method == 'standard':
-                    debit_pdiff_account = line.product_id.property_account_creditor_price_difference \
-                        or line.product_id.categ_id.property_account_creditor_price_difference_categ
+                    debit_pdiff_account = line.product_id.categ_id.property_price_difference_account_id
                     debit_pdiff_account = move.fiscal_position_id.map_account(debit_pdiff_account)
                 else:
                     debit_pdiff_account = line.product_id.product_tmpl_id.get_product_accounts(fiscal_pos=move.fiscal_position_id)['expense']

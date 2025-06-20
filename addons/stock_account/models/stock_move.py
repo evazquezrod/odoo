@@ -45,11 +45,11 @@ class StockMove(models.Model):
             move.is_valued = move.is_in or move.is_out
 
     def _action_done(self, cancel_backorder=False):
+        moves_out = self.filtered(lambda m: m._is_out())
+        moves_out._set_value()
         moves = super()._action_done(cancel_backorder=cancel_backorder)
         moves_in = moves.filtered(lambda m: m.is_in)
         moves_in.product_id._update_standard_price()
-        moves_out = moves.filtered(lambda m: m.is_out)
-        moves_out._set_value()
         return moves
 
     def _action_create_accounting_entries(self):
@@ -106,12 +106,12 @@ class StockMove(models.Model):
 
     def _set_value(self):
         """Set the value of the move"""
-        self.ensure_one()
-        quantity = self.quantity
-        if self.cost_method != 'fifo':
-            self.value = quantity * self.product_id.standard_price
-            return
-        self.value = self._run_fifo(quantity)
+        # TODO groupby product to avoid using twice the same stack
+        for move in self:
+            if move.product_id.cost_method == 'fifo':
+                move.value = move.product_id._run_fifo(move.quantity)
+            else:
+                move.value = 0
 
     def _get_value(self, forced_std_price=False):
         """Returns the value and the quantity valued on the move

@@ -106,6 +106,12 @@ class StockMove(models.Model):
     # --------------------------------------------------------
 
     def _get_value_from_account_move(self, quantity):
+        if not (self.purchase_line_id and self.is_in and self.purchase_line_id):
+            return 0, 0
+        moves_stack = self.purchase_line_id.move_ids
+        aml_stack = self.purchase_line_id.invoice_lines
+        import pudb; pudb.set_trace()
+
         return 0, 0
 
     def _get_value_from_quotation(self, quantity):
@@ -115,9 +121,6 @@ class StockMove(models.Model):
             quantity = min(quantity, self.quantity)
             return price_unit * quantity, quantity
         return super()._get_value_from_quotation(quantity)
-
-    def _get_purchase_order_lines(self):
-        return self.purchase_line_id
 
     def _get_related_invoices(self):
         """ Overridden to return the vendor bills related to this stock move.

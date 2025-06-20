@@ -130,6 +130,8 @@ class ProductProduct(models.Model):
         """Compute totals of multiple svl related values"""
         company_id = self.env.company
         self.company_currency_id = company_id.currency_id
+        import pudb; pudb.set_trace()
+
         for product in self:
             qty_available = product.sudo(False).qty_available
             if product.cost_method in ['standard', 'average']:
@@ -232,11 +234,12 @@ class ProductProduct(models.Model):
                 in_qty = quantity
             fifo_cost += in_value
             quantity -= in_qty
-
         return fifo_cost
 
     def _update_standard_price(self):
         for product in self:
+            if product.cost_method == 'standard':
+                continue
             product.standard_price = product._run_avco()
 
     def _update_lots_standard_price(self):
