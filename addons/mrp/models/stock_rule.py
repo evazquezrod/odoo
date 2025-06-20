@@ -4,6 +4,7 @@
 from collections import defaultdict
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from markupsafe import Markup
 
 from odoo import api, fields, models, SUPERUSER_ID, _
 from odoo.osv import expression
@@ -39,6 +40,14 @@ class StockRule(models.Model):
     def _should_auto_confirm_procurement_mo(self, p):
         return (not p.orderpoint_id and p.move_raw_ids) or (p.move_dest_ids.procure_method != 'make_to_order' and not p.move_raw_ids and not p.workorder_ids)
 
+    def _post_no_bom_notification(self, records_to_notify, users_to_notify, product):
+        notification_msg = Markup(" ").join(Markup("%s") % user._get_html_link(f'@{user.name}') for user in users_to_notify)
+        notification_msg += Markup("<br/>%s <strong>%s</strong>, %s") % (_("No BoM has been found for "), product.display_name, _("this product should have a BoM to be manufactured."))
+        records_to_notify.message_post(body=notification_msg, partner_ids=users_to_notify.ids)
+
+    def _notify_responsible_no_bom(self, procurement):
+        pass
+
     @api.model
     def _run_manufacture(self, procurements):
         new_productions_values_by_company = defaultdict(lambda: defaultdict(list))
@@ -71,6 +80,8 @@ class StockRule(models.Model):
                     'mo_id': mo.id,
                     'product_qty': mo.product_id.uom_id._compute_quantity((mo.product_uom_qty + procurement.product_qty), mo.product_uom_id)
                 }).change_prod_qty()
+            if not bom:
+                self._notify_responsible_no_bom(procurement)
 
         for company_id in new_productions_values_by_company:
             productions_vals_list = new_productions_values_by_company[company_id]['values']
@@ -205,6 +216,11 @@ class StockRule(models.Model):
             return delays, delay_description
         manufacture_rule.ensure_one()
         bom = values.get('bom') or self.env['mrp.bom']._bom_find(product, picking_type=manufacture_rule.picking_type_id, company_id=manufacture_rule.company_id.id)[product]
+        if not bom:
+            delays['total_delay'] += 365
+            delays['no_bom_found_delay'] += 365
+            if not bypass_delay_description:
+                delay_description.append((_('No BoM Found'), _('+ %s day(s)', 365)))
         manufacture_delay = bom.produce_delay
         delays['total_delay'] += manufacture_delay
         delays['manufacture_delay'] += manufacture_delay
