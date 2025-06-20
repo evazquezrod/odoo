@@ -946,7 +946,7 @@ class TestSubcontractingFlows(TestMrpSubcontractingCommon):
         productions = self.env['mrp.production'].search([('product_id', '=', self.finished.id)], order='id')
         self.assertEqual(receipt.move_ids.product_uom_qty, 10.0, 'Demand should not be impacted')
         self.assertRecordValues(productions, [
-            {'qty_producing': 0.0, 'product_qty': 0.0, 'state': 'to_close'},
+            {'qty_producing': 0.0, 'product_qty': 10.0, 'state': 'confirmed'},
         ])
 
     def test_change_partner_subcontracting_location(self):
