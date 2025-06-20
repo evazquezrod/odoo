@@ -1,0 +1,19 @@
+from odoo import models, fields
+
+
+class StockInventoryAdjustmentName(models.TransientModel):
+    _inherit = 'stock.inventory.adjustment.name'
+
+    accounting_date = fields.Date(
+        'Accounting Date',
+        help="Date at which the accounting entries will be created"
+             " in case of automated inventory valuation."
+             " If empty, the inventory date will be used.")
+    should_show_accounting_date = fields.Boolean(compute='_compute_should_show_accounting_date')
+
+    def _compute_should_show_accounting_date(self):
+        for wizard in self:
+            wizard.should_show_accounting_date = any(product.categ_id.property_valuation == 'real_time' for product in wizard.quant_ids.product_id)
+
+    def action_apply(self):
+        return super().with_context(force_period_date=self.accounting_date).action_apply()

@@ -9,7 +9,7 @@ class StockInventoryAdjustmentName(models.TransientModel):
     _description = 'Inventory Adjustment Reference / Reason'
 
     quant_ids = fields.Many2many('stock.quant')
-    inventory_adjustment_name = fields.Char(default="Quantity Updated", string="Inventory Reason")
+    inventory_adjustment_name = fields.Char(default="Physical Inventory", string="Inventory Reason")
 
     def action_apply(self):
         quants = self.quant_ids.filtered('inventory_quantity_set')
