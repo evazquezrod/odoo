@@ -256,6 +256,20 @@ class AccountMove(models.Model):
 
         return msg, error_codes
 
+    def _l10n_tr_nilvera_einvoice_check_xml_subscription_dates(self):
+        if 'deferred_start_date' not in self.invoice_line_ids._fields:
+            return False
+
+        start_dates = set()
+        end_dates = set()
+        for line in self.invoice_line_ids:
+            if line.deferred_start_date:
+                start_dates.add(line.deferred_start_date)
+            if line.deferred_end_date:
+                end_dates.add(line.deferred_end_date)
+
+        return len(start_dates) > 1 or len(end_dates) > 1
+
     # -------------------------------------------------------------------------
     # CRONS
     # -------------------------------------------------------------------------

@@ -1,9 +1,6 @@
 from io import BytesIO
-import logging
 
 from odoo import _, api, fields, models
-
-_logger = logging.getLogger(__name__)
 
 
 class AccountMoveSend(models.TransientModel):
@@ -38,22 +35,32 @@ class AccountMoveSend(models.TransientModel):
         return move.l10n_tr_nilvera_send_status == 'not_sent' and move.is_invoice(include_receipts=True) and move.country_code == 'TR'
 
     def _l10n_tr_nilvera_check_invoices(self):
+        error_messages = {}
         moves_to_check = self.move_ids.filtered(self._get_default_l10n_tr_nilvera_einvoice_enable_einvoice)
         invalid_records = moves_to_check.partner_id.filtered(
             lambda p: p.country_code != 'TR' or not p.city or not p.state_id or not p.street
         )
+        invalid_subscription_dates = moves_to_check.filtered(
+            lambda move: move._l10n_tr_nilvera_einvoice_check_xml_subscription_dates()
+        )
+        if invalid_subscription_dates:
+            error_messages["invalid_subscription_dates"] = {
+                "message": _("Please make sure all the products have same start date and end date in following Invoice(s)"),
+                "action_text": _("View Invoice(s)"),
+                "action": invalid_subscription_dates._get_records_action(
+                    name=_("Check data on Invoice(s)"),
+                ),
+            }
         if invalid_records:
-            return {
-                "partner_data_missing": {
-                    "message": _("The following partner(s) are either not Turkish or are missing one of those fields: city, state and street."),
-                    "action_text": _("View Partner(s)"),
-                    "action": invalid_records._get_records_action(
-                        name=_("Check data on Partner(s)"),
-                    ),
-                }
+            error_messages["partner_data_missing"] = {
+                "message": _("The following partner(s) are either not Turkish or are missing one of those fields: city, state and street."),
+                "action_text": _("View Partner(s)"),
+                "action": invalid_records._get_records_action(
+                    name=_("Check data on Partner(s)"),
+                ),
             }
 
-        return {}
+        return error_messages
 
     # -------------------------------------------------------------------------
     # COMPUTE METHODS

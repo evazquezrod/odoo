@@ -6,9 +6,9 @@
             <field name="model">account.move.send</field>
             <field name="inherit_id" ref="account.account_move_send_form"/>
             <field name="arch" type="xml">
-            <xpath expr="//div[@name='warnings']" position="inside">
-                <field name="l10n_tr_nilvera_warnings" class="o_field_html" widget="actionable_errors"/>
-            </xpath>
+                <xpath expr="//div[@name='warnings']" position="inside">
+                    <field name="l10n_tr_nilvera_warnings" class="o_field_html" widget="actionable_errors"/>
+                </xpath>
                 <xpath expr="//div[@name='advanced_options']" position='after'>
                     <field name="l10n_tr_nilvera_einvoice_enable_xml" invisible="1"/>
                     <div name="option_send_nilvera"
@@ -18,6 +18,12 @@
                             <label for="l10n_tr_nilvera_einvoice_checkbox_xml"/>
                         </span>
                     </div>
+                </xpath>
+                <xpath expr="//button[hasclass('o_mail_send')]" position="attributes">
+                    <attribute name="invisible">l10n_tr_nilvera_warnings</attribute>
+                </xpath>
+                <xpath expr="//button[hasclass('o_mail_send')]" position="after">
+                    <button string="Send &amp; Print" class="print btn-primary o_mail_send" disabled="1" invisible="not l10n_tr_nilvera_warnings"></button>
                 </xpath>
             </field>
         </record>
