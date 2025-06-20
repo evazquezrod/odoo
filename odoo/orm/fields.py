@@ -22,7 +22,7 @@ from odoo.tools.constants import PREFETCH_MAX
 from odoo.tools.misc import SENTINEL, ReadonlyDict, Sentinel, unique
 
 from .domains import NEGATIVE_CONDITION_OPERATORS, Domain
-from .utils import COLLECTION_TYPES, SQL_OPERATORS, SUPERUSER_ID, expand_ids
+from .utils import COLLECTION_TYPES, SQL_OPERATORS, SUPERUSER_ID, expand_ids, parse_field_expr
 
 if typing.TYPE_CHECKING:
     from collections.abc import Callable, Collection, Iterable, Iterator, MutableMapping
@@ -240,6 +240,10 @@ class Field(typing.Generic[T]):
         ``X`` has a dependency like ``parent_id.X``); declaring a field recursive
         must be explicit to guarantee that recomputation is correct
 
+    :param str compute_sql: name of a method that produces SQL for the field
+
+        .. seealso:: :ref:`Advanced Fields/Compute fields <reference/fields/compute>`
+
     :param str inverse: name of a method that inverses the field (optional)
 
     :param str related: sequence of field names
@@ -285,6 +289,7 @@ class Field(typing.Generic[T]):
     compute: str | Callable[[BaseModel], None] | None = None   # compute(recs) computes field on recs
     compute_sudo: bool = False          # whether field should be recomputed as superuser
     precompute: bool = False            # whether field has to be computed before creation
+    compute_sql: str | Callable[[BaseModel, str, Query], SQL] | None = None      # compute_sql(model, alias, query) that gets the SQL for the field
     inverse: str | Callable[[BaseModel], None] | None = None  # inverse(recs) inverses field on recs
     search: str | Callable[[BaseModel, str, typing.Any], DomainType] | None = None  # search(recs, operator, value) searches on self
     related: str | None = None          # sequence of field names, for related fields
@@ -442,6 +447,11 @@ class Field(typing.Generic[T]):
         if name == 'state':
             # by default, `state` fields should be reset on copy
             attrs['copy'] = attrs.get('copy', False)
+        if attrs.get('compute_sql'):
+            if not attrs.get('compute'):
+                warnings.warn(f"compute_sql attrbute makes sense only if {self} is a computed field")
+            if 'compute_sudo' not in attrs:
+                warnings.warn(f"compute_sql requires an explicity compute_sudo flag on {self}")
         if attrs.get('compute'):
             # by default, computed fields are not stored, computed in superuser
             # mode if stored, not copied (unless stored and explicitly not
@@ -631,6 +641,10 @@ class Field(typing.Generic[T]):
         self.compute = self._compute_related
         if self.inherited or not (self.readonly or field.readonly):
             self.inverse = self._inverse_related
+        if not self.store:
+            # XXX add a condition that we can traverse only m2o
+            # and that the target field can be transformed to sql
+            self.compute_sql = self._compute_sql_related
         if not self.store and field._description_searchable:
             # allow searching on self only if the related field is searchable
             self.search = self._search_related
@@ -670,6 +684,36 @@ class Field(typing.Generic[T]):
             corecord = record[name]
             record = next(iter(corecord), corecord)
         return record, self.related_field
+
+    def _traverse_related_sql(self, model: BaseModel, alias: str, query: Query) -> tuple[BaseModel, Field, str]:
+        """ Traverse the related `field` and add needed join to the `query`.
+
+        :returns: tuple ``(model, field, alias)``, where ``field`` is the last
+            field in the sequence, ``model`` is that field's model, and
+            ``alias`` is the model's table alias
+        """
+        assert self.related and not (self.store or self.compute_sql)
+        if not (model.env.su or self.compute_sudo or self.inherited):
+            raise ValueError(f'Cannot convert {self} to SQL because it is not a sudoed related or inherited field')
+
+        if self.compute_sudo:
+            model = model.sudo()
+        *path_fnames, last_fname = self.related.split('.')
+        for path_fname in path_fnames:
+            path_field = model._fields[path_fname]
+            if path_field.type != 'many2one':
+                raise ValueError(f'Cannot convert {self} (related={self.related}) to SQL because {path_fname} is not a Many2one')
+
+            comodel = model.env[path_field.comodel_name]
+            coalias = query.make_alias(alias, path_fname)
+            query.add_join('LEFT JOIN', coalias, comodel._table, SQL(
+                "%s = %s",
+                path_field.to_sql(model, alias, query),
+                SQL.identifier(coalias, 'id'),
+            ))
+            model, alias = comodel, coalias
+
+        return model, model._fields[last_fname], alias
 
     def _compute_related(self, records: BaseModel) -> None:
         """ Compute the related field ``self`` on ``records``. """
@@ -715,6 +759,10 @@ class Field(typing.Generic[T]):
         # assign final values to records
         for record, value in zip(records, values):
             record[self.name] = self._process_related(value[self.related_field.name], record.env)
+
+    def _compute_sql_related(self, model: BaseModel, alias: str, query: Query) -> SQL:
+        ref_model, field, ref_alias = self._traverse_related_sql(model, alias, query)
+        return ref_model._field_to_sql(ref_alias, field.name, query)
 
     def _process_related(self, value, env: Environment):
         """No transformation by default, but allows override."""
@@ -1214,12 +1262,15 @@ class Field(typing.Generic[T]):
     # SQL generation methods
     #
 
-    def to_sql(self, model: BaseModel, alias: str) -> SQL:
+    def to_sql(self, model: BaseModel, alias: str, query: Query | None) -> SQL:
         """ Return an :class:`SQL` object that represents the value of the given
         field from the given table alias.
 
         The query object is necessary for fields that need to add tables to the query.
         """
+        model._check_field_access(self, 'read')
+        if self.compute_sql:
+            return determine(self.compute_sql, model, alias, query)
         if not self.store or not self.column_type:
             raise ValueError(f"Cannot convert {self} to SQL because it is not stored")
         sql_field = SQL.identifier(alias, self.name, to_flush=self)

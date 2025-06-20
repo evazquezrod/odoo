@@ -440,8 +440,8 @@ class Many2one(_Relational):
                 ids1 = tuple(unique((ids0 or ()) + valid_records._ids))
                 invf._update_cache(corecord, ids1)
 
-    def to_sql(self, model: BaseModel, alias: str) -> SQL:
-        sql_field = super().to_sql(model, alias)
+    def to_sql(self, model: BaseModel, alias: str, query: Query | None) -> SQL:
+        sql_field = super().to_sql(model, alias, query)
         if self.company_dependent:
             comodel = model.env[self.comodel_name]
             sql_field = SQL(
@@ -510,7 +510,7 @@ class Many2one(_Relational):
 
         # execute search and generate condition with a SQL query
         domain_query = comodel.with_context(active_test=False)._search(value)
-        return self.condition_to_sql(fname, operator, domain_query, model, alias, query)
+        return self.condition_to_sql(field_expr, operator, domain_query, model, alias, query)
 
 
 class _RelationalMulti(_Relational):
