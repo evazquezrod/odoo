@@ -99,5 +99,9 @@ class AccountMove(models.Model):
         # We need to override this method to remove the link with the move, else we cannot reimburse them anymore.
         # And cancelling the move != cancelling the expense
         res = super().button_cancel()
-        self.write({'expense_sheet_id': False, 'ref': False})
+        with_expense = self.filtered('expense_sheet_id')
+        without_expense = self - with_expense
+        # Only clear reference for moves with expense sheets.
+        with_expense.write({'expense_sheet_id': False, 'ref': False})
+        without_expense.write({'expense_sheet_id': False})
         return res
