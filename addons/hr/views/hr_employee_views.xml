@@ -162,8 +162,8 @@
                                                 context="{'show_address': 1}"
                                                 options='{"highlight_first_line": True}'/>
                                             <field name="work_location_id"
-                                                   context="{'default_address_id': address_id}"
-                                                   placeholder="e.g. Building 2, Remote, etc."/>
+                                                context="{'default_address_id': address_id}"
+                                                placeholder="e.g. Building 2, Remote, etc."/>
                                         </group>
                                         <group name="departure" string="Departure" invisible="active">
                                             <field name="departure_reason_id" options="{'no_edit': True, 'no_create': True, 'no_open': True}"/>
@@ -188,7 +188,7 @@
                                         <field name="bank_account_id" context="{'default_partner_id': work_contact_id}"
                                                options="{'no_quick_create': True}" readonly="not id"/>
                                     </group>
-                                    <group string="Birth Information" name="hr_birth_group">
+                                    <group string="Personal Information" name="hr_birth_group">
                                         <field name="legal_name"/>
                                         <label for="birthday"/>
                                         <div class="o_row" name="div_km_home_work">
@@ -258,22 +258,26 @@
                             </page>
                             <page name="payroll_information" string="Payroll" groups="hr.group_hr_user">
                                 <group name="payroll_group">
-                                    <group name="contract" string="Contract Overview" groups="hr.group_hr_user">
+                                    <group name="contract" groups="hr.group_hr_user" style="padding-top: 20px;">
+                                        <div colspan="2" class="row">
+                                            <span class="col-8 text-uppercase fw-bolder small"> Contract Overview </span>
+                                            <button name="%(hr_version_wizard_action)d" type="action" string="Load a Template" 
+                                                class="btn btn-link col-4 p-0 w-max text-end"/>
+                                            <div class="w-100 border-top border-1 border-secondary mt-0 mb-3"></div>
+                                        </div>
                                         <label for="contract_date_start" string="Contract"/>
                                         <div class="o_row" name="contract_dates">
-                                            <field name="contract_date_start" string="Start Date" placeholder="Not Employed" class="o_hr_narrow_field me-3"/>to
+                                            <field name="contract_date_start" string="Start Date" placeholder="Not Employed" class="o_hr_narrow_field me-3"/>
+                                            <span invisible="not contract_date_start">to</span>
                                             <field name="contract_date_end" string="End Date" placeholder="Indefinite" 
                                                 class="o_hr_narrow_field ms-3" invisible="not contract_date_start"/>
                                                 <button name="action_new_contract" type="object" string="New Contract" class="btn btn-link p-0 ms-auto"
                                                     invisible="not contract_date_start and not contract_date_end"/>
-                                            </div>
-                                            <label for="wage"/>
-                                            <div class="o_row" name="wage">
-                                                <field name="wage" class="oe_inline o_hr_narrow_field" nolabel="1"/>
-                                                <div class="mb-3" name="wage_period_label">/ month</div>
-                                                <button name="%(hr_version_wizard_action)d" type="action" string="Load a Template" class="btn btn-link p-0 ms-auto"/>
                                         </div>
-                                        <field name="employee_type"/>
+                                        <label for="wage"/>
+                                        <div class="o_row" name="wage">
+                                            <field name="wage" class="oe_inline o_hr_narrow_field" nolabel="1"/>
+                                        </div>
                                         <label for="contract_type_id" string="Contract Type"/>
                                         <div class="o_row" name="contract_type">
                                             <field name="contract_type_id" class="oe_inline o_hr_narrow_field" nolabel="1" placeholder="Contract Type"/>
@@ -283,7 +287,6 @@
                                         </div>
                                         <separator string="Schedule"/>
                                         <field name="resource_calendar_id" help="The default working hours are set in configuration."/>
-                                        <field name="tz" required="id"/>
                                     </group>
                                 </group>
                                 <group name="payroll_localization">
@@ -306,6 +309,12 @@
                                             'default_partner_id': work_contact_id,
                                         }"
                                         widget="many2one_avatar_user"/>
+                                        <field name="tz" required="id"/>
+                                    </group>
+                                </group>
+                                <group>
+                                    <group name="managers" string="Approvers">
+                                        <field name="hr_responsible_id" widget="many2one_avatar_user"/>
                                     </group>
                                 </group>
                                 <group>
@@ -318,11 +327,6 @@
                                             <button string="Generate" class="btn btn-link" type="object" name="generate_random_barcode" invisible="barcode"/>
                                             <button name="%(hr_employee_print_badge)d" string="Print Badge" class="btn btn-link" type="action" invisible="not barcode"/>
                                         </div>
-                                    </group>
-                                </group>
-                                <group>
-                                    <group name="managers" string="Approvers">
-                                        <field name="hr_responsible_id" widget="many2one_avatar_user"/>
                                     </group>
                                 </group>
                             </page>
