@@ -1,7 +1,7 @@
 import { ancestors } from "@html_editor/utils/dom_traversal";
 import { throttleForAnimation } from "@web/core/utils/timing";
 import { couldBeScrollableX, couldBeScrollableY } from "@web/core/utils/scrolling";
-import { useComponent, useEffect } from "@odoo/owl";
+import { useComponent, useEffect, useExternalListener } from "@odoo/owl";
 
 /**
  * This hook has the same job as the PositionPlugin, but for Components.
@@ -11,14 +11,22 @@ import { useComponent, useEffect } from "@odoo/owl";
  * the positioning logic so that both the plugin and the hook can use it.
  */
 export function usePositionHook(containerRef, document, callback) {
+    let isMouseDown = false;
     const comp = useComponent();
     const onLayoutGeometryChange = throttleForAnimation(callback.bind(comp));
-    const resizeObserver = new ResizeObserver(onLayoutGeometryChange);
+    const listener = (...args) => {
+        if (!isMouseDown) {
+            onLayoutGeometryChange(...args);
+        }
+    };
+    const resizeObserver = new ResizeObserver(listener);
     const cleanups = [];
     const addDomListener = (target, eventName, capture) => {
-        target.addEventListener(eventName, onLayoutGeometryChange, capture);
-        cleanups.push(() => target.removeEventListener(eventName, onLayoutGeometryChange, capture));
+        target.addEventListener(eventName, listener, capture);
+        cleanups.push(() => target.removeEventListener(eventName, listener, capture));
     };
+    useExternalListener(document, "mousedown", () => (isMouseDown = true));
+    useExternalListener(document, "mouseup", () => (isMouseDown = false));
     useEffect(
         () => {
             if (containerRef.el) {
