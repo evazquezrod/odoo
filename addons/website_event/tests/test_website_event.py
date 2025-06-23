@@ -285,3 +285,24 @@ class TestWebsiteAccess(HttpCaseWithUserDemo, OnlineEventCase):
 
         with self.assertRaises(AccessError):
             self.env['res.partner'].browse(self.partner.id).read()
+
+    def test_create_website_menu_without_parent_id(self):
+        """Test creating a new website menu item without a parent_id."""
+
+        current_website = self.env['website'].get_current_website()
+        top_menu = current_website.menu_id
+        top_menu.unlink()
+        total_menu_items = self.env['website.menu'].search_count([])
+
+        data = [
+            {
+                'id': "new-1",
+                'parent_id': top_menu.exists().id,  # Deleted the top menu, so parent_id is False
+                'name': "Test New Menu",
+                'url': "/new-specific-1",
+                'is_mega_menu': False,
+            },
+        ]
+        self.env['website.menu'].save(current_website.id, {'data': data, 'to_delete': []})
+
+        self.assertEqual(total_menu_items + 1, self.env['website.menu'].search_count([]))
