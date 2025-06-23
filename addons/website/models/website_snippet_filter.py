@@ -86,11 +86,7 @@ class WebsiteSnippetFilter(models.Model):
         """Gets the data and returns it the right format for render."""
         self.ensure_one()
 
-        # The "limit" field is there to prevent loading an arbitrary number of
-        # records asked by the client side. This here makes sure you can always
-        # load at least 16 records as it is what the editor allows.
-        max_limit = max(self.limit, 16)
-        limit = limit and min(limit, max_limit) or max_limit
+        limit = limit or self.limit or 16
 
         if self.filter_id:
             filter_sudo = self.filter_id.sudo()

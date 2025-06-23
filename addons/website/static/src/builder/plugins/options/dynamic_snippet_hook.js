@@ -64,11 +64,15 @@ export function useDynamicSnippetOption(modelNameFilter, contextualFilterDomain 
     function showFilterOption() {
         return Object.values(dynamicFilters).length > 1;
     }
+    function showDropDown() {
+        return true;
+    }
 
     return {
         dynamicFilters,
         domState,
         getFilteredTemplates,
         showFilterOption,
+        showDropDown,
     };
 }
