@@ -358,8 +358,8 @@ $hr-opacity: 1 !default;
 // Pagination
 
 // Arbitrary values to get a circle for 1 digit numbers
-$pagination-padding-y: 0.4ch !default;
-$pagination-padding-x: 1.2ch !default;
+$pagination-padding-y: var(--pagination-font-size) !default;
+$pagination-padding-x: var(--pagination-font-size) !default;
 
 $pagination-border-radius: $border-radius-pill !default;
 $pagination-margin-start: map-get($map: $spacers, $key: 1) !default;
