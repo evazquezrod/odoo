@@ -289,6 +289,9 @@ export class ColorPlugin extends Plugin {
             if (mode === "backgroundColor" && color) {
                 return !closestElement(node, "table.o_selected_table");
             }
+            if (closestElement(node).classList.contains("o_default_color")) {
+                return false;
+            }
             const li = closestElement(node, "li");
             if (li && color && this.dependencies.selection.areNodeContentsFullySelected(li)) {
                 return rgbaToHex(li.style.color).toLowerCase() !== hexColor;
@@ -419,10 +422,6 @@ export class ColorPlugin extends Plugin {
         // Color the selected <font>s and remove uncolored fonts.
         const fontsSet = new Set(fonts);
         for (const font of fontsSet) {
-            const closestLI = closestElement(font, "li");
-            if (font && color === "" && closestLI?.style.color) {
-                color = "initial";
-            }
             this.colorElement(font, color, mode);
             if (
                 !hasColor(font, "color") &&
