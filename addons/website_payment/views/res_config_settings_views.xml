@@ -48,9 +48,9 @@
                                         icon="oi-arrow-right"
                                 />
                             </div>
-                            <div invisible="providers_state != 'primary_provider'">
+                            <div invisible="providers_state != 'onboarding_provider'">
                                 <button
-                                    name="action_configure_primary_provider"
+                                    name="action_configure_onboarding_provider"
                                     type="object"
                                     class="btn-primary col-auto"
                                 >

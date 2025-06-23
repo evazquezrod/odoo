@@ -109,10 +109,10 @@
                             <div
                                 class="mt8"
                                 invisible="not portal_confirmation_pay or
-                                    providers_state != 'primary_provider'"
+                                    providers_state != 'onboarding_provider'"
                             >
                                 <button
-                                    name="action_configure_primary_provider"
+                                    name="action_configure_onboarding_provider"
                                     type="object"
                                     class="btn-primary col-auto"
                                 >
