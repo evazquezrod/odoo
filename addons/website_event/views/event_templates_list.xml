@@ -342,6 +342,14 @@
                                     </t>
                                 </span>
                                 <!-- Participating -->
+                                <!-- <t t-if="request.env.user.id != request.website.user_id.id">
+                                    <small t-if="event.is_participating" class="o_wevent_participating position-absolute bottom-0 px-3 py-2 w-100 text-bg-success">
+                                        <t t-if="request.env.user" t-esc="request.env.user.id"/>=Env
+                                        <t t-esc="request.website.user_id.id"/>=Web
+                                        <i class="fa fa-check me-2"/>Registered
+                                    </small>
+                                </t> -->
+                                <!-- Participating -->
                                 <small t-if="event.is_participating" class="o_wevent_participating position-absolute bottom-0 px-3 py-2 w-100 text-bg-success">
                                     <i class="fa fa-check me-2"/>Registered
                                 </small>

@@ -137,11 +137,22 @@ class Event(models.Model):
 
         visitor_domain = []
         partner_id = self.env.user.partner_id
+        # if current_visitor:
+        #     visitor_domain = [('visitor_id', '=', current_visitor.id)]
+        #     partner_id = current_visitor.partner_id
+        # if partner_id:
+        #     visitor_domain = expression.OR([visitor_domain, [('partner_id', '=', partner_id.id)]])
+
+        # Ignore partner_id if user is public
         if current_visitor:
             visitor_domain = [('visitor_id', '=', current_visitor.id)]
-            partner_id = current_visitor.partner_id
-        if partner_id:
+            if not self.env.user._is_public():
+                partner_id = current_visitor.partner_id
+        if partner_id and not self.env.user._is_public():
             visitor_domain = expression.OR([visitor_domain, [('partner_id', '=', partner_id.id)]])
+
+        if not visitor_domain:
+            return self.env['event.event']
 
         registrations_events = self.env['event.registration'].sudo()._read_group(
             expression.AND([visitor_domain, base_domain]),

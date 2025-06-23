@@ -146,7 +146,7 @@ class WebsiteEventController(http.Controller):
     # EVENT PAGE
     # ------------------------------------------------------------
 
-    @http.route(['''/event/<model("event.event"):event>/page/<path:page>'''], type='http', auth="public", website=True, sitemap=False, readonly=True)
+    @http.route(['''/event/<model("event.event"):event>/page/<path:page>'''], type='http', auth="public", website=True, sitemap=False, readonly=True, cache=False)
     def event_page(self, event, page, **post):
         values = {
             'event': event,

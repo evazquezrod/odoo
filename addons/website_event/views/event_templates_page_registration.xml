@@ -65,7 +65,6 @@
                                 <t t-set="use_size" t-value="False"/>
                                 <t t-set="use_text_align" t-value="True"/>
                                 <t t-set="additionnal_classes" t-value="'o_wevent_event_main_cover overflow-hidden ' + ('css_non_editable_mode_hidden border border-info rounded-bottom' if edition_cover_only else 'd-none' if opt_event_description_cover_hidden else 'rounded')"/>
-
                                 <div id="o_wevent_event_main_cover_content" class="p-3 mt-auto">
                                     <span t-if="event.is_participating" class="badge text-bg-success o_wevent_badge">
                                         <i class="fa fa-check me-2" role="img"/>Registered
