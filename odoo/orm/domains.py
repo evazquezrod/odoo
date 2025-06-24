@@ -169,6 +169,7 @@ class OptimizationLevel(enum.IntEnum):
     """Indicator whether the domain was optimized."""
     NONE = 0
     BASIC = enum.auto()
+    DYNAMIC_VALUES = enum.auto()
     FULL = enum.auto()
 
 
@@ -390,7 +391,11 @@ class Domain:
         """
         raise NotImplementedError
 
-    def optimize(self, model: BaseModel, *, full: bool = False) -> Domain:
+    @typing.final
+    def optimize(self, model: BaseModel, *,
+        level: OptimizationLevel = OptimizationLevel.BASIC,
+        dynamic_values: bool = False, full: bool = False,
+    ) -> Domain:
         """Perform optimizations of the node given a model.
 
         It is a pre-processing step to rewrite the domain into a logically
@@ -406,6 +411,10 @@ class Domain:
         simplify a domain that is sent to the client-side, thereby reducing its
         payload/complexity.
 
+        With ``dynamic_values=True``, basic optimizations are applied and
+        environment-dependent optimizations are performed. Still, no
+        model-specific overrides are used. This mainly resolves dynamic values.
+
         With ``full=True``, basic and advanced optimizations are applied.
         Additional optimizations may rely on model specific overrides
         (search methods of fields, etc.) and the semantic equivalence is only
@@ -413,34 +422,24 @@ class Domain:
         and non-stored fields (using their search method) to transform the
         conditions.
         """
-        level = OptimizationLevel.FULL if full else OptimizationLevel.BASIC
-        if self._opt_level >= level:
-            return self
+        if full:
+            level = OptimizationLevel.FULL
+        elif dynamic_values:
+            level = max(OptimizationLevel.DYNAMIC_VALUES, level)
 
-        domain = self
-
-        if domain._opt_level < OptimizationLevel.BASIC:
-            # determine a fixpoint for _optimize() for level BASIC
-            previous, count = None, 0
-            while domain != previous:
-                if (count := count + 1) > MAX_OPTIMIZE_ITERATIONS:
-                    raise RecursionError("Domain.optimize: too many loops")
-                previous, domain = domain, domain._optimize(model, False)
-
-        if full and domain._opt_level < OptimizationLevel.FULL:
-            # determine a fixpoint for _optimize() for level FULL
-            previous, count = None, 0
-            while domain != previous:
-                if (count := count + 1) > MAX_OPTIMIZE_ITERATIONS:
-                    raise RecursionError("Domain.optimize: too many loops")
-                previous, domain = domain, domain._optimize(model, True)
-
-        # set the optimization level if necessary (unlike DomainBool, for instance)
-        if domain._opt_level < level:
-            object.__setattr__(domain, '_opt_level', level)
+        # determine a fixpoint for _optimize()
+        domain, previous, count = self, None, 0
+        while domain._opt_level < level:
+            if (count := count + 1) > MAX_OPTIMIZE_ITERATIONS:
+                raise RecursionError("Domain.optimize: too many loops")
+            next_level = OptimizationLevel(domain._opt_level + 1)
+            previous, domain = domain, domain._optimize(model, next_level)
+            # set the optimization level if necessary (unlike DomainBool, for instance)
+            if domain == previous and domain._opt_level < next_level:
+                object.__setattr__(domain, '_opt_level', next_level)  # noqa: PLC2801
         return domain
 
-    def _optimize(self, model: BaseModel, full: bool) -> Domain:
+    def _optimize(self, model: BaseModel, level: OptimizationLevel) -> Domain:
         """Implementation of domain optimizations."""
         return self
 
@@ -532,8 +531,8 @@ class DomainNot(Domain):
     def map_conditions(self, function) -> Domain:
         return ~(self.child.map_conditions(function))
 
-    def _optimize(self, model: BaseModel, full: bool) -> Domain:
-        return self.child.optimize(model, full=full)._negate(model)
+    def _optimize(self, model: BaseModel, level: OptimizationLevel) -> Domain:
+        return self.child.optimize(model, level=level)._negate(model)
 
     def __eq__(self, other):
         return self is other or (isinstance(other, DomainNot) and self.child == other.child)
@@ -626,9 +625,9 @@ class DomainNary(Domain):
     def map_conditions(self, function) -> Domain:
         return self.apply(child.map_conditions(function) for child in self.children)
 
-    def _optimize(self, model: BaseModel, full: bool) -> Domain:
+    def _optimize(self, model: BaseModel, level: OptimizationLevel) -> Domain:
         # optimize children
-        children = self._flatten(child.optimize(model, full=full) for child in self.children)
+        children = self._flatten(child.optimize(model, level=level) for child in self.children)
         size = len(children)
         if size > 1:
             # sort children in order to ease their grouping by field and operator
@@ -887,7 +886,7 @@ class DomainCondition(Domain):
         object.__setattr__(self, '_field_instance', field)
         return field, property_name or ''
 
-    def _optimize(self, model: BaseModel, full: bool) -> Domain:
+    def _optimize(self, model: BaseModel, level: OptimizationLevel) -> Domain:
         """Optimization step.
 
         Apply some generic optimizations and then dispatch optimizations
@@ -900,62 +899,47 @@ class DomainCondition(Domain):
         - Run optimizations.
         - Check the output.
         """
+        assert level == self._opt_level + 1, f"Trying to skip optimization level after {self._opt_level}"
+
         # optimize path
         field, property_name = self.__get_field(model)
         if property_name and field.relational:
             sub_domain = DomainCondition(property_name, self.operator, self.value)
             return DomainCondition(field.name, 'any', sub_domain)
 
+        if level == OptimizationLevel.FULL:
+            # resolve inherited fields
+            # inherits implies both Field.delegate=True and Field.auto_join=True
+            # so no additional permissions will be added by the 'any' operator below
+            if field.inherited:
+                parent_fname = field.related.split('.')[0]
+                parent_domain = DomainCondition(self.field_expr, self.operator, self.value)
+                return DomainCondition(parent_fname, 'any', parent_domain)
+
+            # handle searchable fields
+            if field.search and field.name == self.field_expr:
+                domain = self._optimize_field_search_method(model)
+                # The domain is optimized so that value data types are comparable.
+                # Only simple optimization to avoid endless recursion.
+                domain = domain.optimize(model)
+                if domain != self:
+                    return domain
+
         # optimizations based on operator
-        for opt in _OPTIMIZATIONS_BY_OPERATOR[self.operator]:
-            if opt.level == OptimizationLevel.BASIC:
-                domain = opt(self, model)
-                if domain != self:
-                    return domain
-
-        # optimizations based on field type
-        for opt in _OPTIMIZATIONS_BY_FIELD_TYPE[field.type]:
-            if opt.level == OptimizationLevel.BASIC:
-                domain = opt(self, model)
-                if domain != self:
-                    return domain
-
-        if not full:
-            return self
-
-        # resolve inherited fields
-        # inherits implies both Field.delegate=True and Field.auto_join=True
-        # so no additional permissions will be added by the 'any' operator below
-        if field.inherited:
-            parent_fname = field.related.split('.')[0]
-            parent_domain = DomainCondition(self.field_expr, self.operator, self.value)
-            return DomainCondition(parent_fname, 'any', parent_domain)
-
-        # handle searchable fields
-        if field.search and field.name == self.field_expr:
-            domain = self._optimize_field_search_method(model)
-            # The domain is optimized so that value data types are comparable.
-            # Only simple optimization to avoid endless recursion.
-            domain = domain.optimize(model)
+        optimizations = _OPTIMIZATIONS_FOR[level]
+        for opt in optimizations.get(self.operator, ()):
+            domain = opt(self, model)
             if domain != self:
                 return domain
 
-        # optimizations based on operator
-        for opt in _OPTIMIZATIONS_BY_OPERATOR[self.operator]:
-            if opt.level == OptimizationLevel.FULL:
-                domain = opt(self, model)
-                if domain != self:
-                    return domain
-
         # optimizations based on field type
-        for opt in _OPTIMIZATIONS_BY_FIELD_TYPE[field.type]:
-            if opt.level == OptimizationLevel.FULL:
-                domain = opt(self, model)
-                if domain != self:
-                    return domain
+        for opt in optimizations.get(field.type, ()):
+            domain = opt(self, model)
+            if domain != self:
+                return domain
 
         # final checks
-        if self.operator not in STANDARD_CONDITION_OPERATORS:
+        if self.operator not in STANDARD_CONDITION_OPERATORS and level == OptimizationLevel.FULL:
             self._raise("Not standard operator left")
 
         return self
@@ -1004,8 +988,8 @@ class DomainCondition(Domain):
         if not records:
             return lambda _: False
 
-        if self._opt_level < OptimizationLevel.BASIC:
-            return self.optimize(records, full=False)._as_predicate(records)
+        if self._opt_level < OptimizationLevel.DYNAMIC_VALUES:
+            return self.optimize(records, level=OptimizationLevel.DYNAMIC_VALUES)._as_predicate(records)
 
         operator = self.operator
         if operator in ('child_of', 'parent_of'):
@@ -1046,12 +1030,6 @@ class DomainCondition(Domain):
         elif field_expr == 'id':
             # for new records, compare to their origin
             field_expr = 'id.origin'
-        elif field.type == 'date' and '.' not in field_expr and isinstance(value, str):
-            # dynamic value
-            value = _value_to_date(value, records.env)
-        elif field.type == 'datetime' and '.' not in field_expr and isinstance(value, str):
-            # dynamic value
-            value, _ = _value_to_datetime(value, records.env)
 
         func = field.filter_function(records, field_expr, positive_operator, value)
         return func if positive_operator == operator else lambda rec: not func(rec)
@@ -1077,8 +1055,8 @@ if typing.TYPE_CHECKING:
     ConditionOptimization = Callable[[DomainCondition, BaseModel], Domain]
     MergeOptimization = Callable[[type[DomainNary], list[Domain], BaseModel], Iterable[Domain]]
 
-_OPTIMIZATIONS_BY_OPERATOR: dict[str, list[ConditionOptimization]] = collections.defaultdict(list)
-_OPTIMIZATIONS_BY_FIELD_TYPE: dict[str, list[ConditionOptimization]] = collections.defaultdict(list)
+_OPTIMIZATIONS_FOR: dict[OptimizationLevel, dict[str, list[ConditionOptimization]]] = {
+    level: collections.defaultdict(list) for level in OptimizationLevel if level != OptimizationLevel.NONE}
 _MERGE_OPTIMIZATIONS: list[MergeOptimization] = list()
 
 
@@ -1088,9 +1066,9 @@ def operator_optimization(operators: Collection[str], level: OptimizationLevel =
     CONDITION_OPERATORS.update(operators)
 
     def register(optimization: ConditionOptimization):
-        optimization.level = level
-        for operator in operators:
-            _OPTIMIZATIONS_BY_OPERATOR[operator].append(optimization)
+        mapping = _OPTIMIZATIONS_FOR[level]
+        for operator in operators:  # noqa: F402
+            mapping[operator].append(optimization)
         return optimization
 
     return register
@@ -1099,9 +1077,9 @@ def operator_optimization(operators: Collection[str], level: OptimizationLevel =
 def field_type_optimization(field_types: Collection[str], level: OptimizationLevel = OptimizationLevel.BASIC):
     """Register a condition optimization by field type for (condition, model)"""
     def register(optimization: ConditionOptimization):
-        optimization.level = level
+        mapping = _OPTIMIZATIONS_FOR[level]
         for field_type in field_types:
-            _OPTIMIZATIONS_BY_FIELD_TYPE[field_type].append(optimization)
+            mapping[field_type].append(optimization)
         return optimization
 
     return register
@@ -1305,8 +1283,8 @@ def _optimize_any_domain(condition, model):
     return DomainCondition(condition.field_expr, condition.operator, domain)
 
 
-@operator_optimization(['any', 'not any'], OptimizationLevel.FULL)
-def _optimize_any_domain_for_sql(condition, model):
+# register and bind multiple levels later
+def _optimize_any_domain_at_level(level: OptimizationLevel, condition, model):
     domain = condition.value
     if not isinstance(domain, Domain):
         return condition
@@ -1317,8 +1295,15 @@ def _optimize_any_domain_for_sql(condition, model):
         comodel = model.env[field.comodel_name]
     except KeyError:
         condition._raise("Cannot determine the comodel relation")
-    domain = domain.optimize(comodel, full=True)
+    domain = domain.optimize(comodel, level=level)
     return DomainCondition(condition.field_expr, condition.operator, domain)
+
+
+[
+    operator_optimization(['any', 'not any'], level)(functools.partial(_optimize_any_domain_at_level, level))
+    for level in OptimizationLevel
+    if level > OptimizationLevel.BASIC
+]
 
 
 @operator_optimization([op for op in CONDITION_OPERATORS if op.endswith('like')])
@@ -1459,7 +1444,7 @@ def _optimize_type_date(condition, model):
     return DomainCondition(condition.field_expr, operator, value)
 
 
-@field_type_optimization(['date'], level=OptimizationLevel.FULL)
+@field_type_optimization(['date'], level=OptimizationLevel.DYNAMIC_VALUES)
 def _optimize_type_date_relative(condition, model):
     operator = condition.operator
     if (
@@ -1566,7 +1551,7 @@ def _optimize_type_datetime(condition, model):
     return DomainCondition(field_expr, operator, value)
 
 
-@field_type_optimization(['datetime'], level=OptimizationLevel.FULL)
+@field_type_optimization(['datetime'], level=OptimizationLevel.DYNAMIC_VALUES)
 def _optimize_type_datetime_relative(condition, model):
     operator = condition.operator
     if (
