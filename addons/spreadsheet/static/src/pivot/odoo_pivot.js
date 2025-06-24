@@ -155,6 +155,7 @@ export class OdooPivot {
 
     async loadMetadata() {
         this._fields = await this.loader.getFields(this.coreDefinition.model);
+        await this._loadRelationalFieldsDefinitions();
         await this._loadPropertiesDefinitions();
     }
 
@@ -469,6 +470,29 @@ export class OdooPivot {
         return this.loader.assertIsValid({ throwOnError });
     }
 
+    async _loadRelationalFieldsDefinitions() {
+        // Relational dimensions are fields with a relation to another model
+        const related = this.coreDefinition.rows
+            .concat(this.coreDefinition.columns)
+            .filter(
+                (dimension) =>
+                    dimension.fieldName.includes(".") && !(dimension.fieldName in this._fields)
+            );
+        await Promise.all(
+            related.map((dimension) =>
+                this.odooDataProvider.fieldService
+                    .loadPath(this.coreDefinition.model, dimension.fieldName)
+                    .then(({ modelsInfo, names }) => {
+                        this._fields[dimension.fieldName] =
+                            modelsInfo.at(-1).fieldDefs[dimension.fieldName.split(".").at(-1)];
+                        this._fields[dimension.fieldName].string = names
+                            .map((name, i) => modelsInfo[i].fieldDefs[name].string)
+                            .join(" > ");
+                    })
+            )
+        );
+    }
+
     /**
      * @private
      */
@@ -477,7 +501,11 @@ export class OdooPivot {
         const orm = this.odooDataProvider.orm;
         const properties = this.coreDefinition.rows
             .concat(this.coreDefinition.columns)
-            .filter((dimension) => dimension.fieldName.includes("."));
+            .filter(
+                (dimension) =>
+                    dimension.fieldName.includes(".") &&
+                    this._fields[dimension.fieldName.split(".")[0]].type === "property"
+            );
         await Promise.all(
             properties.map((dimension) =>
                 orm
