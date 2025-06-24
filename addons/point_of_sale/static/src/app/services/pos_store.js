@@ -155,6 +155,7 @@ export class PosStore extends WithLazyGetterTrap {
         this.closeOtherTabs();
         this.syncAllOrdersDebounced = debounce(this.syncAllOrders, 100);
         this._searchTriggered = false;
+        this.isFastPaymentRunning = false;
 
         if (this.env.debug) {
             registry.category("main_components").add("DebugWidget", {
@@ -1817,7 +1818,7 @@ export class PosStore extends WithLazyGetterTrap {
         }
 
         // printing errors
-        if (unsuccedPrints.length) {
+        if (unsuccedPrints.length && !this.isFastPaymentRunning) {
             const failedReceipts = unsuccedPrints.join(", ");
             this.dialog.add(AlertDialog, {
                 title: _t("Printing failed"),
@@ -2502,6 +2503,20 @@ export class PosStore extends WithLazyGetterTrap {
         order.uiState.locked = true;
         if (this.getOrder() === order) {
             this.searchProductWord = "";
+        }
+    }
+
+    async askForSendOrderInPreparation() {
+        const confirmed = await ask(this.dialog, {
+            title: _t("Warning !"),
+            body: _t(
+                "It seems that the order has not been sent. Would you like to send it to preparation?"
+            ),
+            confirmLabel: _t("Order"),
+            cancelLabel: _t("Discard"),
+        });
+        if (confirmed) {
+            await this.sendOrderInPreparationUpdateLastChange(this.getOrder());
         }
     }
 }
