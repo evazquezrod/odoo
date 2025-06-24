@@ -434,6 +434,23 @@ export class DateTimePicker extends Component {
     //-------------------------------------------------------------------------
 
     /**
+     * @param {number} valueIndex
+     */
+    async addDate(valueIndex) {
+        this.props.focusedDateIndex = valueIndex;
+        this.props.range = true;
+        this.state.timeValues = this.getTimeValues(this.props);
+    }
+
+    removeDate() {
+        this.values = [this.values[1]];
+        this.props.focusedDateIndex = 1;
+        this.props.range = false;
+        delete this.state.timeValues[0];
+        this.state.timeValues = this.getTimeValues(this.props);
+    }
+
+    /**
      * @param {NullableDateTime[]} values
      * @param {number} focusedDateIndex
      */

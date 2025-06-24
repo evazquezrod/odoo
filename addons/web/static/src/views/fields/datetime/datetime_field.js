@@ -177,22 +177,6 @@ export class DateTimeField extends Component {
     /**
      * @param {number} valueIndex
      */
-    async addDate(valueIndex) {
-        const values = this.values;
-        values[valueIndex] = valueIndex
-            ? values[0].plus({ hours: 1 })
-            : values[1].minus({ hours: 1 });
-
-        this.state.focusedDateIndex = valueIndex;
-        this.state.value = values;
-        this.state.range = true;
-
-        this.openPicker(valueIndex);
-    }
-
-    /**
-     * @param {number} valueIndex
-     */
     getFormattedValue(valueIndex) {
         const values = this.values;
         const value = values[valueIndex];
