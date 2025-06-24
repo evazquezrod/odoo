@@ -1132,7 +1132,7 @@ class One2many(_RelationalMulti):
 
         comodel = model.env[self.comodel_name].sudo()
         inverse_field = comodel._fields[self.inverse_name]
-        if inverse_field.store:
+        if inverse_field.store or inverse_field.compute_sql:
             subselect = coquery.subselect(
                 comodel._field_to_sql(coquery.table, inverse_field.name, coquery)
             )

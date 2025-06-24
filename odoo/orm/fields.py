@@ -641,11 +641,11 @@ class Field(typing.Generic[T]):
         self.compute = self._compute_related
         if self.inherited or not (self.readonly or field.readonly):
             self.inverse = self._inverse_related
-        if not self.store:
+        if not self.store and field._description_sortable:
             # XXX add a condition that we can traverse only m2o
             # and that the target field can be transformed to sql
             self.compute_sql = self._compute_sql_related
-        if not self.store and field._description_searchable:
+        elif not self.store and field._description_searchable:
             # allow searching on self only if the related field is searchable
             self.search = self._search_related
 
@@ -972,10 +972,10 @@ class Field(typing.Generic[T]):
 
     @property
     def _description_searchable(self) -> bool:
-        return bool(self.store or self.search)
+        return bool(self.store or self.search or self.compute_sql)
 
     def _description_sortable(self, env: Environment):
-        if self.column_type and self.store:  # shortcut
+        if self.column_type and (self.store or self.compute_sql):  # shortcut
             return True
 
         model = env[self.model_name]
@@ -987,7 +987,7 @@ class Field(typing.Generic[T]):
             return False
 
     def _description_groupable(self, env: Environment):
-        if self.column_type and self.store:  # shortcut
+        if self.column_type and (self.store or self.compute_sql):  # shortcut
             return True
 
         model = env[self.model_name]
@@ -1000,7 +1000,7 @@ class Field(typing.Generic[T]):
             return False
 
     def _description_aggregator(self, env: Environment):
-        if not self.aggregator or (self.column_type and self.store):  # shortcut
+        if not self.aggregator or (self.column_type and (self.store or self.compute_sql)):  # shortcut
             return self.aggregator
 
         model = env[self.model_name]
@@ -1270,7 +1270,9 @@ class Field(typing.Generic[T]):
         """
         model._check_field_access(self, 'read')
         if self.compute_sql:
-            return determine(self.compute_sql, model, alias, query)
+            sql_field = determine(self.compute_sql, model, alias, query)
+            assert isinstance(sql_field, SQL), f"{self} invalid return of compute_sql"
+            return sql_field
         if not self.store or not self.column_type:
             raise ValueError(f"Cannot convert {self} to SQL because it is not stored")
         sql_field = SQL.identifier(alias, self.name, to_flush=self)

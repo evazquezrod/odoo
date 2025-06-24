@@ -1731,10 +1731,11 @@ class BaseModel(metaclass=MetaModel):
 
         elif field.type == 'many2many':
             alias = self._table
-            if field.related and not field.store:
+            selectable = (field.store or field.compute_sql)
+            if field.related and not selectable:
                 _model, field, alias = field._traverse_related_sql(self, alias, query)
 
-            if not field.store:
+            if not selectable:
                 raise ValueError(f"Group by non-stored many2many field: {groupby_spec!r}")
             # special case for many2many fields: prepare a query on the comodel
             # in order to reuse the mechanism _apply_ir_rules, then inject the
@@ -3517,7 +3518,7 @@ class BaseModel(metaclass=MetaModel):
         for field in fields:
             if field.name == 'id':
                 continue
-            assert field.store
+            assert field.store or field.compute_sql
             (column_fields if field.column_type else other_fields).add(field)
 
         context = self.env.context
