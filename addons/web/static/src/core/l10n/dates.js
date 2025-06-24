@@ -70,11 +70,19 @@ const smartDateUnits = {
     m: "months",
     w: "weeks",
     y: "years",
+    H: "hours",
+    M: "minutes",
+    S: "seconds",
 };
-const smartDateRegex = new RegExp(
-    ["^", "([+-])", "(\\d+)", `([${Object.keys(smartDateUnits).join("")}]?)`, "$"].join("\\s*"),
-    "i"
-);
+const smartWeekdays = {
+    monday: 0,
+    tuesday: 1,
+    wednesday: 2,
+    thursday: 3,
+    friday: 4,
+    saturday: 5,
+    sunday: 6,
+}
 
 /** @type {WeakMap<DateTime, string>} */
 const dateCache = new WeakMap();
@@ -242,24 +250,80 @@ function isValidDate(date) {
  *   "-2w" will return now - 2 weeks
  *   "+3m" will return now + 3 months
  *   "-4y" will return now + 4 years
+ * TODO update doc
+ * Difference with python version: the unit is optional and defaults to "d".
  *
  * @param {string} value
  * @returns {NullableDateTime} Luxon datetime object (in the user's local timezone)
  */
 function parseSmartDateInput(value) {
-    const match = value.match(smartDateRegex);
-    if (match) {
-        let date = DateTime.local();
-        const offset = parseInt(match[2], 10);
-        const unit = smartDateUnits[(match[3] || "d").toLowerCase()];
-        if (match[1] === "+") {
-            date = date.plus({ [unit]: offset });
-        } else {
-            date = date.minus({ [unit]: offset });
-        }
-        return date;
+    // based on python version: odoo.tools.date_utils.parse_date
+    const terms = value.split(/\s+/);
+    if (!terms.length) {
+        return false;
     }
-    return false;
+    var now = DateTime.local().startOf('second');
+    if (terms[0] == 'today') {
+        terms.shift();
+        now = now.startOf('day');
+    } else if (terms[0] == 'now') {
+        terms.shift();
+    }
+
+    for (let i = 0; i < terms.length; i++) {
+        const term = terms[i];
+        const operator = term[0];
+        if (term.length < 2 || !['+', '-', '='].includes(operator)) {
+            return false;
+        }
+
+        // Weekday
+        const weekdayNumber = smartWeekdays[term.slice(1)];
+        if (weekdayNumber != undefined) {
+            now = now.startOf('day');
+            let weekdayOffset = weekdayNumber - now.weekday;
+            if (operator == '+' || operator == '-') {
+                if (weekdayOffset > 0 && operator == '-') {
+                    weekdayOffset -= 7;
+                } else if (weekdayOffset < 0 && operator == '+') {
+                    weekdayOffset += 7;
+                }
+            }
+            now = now.plus({days: weekdayOffset});
+            continue;
+        }
+
+        // Operations on dates
+        try {
+            let field_name = smartDateUnits[term[term.length - 1]];
+            let number = parseInt(term.slice(1, -1), 10);
+            if (!field_name && /^\d+$/.test(term.slice(1, term.length))) {
+                field_name = smartDateUnits['d'];
+                number = parseInt(term.slice(1, term.length));
+            }
+            if (!field_name || isNaN(number)) {
+                return false;
+            }
+            if (operator == '+') {
+                now = now.plus({[field_name]: number});
+            } else if (operator == '-') {
+                now = now.minus({[field_name]: number});
+            } else if (operator == '=') {
+                if (field_name == 'seconds' || field_name == 'minutes' || field_name == 'hours') {
+                    now = now.startOf(field_name);
+                } else if (field_name == 'weeks') {
+                    return false;  // unsupported
+                } else {
+                    now = now.startOf('day');
+                }
+                now = now.set({[field_name]: number});
+            }
+        } catch {
+            return false;
+        }
+    }
+
+    return now;
 }
 
 /**
