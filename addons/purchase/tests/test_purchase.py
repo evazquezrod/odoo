@@ -256,6 +256,7 @@ class TestPurchase(AccountTestInvoicingCommon):
         product_data = {
             'name': 'SuperProduct',
             'type': 'consu',
+            'volume': 4,
             'uom_id': uom_units.id,
             'seller_ids': [Command.create({
                 'partner_id': self.partner_a.id,
@@ -277,6 +278,9 @@ class TestPurchase(AccountTestInvoicingCommon):
 
         self.assertEqual(po.order_line[0].price_unit, 200)
         self.assertEqual(po.order_line[1].price_unit, 1200)
+        po.button_confirm()
+        report = self.env['purchase.report'].search([('product_id', '=', product_01.id)])
+        self.assertEqual(report.volume, 8)
 
     def test_on_change_quantity_description(self):
         """
