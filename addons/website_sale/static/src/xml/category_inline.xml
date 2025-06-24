@@ -31,7 +31,7 @@
                     loading="lazy"
                     t-attf-src="/web/image/product.public.category/{{category.id}}/image_1920"
                     t-att-alt="category.name"
-                    class="s_categories_inline_item_img"
+                    class="img-fluid"
                 />
                 <span t-out="category.name"/>
             </a>

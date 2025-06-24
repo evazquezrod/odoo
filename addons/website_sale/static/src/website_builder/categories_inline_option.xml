@@ -2,11 +2,11 @@
 <templates xml:space="preserve">
     <t t-name="website_sale.CategoriesInlineOption" name="Categories Inline">
         <BuilderRow label.translate="Filters">
-            <BuilderSelect dataAttributeAction="'filterId'">
+            <BuilderSelect dataAttributeAction="'categoryId'">
                 <BuilderSelectItem dataAttributeActionValue="'0'" label.translate="All Categories">
                     All Categories
                 </BuilderSelectItem>
-                <t t-foreach="this.state.categories" t-as="category" t-key="category.id">
+                <t t-foreach="this.categories" t-as="category" t-key="category.id">
                     <BuilderSelectItem
                         dataAttributeActionValue="`${category.id}`"
                         label="category.name"

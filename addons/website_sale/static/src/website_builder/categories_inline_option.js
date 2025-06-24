@@ -9,14 +9,14 @@ export class CategoriesInlineOption extends BaseOptionComponent {
     setup() {
         super.setup();
         this.orm = useService("orm");
-
-        this.state = useState({
-            categories: [],
-        });
+        this.website = useService('website');
+        this.categories = [];
 
         onWillStart(async () => {
-            this.state.categories = await this.orm.call(
-                'product.public.category', 'get_snippet_categories', []
+            this.categories = await this.orm.call(
+                'product.public.category',
+                'get_snippet_categories',
+                [this.website.currentWebsiteId],
             );
         });
     }

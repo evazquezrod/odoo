@@ -1,7 +1,7 @@
 import { _t } from '@web/core/l10n/translation';
 import { rpc } from '@web/core/network/rpc';
 import { registry } from '@web/core/registry';
-import { listenSizeChange, utils as uiUtils } from '@web/core/ui/ui_service';
+// import { listenSizeChange, utils as uiUtils } from '@web/core/ui/ui_service';
 import { renderToFragment } from '@web/core/utils/render';
 import { Interaction } from '@web/public/interaction';
 
@@ -11,19 +11,19 @@ export class CategoriesInline extends Interaction {
     dynamicContent = {
         ".s_categories_inline_wrapper": {
             "t-att-class": () => ({
-                "list-unstyled": this.el.dataset.layout === "list",
                 "nav": this.el.dataset.layout === "nav",
+                "list-unstyled": this.el.dataset.layout === "list",
                 "list-group": this.el.dataset.layout === "listgroup",
-                "thumbnails": this.el.dataset.layout === "o_categories_inline_thumbnails list-unstyled",
+                "o_categories_inline_thumbnails list-unstyled d-flex flex-column gap-2": this.el.dataset.layout === "thumbnails",
             }),
         },
     };
 
     async willStart() {
-        const filterId = this.el.dataset.filterId;
-        this.data = filterId
-            ? await this.waitFor(rpc('/shop/categories', { filter_id: parseInt(filterId) }))
-            : [];
+        const categoryId = this.el.dataset.categoryId;
+        this.data = categoryId != ''
+            ? await this.waitFor(rpc('/shop/get_categories', { category_id: parseInt(categoryId) }))
+            : await this.waitFor(rpc('/shop/get_categories'));
     }
 
     start() {
@@ -48,7 +48,7 @@ export class CategoriesInline extends Interaction {
             oldWrapperEl.parentNode.replaceChild(newWrapperEl, oldWrapperEl);
             snippetWrapperEl = newWrapperEl;
         }
-        snippetWrapperEl.appendChild(
+        snippetWrapperEl.replaceChildren(
             renderToFragment("website_sale.s_categories_inline_template_" + layout, {
                 data: this.data,
             }

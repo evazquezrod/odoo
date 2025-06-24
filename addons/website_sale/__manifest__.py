@@ -92,7 +92,7 @@
             'website_sale/static/src/scss/website_sale_frontend.scss',
             'website_sale/static/src/scss/website_sale_delivery.scss',
             'website_sale/static/src/snippets/s_dynamic_snippet_categories/000.scss',
-            'website_sale/static/src/snippets/s_category_inline/000.scss',
+            # 'website_sale/static/src/snippets/s_category_inline/000.scss',
             'website/static/lib/multirange/multirange_custom.scss',
             'sale/static/src/scss/sale_portal.scss',
 

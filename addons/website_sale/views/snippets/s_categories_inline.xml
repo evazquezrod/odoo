@@ -2,9 +2,15 @@
 <odoo>
 
 <template name="Categories" id="s_categories_inline">
-    <div class="s_categories_inline" data-filter-id="0" data-layout="list" contenteditable="false">
+    <div class="s_categories_inline" data-category-id="0" data-layout="list" contenteditable="false">
         <ul class="s_categories_inline_wrapper list-unstyled"/>
     </div>
 </template>
+
+<record id="website_sale.s_categories_inline_000_scss" model="ir.asset">
+    <field name="name">Categories inline 000 SCSS</field>
+    <field name="bundle">web.assets_frontend</field>
+    <field name="path">website_sale/static/src/snippets/s_categories_inline/000.scss</field>
+</record>
 
 </odoo>
