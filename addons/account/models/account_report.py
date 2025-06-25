@@ -59,7 +59,6 @@ class AccountReport(models.Model):
     )
     load_more_limit = fields.Integer(string="Load More Limit") # TODO OCO renommer le champ ? + une valeur par défaut décente ?
     search_bar = fields.Boolean(string="Search Bar") # TODO OCO ce truc-là, s'assurer de comment il marche avec ce qu'on change pour le load_more
-    prefix_groups_threshold = fields.Integer(string="Prefix Groups Threshold", default=4000) # TODO OCO virer
     integer_rounding = fields.Selection(string="Integer Rounding", selection=[('HALF-UP', "Nearest"), ('UP', "Up"), ('DOWN', "Down")])
     allow_foreign_vat = fields.Boolean(
         string="Allow Foreign VAT",
