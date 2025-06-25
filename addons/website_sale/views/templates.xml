@@ -2220,8 +2220,10 @@
         </xpath>
         <xpath expr="//div[@id='o_wsale_cta_wrapper']" position="inside">
             <div class="d-flex gap-5 flex-grow-1 justify-content-between align-items-center order-first w-100 mb-3 pb-3 border-bottom">
-                <span class="text-muted">Price</span>
-                <t t-call="website_sale.product_price"/>
+                <span class="o_wsale_cta_wrapper_boxed_price text-muted">Price</span>
+                <t t-call="website_sale.product_price">
+                    <t t-set="_price_classes" t-value="'w-100'"/>
+                </t>
             </div>
         </xpath>
     </template>
@@ -2532,7 +2534,7 @@
     <template id="product_price">
         <div
             name="product_price"
-            t-attf-class="product_price text-end {{'' if is_view_active('website_sale.cta_wrapper_boxed') else 'mt-2'}} {{'d-none' if combination_info['prevent_zero_price_sale'] else 'd-inline-block'}}"
+            t-attf-class="product_price {{_price_classes}} {{'' if is_view_active('website_sale.cta_wrapper_boxed') else 'mt-2'}} {{'d-none' if combination_info['prevent_zero_price_sale'] else 'd-inline-flex justify-content-end'}}"
         >
             <div
                 name="product_price_container"
