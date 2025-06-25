@@ -29,7 +29,7 @@ export class MailComposerTemplateSelector extends Component {
     }
 
     async fetchTemplates() {
-        const fields = ["display_name"];
+        const fields = ["display_name", "attachment_ids"];
         const templates = await this.orm.searchRead("mail.template", [
             ["model", "=", this.props.record.data.render_model],
             ["user_id", "=", user.userId]
@@ -47,10 +47,11 @@ export class MailComposerTemplateSelector extends Component {
      * @param {Object} template
      * @param {integer} template.id
      * @param {string} template.display_name
+     * @param {Array} template.attachment_ids
      */
     async onLoadTemplate(template) {
         await this.props.record.update({
-            template_id: [template.id]
+            template_id: [template.id, template.attachment_ids],
         });
     }
 
