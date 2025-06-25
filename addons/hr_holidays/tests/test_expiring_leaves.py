@@ -1,13 +1,13 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from datetime import date
+
 from dateutil.relativedelta import relativedelta
 from freezegun import freeze_time
 
-from odoo.addons.base.tests.common import HttpCase
-from odoo.tests.common import tagged
-from odoo.tests.common import users
+from odoo.tests.common import tagged, users
 
+from odoo.addons.base.tests.common import HttpCase
 from odoo.addons.hr_holidays.tests.common import TestHrHolidaysCommon
 
 
@@ -44,7 +44,7 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
                 'accrual_validity': True,
                 'accrual_validity_count': 3,
                 'accrual_validity_type': 'month',
-                })
+                }),
             ],
         })
 
@@ -82,8 +82,8 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
                 'yearly_day': 1,
                 'yearly_month': '1',
                 'cap_accrued_time': False,
-                'action_with_unused_accruals': 'lost'
-                })
+                'action_with_unused_accruals': 'lost',
+                }),
             ],
         })
 
@@ -102,7 +102,7 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
             'employee_id': logged_in_emp.id,
             'holiday_status_id': self.leave_type.id,
             'request_date_from': target_date + relativedelta(month=12, day=1),
-            'request_date_to': target_date + relativedelta(month=12, day=7)
+            'request_date_to': target_date + relativedelta(month=12, day=7),
         })
 
         allocation_data = self.leave_type.get_allocation_data(
@@ -158,7 +158,7 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
                 'action_with_unused_accruals': 'all',
                 'carryover_options': 'limited',
                 'postpone_max_days': carryover_limit,
-                })
+                }),
             ],
         })
 
@@ -177,7 +177,7 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
             'employee_id': logged_in_emp.id,
             'holiday_status_id': self.leave_type.id,
             'request_date_from': target_date + relativedelta(month=12, day=1),
-            'request_date_to': target_date + relativedelta(month=12, day=7)
+            'request_date_to': target_date + relativedelta(month=12, day=7),
         })
         allocation_data = self.leave_type.get_allocation_data(
             allocation.employee_id, target_date)
@@ -245,7 +245,7 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
                 'action_with_unused_accruals': 'all',
                 'carryover_options': 'limited',
                 'postpone_max_days': carryover_limit,
-                })
+                }),
             ],
         })
 
@@ -263,7 +263,7 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
                 'yearly_month': '1',
                 'cap_accrued_time': False,
                 'action_with_unused_accruals': 'all',
-                })
+                }),
             ],
         })
 
@@ -281,7 +281,7 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
                 'employee_id': logged_in_emp.id,
                 'holiday_status_id': self.leave_type.id,
                 'request_date_from': '2025-12-01',
-                'request_date_to': '2025-12-05'
+                'request_date_to': '2025-12-05',
             })
             # The expiring allocation
             self.env['hr.leave.allocation'].sudo().create({
@@ -347,7 +347,7 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
                 'yearly_month': '1',
                 'cap_accrued_time': False,
                 'action_with_unused_accruals': 'lost',
-                })
+                }),
             ],
         })
 
@@ -415,7 +415,7 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
                     'action_with_unused_accruals': 'all',
                     'carryover_options': 'limited',
                     'postpone_max_days': 5,
-                    })
+                    }),
                 ],
             })
 
@@ -476,7 +476,7 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
                 'action_with_unused_accruals': 'all',
                 'carryover_options': 'limited',
                 'postpone_max_days': 5,
-                })
+                }),
             ],
         })
 
@@ -548,8 +548,8 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
                 'yearly_day': 1,
                 'yearly_month': '1',
                 'cap_accrued_time': False,
-                'action_with_unused_accruals': 'lost'
-                })
+                'action_with_unused_accruals': 'lost',
+                }),
             ],
         })
 
@@ -577,7 +577,7 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
             'employee_id': logged_in_emp.id,
             'holiday_status_id': self.leave_type.id,
             'request_date_from': target_date + relativedelta(month=12, day=1),
-            'request_date_to': target_date + relativedelta(month=12, day=7)
+            'request_date_to': target_date + relativedelta(month=12, day=7),
         })
 
         allocation_data = self.leave_type.get_allocation_data(
@@ -630,8 +630,8 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
                 'yearly_day': 1,
                 'yearly_month': '1',
                 'cap_accrued_time': False,
-                'action_with_unused_accruals': 'lost'
-                })
+                'action_with_unused_accruals': 'lost',
+                }),
             ],
         })
 
@@ -652,7 +652,7 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
             'employee_id': logged_in_emp.id,
             'holiday_status_id': self.leave_type.id,
             'request_date_from': target_date + relativedelta(month=12, day=1),
-            'request_date_to': target_date + relativedelta(month=12, day=7)
+            'request_date_to': target_date + relativedelta(month=12, day=7),
         })
 
         allocation_data = self.leave_type.get_allocation_data(
@@ -716,7 +716,7 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
                 'action_with_unused_accruals': 'all',
                 'carryover_options': 'limited',
                 'postpone_max_days': 5,
-                })
+                }),
             ],
         })
 

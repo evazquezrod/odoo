@@ -1,13 +1,13 @@
 import datetime
-from freezegun import freeze_time
 from datetime import date
+
 from dateutil.relativedelta import relativedelta
+from freezegun import freeze_time
 from psycopg2 import IntegrityError
 
 from odoo import Command
-from odoo.exceptions import UserError
-from odoo.tests import tagged, Form
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
+from odoo.tests import Form, tagged
 from odoo.tools import mute_logger
 
 from odoo.addons.hr_holidays.tests.common import TestHrHolidaysCommon
@@ -67,7 +67,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'frequency': 'hourly',
                 'action_with_unused_accruals': 'all',
                 'cap_accrued_time': True,
-                'maximum_leave': 10000
+                'maximum_leave': 10000,
             })],
         })
         level = accrual_plan.level_ids
@@ -115,7 +115,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                     'frequency': 'hourly',
                     'action_with_unused_accruals': 'all',
                     'cap_accrued_time': True,
-                    'maximum_leave': 10000
+                    'maximum_leave': 10000,
                 })],
             })
             allocation = self.env['hr.leave.allocation'].with_user(self.user_hrmanager_id).with_context(tracking_disable=True).create({
@@ -186,8 +186,8 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'holiday_status_id': leave_type.id,
                 'request_date_from': '2017-12-06 08:00:00',
                 'request_date_to': '2017-12-06 17:00:00',
-                'request_unit_half': True,
                 'request_date_from_period': 'am',
+                'request_date_to_period': 'am',
             })
             leave.action_approve()
 
@@ -476,21 +476,21 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                     'hour_from': 8,
                     'hour_to': 12,
                     'dayofweek': str(index),
-                    'day_period': 'morning'
+                    'day_period': 'morning',
                 }))
                 attendances.append((0, 0, {
                     'name': '%s_%d' % ('40 Hours', index),
                     'hour_from': 12,
                     'hour_to': 13,
                     'dayofweek': str(index),
-                    'day_period': 'lunch'
+                    'day_period': 'lunch',
                 }))
                 attendances.append((0, 0, {
                     'name': '%s_%d' % ('40 Hours', index),
                     'hour_from': 13,
                     'hour_to': 17,
                     'dayofweek': str(index),
-                    'day_period': 'afternoon'
+                    'day_period': 'afternoon',
                 }))
             calendar_emp = self.env['resource.calendar'].create({
                 'name': '40 Hours',
@@ -1240,7 +1240,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                     'cap_accrued_time': True,
                     'maximum_leave': 12,
                     'action_with_unused_accruals': 'lost',
-                })
+                }),
             ],
         })
         with freeze_time('2019-01-01'):
@@ -1494,7 +1494,6 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'name': "Leave for employee",
                 'employee_id': self.employee_emp.id,
                 'holiday_status_id': leave_type.id,
-                'request_unit_hours': True,
                 'request_date_from': datetime.date(2024, 12, 19),
                 'request_date_to': datetime.date(2024, 12, 19),
                 'request_hour_from': '10',
@@ -1648,7 +1647,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                     'week_day': '2',
                     'cap_accrued_time': True,
                     'maximum_leave': 5,
-                })
+                }),
             ],
         })
         with freeze_time("2023-04-26"):
@@ -2079,7 +2078,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'cap_accrued_time': False,
                 'action_with_unused_accruals': 'all',
                 'carryover_options': 'limited',
-                'postpone_max_days': 5
+                'postpone_max_days': 5,
             })],
         })
         with freeze_time('2024-03-02'):
@@ -2173,7 +2172,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'employee_id': self.employee_emp.id,
                 'accrual_plan_id': accrual_plan.id,
                 'number_of_days': 3,
-            }
+            },
         ])
         allocations.action_approve()
         leave = self.env['hr.leave'].create({
@@ -2221,7 +2220,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'cap_accrued_time': False,
                 'action_with_unused_accruals': 'all',
                 'carryover_options': 'limited',
-                'postpone_max_days': 5
+                'postpone_max_days': 5,
             })],
         })
 
@@ -2352,8 +2351,6 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 f.holiday_status_id = leave_type
                 f.date_from = '2024-02-01'
                 f.name = "Accrual allocation for employee"
-
-            allocation = f.record
 
             first_result = get_remaining_leaves(2024, 2, 21)
             self.assertEqual(get_remaining_leaves(2024, 2, 21), first_result, "Function return result should persist")
@@ -2495,22 +2492,22 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                         'hour_from': 8,
                         'hour_to': 10,
                         'dayofweek': str(index),
-                        'day_period': 'morning'
+                        'day_period': 'morning',
                     }),
                     (0, 0, {
                         'name': '%s_%d' % ('20 Hours', index),
                         'hour_from': 10,
                         'hour_to': 11,
                         'dayofweek': str(index),
-                        'day_period': 'lunch'
+                        'day_period': 'lunch',
                     }),
                     (0, 0, {
                         'name': '%s_%d' % ('20 Hours', index),
                         'hour_from': 11,
                         'hour_to': 13,
                         'dayofweek': str(index),
-                        'day_period': 'afternoon'
-                    })
+                        'day_period': 'afternoon',
+                    }),
                 ])
             calendar_emp = self.env['resource.calendar'].create({
                 'name': '20 Hours',
@@ -2584,7 +2581,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'number_of_days': 0,
                 'allocation_type': 'accrual',
                 'accrual_plan_id': accrual_plan.id,
-                'date_from': datetime.date(2024, 1, 1)
+                'date_from': datetime.date(2024, 1, 1),
             })
             allocation.action_approve()
 
@@ -2635,7 +2632,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'milestone_date': 'creation',
                 'start_type': 'day',
                 'frequency': 'yearly',
-                'action_with_unused_accruals': 'lost'
+                'action_with_unused_accruals': 'lost',
             })],
         })
         with freeze_time('2024-01-01'):
@@ -2646,7 +2643,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'number_of_days': 0,
                 'allocation_type': 'accrual',
                 'accrual_plan_id': accrual_plan.id,
-                'date_from': datetime.date(2024, 1, 1)
+                'date_from': datetime.date(2024, 1, 1),
             })
             allocation.action_approve()
 
@@ -2699,7 +2696,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'frequency': 'yearly',
                 'milestone_date': 'creation',
                 'start_type': 'day',
-                'action_with_unused_accruals': 'lost'
+                'action_with_unused_accruals': 'lost',
             }),
             (0, 0, {
                 'added_value': 14,
@@ -2708,7 +2705,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'milestone_date': 'after',
                 'start_count': 18,
                 'start_type': 'month',
-                'action_with_unused_accruals': 'lost'
+                'action_with_unused_accruals': 'lost',
             })],
         })
         with freeze_time('2024-01-01'):
@@ -2719,7 +2716,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'number_of_days': 0,
                 'allocation_type': 'accrual',
                 'accrual_plan_id': accrual_plan.id,
-                'date_from': datetime.date(2024, 1, 1)
+                'date_from': datetime.date(2024, 1, 1),
             })
             allocation.action_approve()
 
@@ -2781,7 +2778,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'frequency': 'monthly',
                 'milestone_date': 'creation',
                 'start_type': 'day',
-                'action_with_unused_accruals': 'lost'
+                'action_with_unused_accruals': 'lost',
             }),
             (0, 0, {
                 'added_value': 1,
@@ -2792,7 +2789,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'start_type': 'month',
                 'action_with_unused_accruals': 'all',
                 'carryover_options': 'limited',
-                'postpone_max_days': 5
+                'postpone_max_days': 5,
             })],
         })
         with freeze_time('2024-01-01'):
@@ -2803,7 +2800,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'number_of_days': 0,
                 'allocation_type': 'accrual',
                 'accrual_plan_id': accrual_plan.id,
-                'date_from': datetime.date(2024, 1, 1)
+                'date_from': datetime.date(2024, 1, 1),
             })
             allocation.action_approve()
 
@@ -2875,7 +2872,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'frequency': 'yearly',
                 'milestone_date': 'creation',
                 'start_type': 'day',
-                'action_with_unused_accruals': 'lost'
+                'action_with_unused_accruals': 'lost',
             }),
             (0, 0, {
                 'added_value': 12,
@@ -2895,7 +2892,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'number_of_days': 0,
                 'allocation_type': 'accrual',
                 'accrual_plan_id': accrual_plan.id,
-                'date_from': datetime.date(2024, 1, 1)
+                'date_from': datetime.date(2024, 1, 1),
             })
             allocation.action_approve()
 
@@ -3466,7 +3463,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'accrual_validity': True,
                 'accrual_validity_type': 'month',
                 'accrual_validity_count': 5,
-            })]
+            })],
         })
         with freeze_time('2023-01-01'):
             allocation = self.env['hr.leave.allocation'].with_user(self.user_hrmanager_id).with_context(tracking_disable=True).create({
@@ -3579,7 +3576,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'accrual_validity': True,
                 'accrual_validity_type': 'month',
                 'accrual_validity_count': 1,
-            })]
+            })],
         })
 
         with freeze_time('2023-08-01'):
@@ -3590,7 +3587,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 'employee_id': self.employee_emp.id,
                 'holiday_status_id': self.leave_type.id,
                 'number_of_days': 0,
-                'date_from': '2023-08-01'
+                'date_from': '2023-08-01',
             })
 
         with freeze_time('2024-09-25'):
@@ -3702,7 +3699,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                     'cap_accrued_time': False,
                     'action_with_unused_accruals': 'all',
                     'first_day': 31,
-                })
+                }),
             ],
         })
 
@@ -3753,8 +3750,8 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
                 "start_count": 0,
                 "start_type": "day",
                 "yearly_day": 1,
-                "yearly_month": "1"
-            })
+                "yearly_month": "1",
+            }),
             ],
         })
 
@@ -3792,7 +3789,7 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
         })
 
         plan = self.env["hr.leave.accrual.level"].with_context(tracking_disable=True).create({
-            "accrual_plan_id" : accrual_plan.id,
+            "accrual_plan_id": accrual_plan.id,
         })
 
         with Form(plan) as f:
