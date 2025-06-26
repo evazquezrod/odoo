@@ -483,11 +483,13 @@ export class OdooPivot {
                 this.odooDataProvider.fieldService
                     .loadPath(this.coreDefinition.model, dimension.fieldName)
                     .then(({ modelsInfo, names }) => {
-                        this._fields[dimension.fieldName] =
-                            modelsInfo.at(-1).fieldDefs[dimension.fieldName.split(".").at(-1)];
-                        this._fields[dimension.fieldName].string = names
-                            .map((name, i) => modelsInfo[i].fieldDefs[name].string)
-                            .join(" > ");
+                        this._fields[dimension.fieldName] = {
+                            ...modelsInfo.at(-1).fieldDefs[dimension.fieldName.split(".").at(-1)],
+                            string: names
+                                .map((name, i) => modelsInfo[i].fieldDefs[name].string)
+                                .join(" > "),
+                            name: dimension.fieldName,
+                        };
                     })
             )
         );
