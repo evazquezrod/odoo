@@ -2106,7 +2106,7 @@ class Website(models.Model):
             direct_fields = set(fields).intersection(model._fields)
             indirect_fields = self._search_get_indirect_fields(fields, model)
 
-            query = Query(self.env.cr, model._table, model._table_query)
+            query = Query(model)
 
             unaccent = self.env.registry.unaccent
             similarities = [
