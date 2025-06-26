@@ -1,24 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates>
     <!-- /file template -->
-    <t t-name="html_editor.ReadonlyEmbeddedFile" t-inherit="html_editor.StaticFileBox" t-inherit-mode="primary">
-        <xpath expr="//span[hasclass('o_file_image')]" position="inside">
+    <t t-name="html_editor.ReadonlyEmbeddedFile">
+        <span class="d-flex flex-grow-1 align-items-center alert alert-info">
+            <span class="o_file_image d-flex o_image user-select-none"
+                t-att-title="fileModel.filename"
+                t-att-data-mimetype="fileModel.mimetype">
             <a t-att-href="fileModel.downloadUrl" t-on-click.prevent.stop="onClickFileImage" class="w-100"/>
-        </xpath>
-
-        <xpath expr="//span[hasclass('o_file_name_container')]/a" position="replace">
-            <span class="o_file_name" t-out="fileModel.filename"/>
-        </xpath>
-
-        <xpath expr="//span[hasclass('o_file_name_container')]" position="after">
+            </span>
+            <span class="o_file_name_container mx-2">
+                <span class="o_file_name" t-out="fileModel.filename"/>
+            </span>
             <span class="flex-grow-1 d-flex justify-content-end">
-                <!-- Empty toolbar, buttons are added by templates that extend this one -->
                 <EmbeddedComponentToolbar>
                     <t t-set-slot="buttons"/>
                 </EmbeddedComponentToolbar>
             </span>
-        </xpath>
-       
+        </span>
     </t>
-
 </templates>
