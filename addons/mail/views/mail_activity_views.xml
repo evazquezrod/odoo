@@ -239,10 +239,10 @@
                 <separator/>
                 <separator invisible="1"/>
                 <filter string="Overdue" name="filter_date_deadline_past"
-                        domain="[('date_deadline', '&lt;', context_today().strftime('%Y-%m-%d'))]"
+                        domain="[('date_deadline', '&lt;', 'today')]"
                         help="Show all records whose next activity date is past"/>
                 <filter string="Today" name="filter_date_deadline_today"
-                        domain="[('date_deadline', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                        domain="[('date_deadline', '=', 'today')]"/>
                 <filter string="Tomorrow" name="filter_date_deadline_tomorrow"
                         help="Show all records whose next action date is tomorrow"
                         domain="[('date_deadline', '=', (context_today() + relativedelta(days=1)).strftime('%Y-%m-%d'))]"/>
@@ -253,7 +253,7 @@
                             ('date_deadline', '&lt;=', (context_today() + relativedelta(weekday=6)).strftime('%Y-%m-%d')
                         )]"/>
                 <filter string="Future" name="filter_date_deadline_future"
-                        domain="[('date_deadline', '&gt;', context_today().strftime('%Y-%m-%d'))
+                        domain="[('date_deadline', '&gt;', 'today')
                         ]"/>
                 <separator/>
                 <filter string="Done" name="filter_archived" domain="[('active', '=', False)]"/>
