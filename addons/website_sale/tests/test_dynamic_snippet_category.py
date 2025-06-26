@@ -1,5 +1,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+from lxml import html
+
 from odoo import Command
 from odoo.addons.website_sale.controllers.main import WebsiteSale
 from odoo.addons.website_sale.tests.common import MockRequest, WebsiteSaleCommon
@@ -39,20 +41,22 @@ class TestDynamicSnippetCategory(WebsiteSaleCommon):
         """Test that published categories are returned by the _get_shop_categories"""
         with MockRequest(self.website.env, website=self.website):
             categories = self.website_sale.get_shop_categories()
+            root = [html.fromstring(category) for category in categories]
             self.assertEqual(
                 self.category1.id,
-                categories[0]['id'],
+                int(root[0].attrib.get('data-category-id')),
                 "only published categories should be returned",
             )
             self.assertEqual(
                 self.category2.id,
-                categories[1]['id'],
+                int(root[1].attrib.get('data-category-id')),
                 "only published categories should be returned",
             )
             categories = self.website_sale.get_shop_categories(self.category1.id)
+            root = [html.fromstring(category) for category in categories]
             self.assertEqual(
                 self.child_category.id,
-                categories[0]['id'],
+                int(root[0].attrib.get('data-category-id')),
                 "only children categories of category1 should be returned",
             )
 
