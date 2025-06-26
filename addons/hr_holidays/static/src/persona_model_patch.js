@@ -2,6 +2,7 @@ import { Persona } from "@mail/core/common/persona_model";
 import { deserializeDateTime } from "@web/core/l10n/dates";
 import { _t } from "@web/core/l10n/translation";
 import { patch } from "@web/core/utils/patch";
+import { user } from "@web/core/user";
 
 const { DateTime } = luxon;
 
@@ -19,7 +20,7 @@ export function getOutOfOfficeDateEndText(datetime) {
 patch(Persona.prototype, {
     /** @returns {string} */
     get outOfOfficeDateEndText() {
-        if (!this.main_user_id?.leave_date_to) {
+        if (!this.main_user_id?.leave_date_to || this.main_user_id.id === user.userId) {
             return "";
         }
         return getOutOfOfficeDateEndText(this.main_user_id.leave_date_to);
