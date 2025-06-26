@@ -424,7 +424,7 @@
                     <filter name="waiting_rfqs" string="Sent" domain="[('state', '=', 'sent')]"/>
                     <filter name="approved" string="Purchase Orders" domain="[('state', '=', 'purchase')]"/>
                     <separator/>
-                    <filter name="late" string="Late" domain="[('state', 'in', ['draft', 'sent', 'to approve']),('date_order', '&lt;', datetime.datetime.now())]"/>
+                    <filter name="late" string="Late" domain="[('state', 'in', ['draft', 'sent', 'to approve']),('date_order', '&lt;', 'now')]"/>
                     <filter name="not_acknowledged" string="Not Acknowledged" domain="[('state', '=', 'purchase'), ('acknowledged', '=', False)]"/>
                     <filter name="late_receipt" string="Late Receipts" domain="[('is_late', '=', True)]"/>
                     <separator/>
@@ -793,7 +793,7 @@
                     <filter name="filter_date_order" date="date_order" default_period="month"/>
                     <filter name="order_date_last_year" string="Order Date: Last 365 Days"
                         domain="[
-                            ('date_order', '>', ((context_today() - relativedelta(years=1)).strftime('%Y-%m-%d')))
+                            ('date_order', '>', 'today -1y')
                         ]" invisible="1"/>
                     <group expand="0" string="Group By">
                         <filter name="groupby_supplier" string="Vendor" domain="[]" context="{'group_by' : 'partner_id'}" />
