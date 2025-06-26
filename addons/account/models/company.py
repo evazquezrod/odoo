@@ -737,6 +737,11 @@ class ResCompany(models.Model):
                 if company.root_id._existing_accounting():
                     raise UserError(_('You cannot change the currency of the company since some journal items already exist'))
 
+            if 'expense_account_id' in values and values['expense_account_id'] != company.expense_account_id.id:
+                self.env['ir.default'].set('product.category', 'property_account_expense_categ_id', values['expense_account_id'], company_id=company.id)
+            if 'income_account_id' in values and values['income_account_id'] != company.income_account_id.id:
+                self.env['ir.default'].set('product.category', 'property_account_income_categ_id', values['income_account_id'], company_id=company.id)
+
         companies = super().write(values)
 
         # We revoke all active exceptions affecting the changed lock dates and recreate them (with the updated lock dates)
