@@ -212,3 +212,10 @@ def misc_migration_updates():
         subprocess.run(
             ['sed', '-i', 's|iot_drivers|hw_drivers,hw_posbox_homepage|g', '/home/pi/odoo.conf'], check=False
         )
+
+    if True:
+        # TODO: - Uninstall pyopenssl and cryptography pip versions
+        #         - sudo pip uninstall --break-system-packages pyopenssl cryptography
+        #       - Install aiortc wheel
+        #         - sudo -u odoo pip install --break-system-packages aiortc-1.4.0-py3-none-any.whl
+        pass
