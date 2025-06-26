@@ -95,6 +95,35 @@ class PosOrder(models.Model):
         for order in self:
             order.l10n_es_edi_verifactu_show_cancel_button = order.l10n_es_edi_verifactu_state in ('registered_with_errors', 'accepted')
 
+    def _l10n_es_edi_verifactu_get_verifactu_tax_type(self):
+        """
+        Currently we only support a single Veri*Factu Tax Type per Veri*Factu document.
+        In `_check_record_values` of model 'l10n_es_edi_verifactu.document' we check:
+        There is only a single Veri*Factu Tax Type on the whole move.
+        """
+        self.ensure_one()
+        if not self.l10n_es_edi_verifactu_required:
+            return False
+
+        taxes = self.lines.tax_ids.flatten_taxes_hierarchy()
+        return taxes._l10n_es_edi_verifactu_get_verifactu_tax_type()
+
+    def _l10n_es_edi_verifactu_get_clave_regimen(self):
+        """
+        Currently we only support a single Clave Regimen per Veri*Factu document.
+        """
+        self.ensure_one()
+
+        verifactu_tax_type = self._l10n_es_edi_verifactu_get_verifactu_tax_type()
+        if not verifactu_tax_type:
+            return False
+
+        taxes = self.lines.tax_ids.flatten_taxes_hierarchy()
+        special_regime = self.company_id.l10n_es_edi_verifactu_special_vat_regime
+        return taxes._l10n_es_edi_verifactu_get_suggested_clave_regimen(
+            special_regime, forced_verifactu_tax_type=verifactu_tax_type
+        )
+
     @api.model
     def l10n_es_edi_verifactu_get_refund_reason_selection(self):
         return self._fields['l10n_es_edi_verifactu_refund_reason']._description_selection(self.env)
@@ -134,7 +163,8 @@ class PosOrder(models.Model):
         if vals['errors']:
             return vals
 
-        company_in_simplified_regime = company.l10n_es_edi_verifactu_special_vat_regime == 'simplified'
+        verifactu_tax_type = self._l10n_es_edi_verifactu_get_verifactu_tax_type()
+        clave_regimen = self._l10n_es_edi_verifactu_get_clave_regimen()
 
         documents = self.l10n_es_edi_verifactu_document_ids
         # Just checking whether the last document was rejected is enough; we do not allow to submit the same record
@@ -160,9 +190,8 @@ class PosOrder(models.Model):
             'substituted_document_reversal_document': None,
             'documents': documents,
             'record_identifier': documents._get_last('submission').record_identifier,
-            # TODO: check
-            'verifactu_tax_type': '01',
-            'clave_regimen': '20' if company_in_simplified_regime else '01',
+            'verifactu_tax_type': verifactu_tax_type,
+            'clave_regimen': clave_regimen,
         })
 
         tax_details_functions = self.env['account.tax']._l10n_es_edi_verifactu_get_tax_details_functions(company)

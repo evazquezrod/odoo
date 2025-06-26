@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 17.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-25 08:03+0000\n"
-"PO-Revision-Date: 2025-04-25 08:03+0000\n"
+"POT-Creation-Date: 2025-06-26 11:27+0000\n"
+"PO-Revision-Date: 2025-06-26 11:27+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -27,9 +27,6 @@ msgid ""
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
-#: model:ir.model.fields,help:l10n_es_edi_verifactu.field_account_bank_statement_line__l10n_es_edi_verifactu_error_level
-#: model:ir.model.fields,help:l10n_es_edi_verifactu.field_account_move__l10n_es_edi_verifactu_error_level
-#: model:ir.model.fields,help:l10n_es_edi_verifactu.field_account_payment__l10n_es_edi_verifactu_error_level
 #: model:ir.model.fields,help:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_document__state
 msgid ""
 "- Rejected: Successfully sent to the AEAT, but it was rejected during validation\n"
@@ -45,6 +42,13 @@ msgstr ""
 #. module: l10n_es_edi_verifactu
 #: model_terms:ir.ui.view,arch_db:l10n_es_edi_verifactu.report_invoice_document
 msgid "<strong class=\"text-center\">VERI*FACTU</strong>"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/account_move.py:0
+#, python-format
+msgid "A Veri*Factu document is waiting to be sent as soon as possible."
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
@@ -66,13 +70,30 @@ msgid "Account Chart Template"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
+#: model:ir.model,name:l10n_es_edi_verifactu.model_account_move_reversal
+msgid "Account Move Reversal"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
 #: model:ir.model,name:l10n_es_edi_verifactu.model_account_move_send
 msgid "Account Move Send"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_tax__l10n_es_applicability
+msgid "Applicability (Spain)"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
 #: model_terms:ir.ui.view,arch_db:l10n_es_edi_verifactu.res_config_settings_view_form
 msgid "Automatically generate and send Veri*Factu records to the AEAT."
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_bank_statement_line__l10n_es_edi_verifactu_available_clave_regimens
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_move__l10n_es_edi_verifactu_available_clave_regimens
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_payment__l10n_es_edi_verifactu_available_clave_regimens
+msgid "Available Veri*Factu Regime Key"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
@@ -176,13 +197,36 @@ msgid "Error"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid ""
+"Error while sending the batch document:\n"
+"%s"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
 #: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_document__errors
 msgid "Errors"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/account_move.py:0
+#, python-format
+msgid "Export"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
 #: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_certificate__content
 msgid "File"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/account_move.py:0
+#, python-format
+msgid "General regime operation"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
@@ -192,14 +236,40 @@ msgid "ID"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
+#: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__account_tax__l10n_es_applicability__igic
+msgid "IGIC"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__account_tax__l10n_es_applicability__ipsi
+msgid "IPSI"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
 #: model:ir.model.fields,help:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_document__chain_index
 msgid ""
-"Index in the chain of Veri*Factu Documents. It is only set if the XML "
-"generation was succesful."
+"Index in the chain of Veri*Factu Documents. It is only set if the generation"
+" was succesful."
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_document__json_attachment_id
+msgid "JSON Attachment"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_document__json_attachment_base64
+msgid "JSON Attachment (Base64)"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_document__json_attachment_filename
+msgid "JSON Filename"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
 #: model:ir.model,name:l10n_es_edi_verifactu.model_account_move
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_document__move_id
 msgid "Journal Entry"
 msgstr ""
 
@@ -219,13 +289,6 @@ msgid "L10N Es Edi Verifactu Warnings"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
-#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_bank_statement_line__l10n_es_edi_verifactu_last_erroneous_document_id
-#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_move__l10n_es_edi_verifactu_last_erroneous_document_id
-#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_payment__l10n_es_edi_verifactu_last_erroneous_document_id
-msgid "Last Erroneous Veri*Factu Document"
-msgstr ""
-
-#. module: l10n_es_edi_verifactu
 #: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_certificate__write_uid
 #: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_document__write_uid
 msgid "Last Updated by"
@@ -238,8 +301,34 @@ msgid "Last Updated on"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/account_move.py:0
+#, python-format
+msgid "Leasing of business premises"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
 #: model_terms:ir.ui.view,arch_db:l10n_es_edi_verifactu.res_config_settings_view_form
 msgid "Manage certificates"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid ""
+"Networking error while sending the document:\n"
+"%s"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid ""
+"Networking error:\n"
+"%s"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
@@ -250,13 +339,33 @@ msgid "No Sujeto VAT taxes must have 0 amount."
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
-#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_document__res_id
-msgid "Origin ID"
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid "Only a single recargo tax may used per \"main\" tax."
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
-#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_document__res_model
-msgid "Origin Model"
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/account_move.py:0
+#, python-format
+msgid ""
+"Operation under one of the regimes provided for in Chapter XI of Title IX "
+"(OSS and IOSS)."
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/account_move.py:0
+#, python-format
+msgid ""
+"Operations of activities included in the Special Regime for Agriculture, "
+"Livestock and Fishing (REAGYP)"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__account_tax__l10n_es_applicability__other
+msgid "Other"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
@@ -280,17 +389,68 @@ msgid "Personal Digital Certificate"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid "Programming error: Invalid `verifactu_move_type`."
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__account_move__l10n_es_edi_verifactu_refund_reason__r1
+msgid "R1: Art 80.1 and 80.2 and error of law"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__account_move__l10n_es_edi_verifactu_refund_reason__r2
+msgid "R2: Art. 80.3"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__account_move__l10n_es_edi_verifactu_refund_reason__r3
+msgid "R3: Art. 80.4"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__account_move__l10n_es_edi_verifactu_refund_reason__r4
+msgid "R4: Rest"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__account_move__l10n_es_edi_verifactu_refund_reason__r5
+msgid "R5: Corrective invoices concerning simplified invoices"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__res_company__l10n_es_edi_verifactu_special_vat_regime__reagyp
+msgid "REAGYP (Special Regime for Agriculture, Livestock and Fisheries)"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__res_company__l10n_es_edi_verifactu_special_vat_regime__recargo
+msgid "Recargo de Equivalencia"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/account_move.py:0
+#, python-format
+msgid "Recargo de equivalencia"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
 #: model_terms:ir.ui.view,arch_db:l10n_es_edi_verifactu.view_l10n_es_edi_verifactu_document_form
 msgid "Record Identifier"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
+#: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__account_move__l10n_es_edi_verifactu_error_level__registered_with_errors
 #: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__account_move__l10n_es_edi_verifactu_state__registered_with_errors
 #: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__l10n_es_edi_verifactu_document__state__registered_with_errors
 msgid "Registered with Errors"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
+#: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__account_move__l10n_es_edi_verifactu_error_level__rejected
 #: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__account_move__l10n_es_edi_verifactu_state__rejected
 #: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__l10n_es_edi_verifactu_document__state__rejected
 msgid "Rejected"
@@ -314,17 +474,48 @@ msgid "See the 'Veri*Factu' tab for more information."
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
-#. odoo-python
-#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
-#, python-format
-msgid "Sending the document to the AEAT failed: %s"
-msgstr ""
-
-#. module: l10n_es_edi_verifactu
 #: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_bank_statement_line__l10n_es_edi_verifactu_show_cancel_button
 #: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_move__l10n_es_edi_verifactu_show_cancel_button
 #: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_payment__l10n_es_edi_verifactu_show_cancel_button
 msgid "Show Veri*Factu Cancel Button"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/account_move.py:0
+#: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__res_company__l10n_es_edi_verifactu_special_vat_regime__simplified
+#, python-format
+msgid "Simplified Regime"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid ""
+"Some of the documents can not be sent. They were sent already or could not "
+"be generated correctly."
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid ""
+"Someone else is already generating Veri*Factu documents for the same "
+"company."
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_res_company__l10n_es_edi_verifactu_special_vat_regime
+msgid "Special VAT Regime"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/account_move.py:0
+#, python-format
+msgid "Special retailer regime"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
@@ -338,6 +529,20 @@ msgid "Submission"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_bank_statement_line__l10n_es_edi_verifactu_substitution_move_id
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_move__l10n_es_edi_verifactu_substitution_move_id
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_payment__l10n_es_edi_verifactu_substitution_move_id
+msgid "Substituted by"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_bank_statement_line__l10n_es_edi_verifactu_substituted_entry_id
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_move__l10n_es_edi_verifactu_substituted_entry_id
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_payment__l10n_es_edi_verifactu_substituted_entry_id
+msgid "Substitution of"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
 #: model:ir.model,name:l10n_es_edi_verifactu.model_account_tax
 msgid "Tax"
 msgstr ""
@@ -347,6 +552,15 @@ msgstr ""
 msgid ""
 "Technical field containing the values used to identify records in the "
 "Veri*Factu system."
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields,help:l10n_es_edi_verifactu.field_account_bank_statement_line__l10n_es_edi_verifactu_available_clave_regimens
+#: model:ir.model.fields,help:l10n_es_edi_verifactu.field_account_move__l10n_es_edi_verifactu_available_clave_regimens
+#: model:ir.model.fields,help:l10n_es_edi_verifactu.field_account_payment__l10n_es_edi_verifactu_available_clave_regimens
+msgid ""
+"Technical field to enable a dynamic selection of the field \"Veri*Factu "
+"Regime Key\""
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
@@ -369,9 +583,17 @@ msgstr ""
 #. module: l10n_es_edi_verifactu
 #. odoo-python
 #: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
 #, python-format
 msgid ""
 "The NIF '%(company_NIF)s' of the company is not exactly 9 characters long."
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid "The SSL certificate could not be validated."
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
@@ -389,6 +611,13 @@ msgstr ""
 #: code:addons/l10n_es_edi_verifactu/tests/common.py:0
 #, python-format
 msgid "The Veri*Factu document could not be created"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid "The Veri*Factu document was not created"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
@@ -423,11 +652,6 @@ msgid "The data is sent to the tax agency."
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
-#: model:ir.model.fields,help:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_document__response_time
-msgid "The date and time on which we received the response."
-msgstr ""
-
-#. module: l10n_es_edi_verifactu
 #: model:ir.model.fields,help:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_certificate__date_end
 msgid "The date on which the certificate expires"
 msgstr ""
@@ -441,14 +665,9 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
 #, python-format
-msgid "The document could not be sent; the access was denied."
-msgstr ""
-
-#. module: l10n_es_edi_verifactu
-#. odoo-python
-#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
-#, python-format
-msgid "The document could not be sent; the access was denied: %s"
+msgid ""
+"The document could not be sent; the access was denied due to a problem with "
+"the certificate."
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
@@ -465,6 +684,13 @@ msgstr ""
 #: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
 #, python-format
 msgid "The invoice date is missing."
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/account_move.py:0
+#, python-format
+msgid "The journal entry has no Veri*Factu Operation Type."
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
@@ -493,9 +719,21 @@ msgstr ""
 #. odoo-python
 #: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
 #, python-format
-msgid ""
-"The response could not be parsed:\n"
-"%s"
+msgid "The record identifier changed: %(key)s (%(old)s → %(new)s)"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid "The refund reason is not specified."
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid "There are no taxes set on the invoice"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
@@ -511,31 +749,43 @@ msgstr ""
 #. module: l10n_es_edi_verifactu
 #. odoo-python
 #: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
-#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
 #, python-format
-msgid "There is no certificate configured for Veri*Factu on the company."
+msgid "There is no Veri*Factu document for the refunded record."
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
 #. odoo-python
 #: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
 #, python-format
-msgid "There is no record identifier yet for the refunded record."
+msgid ""
+"There is no Veri*Factu document for the reversal of the substituted record."
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
-#: model:ir.model.fields,help:l10n_es_edi_verifactu.field_account_bank_statement_line__l10n_es_edi_verifactu_last_erroneous_document_id
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid "There is no Veri*Factu document for the substituted record."
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid "There is no certificate configured for Veri*Factu on the company."
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
 #: model:ir.model.fields,help:l10n_es_edi_verifactu.field_account_bank_statement_line__l10n_es_edi_verifactu_qr_code
-#: model:ir.model.fields,help:l10n_es_edi_verifactu.field_account_move__l10n_es_edi_verifactu_last_erroneous_document_id
 #: model:ir.model.fields,help:l10n_es_edi_verifactu.field_account_move__l10n_es_edi_verifactu_qr_code
-#: model:ir.model.fields,help:l10n_es_edi_verifactu.field_account_payment__l10n_es_edi_verifactu_last_erroneous_document_id
 #: model:ir.model.fields,help:l10n_es_edi_verifactu.field_account_payment__l10n_es_edi_verifactu_qr_code
 msgid "This QR code is mandatory for Veri*Factu invoices."
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
-#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_document__response_time
-msgid "Time of Response"
+#: model:ir.model.fields.selection,name:l10n_es_edi_verifactu.selection__account_tax__l10n_es_applicability__iva
+msgid "VAT"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
@@ -564,6 +814,13 @@ msgstr ""
 #. module: l10n_es_edi_verifactu
 #: model:ir.model,name:l10n_es_edi_verifactu.model_l10n_es_edi_verifactu_document
 msgid "Veri*Factu Document"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid "Veri*Factu Document %s"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
@@ -618,6 +875,20 @@ msgid "Veri*Factu Record Identifier"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_bank_statement_line__l10n_es_edi_verifactu_refund_reason
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_move__l10n_es_edi_verifactu_refund_reason
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_payment__l10n_es_edi_verifactu_refund_reason
+msgid "Veri*Factu Refund Reason"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_bank_statement_line__l10n_es_edi_verifactu_clave_regimen
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_move__l10n_es_edi_verifactu_clave_regimen
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_payment__l10n_es_edi_verifactu_clave_regimen
+msgid "Veri*Factu Regime Key"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
 #: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_bank_statement_line__l10n_es_edi_verifactu_required
 #: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_move__l10n_es_edi_verifactu_required
 #: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_payment__l10n_es_edi_verifactu_required
@@ -644,24 +915,24 @@ msgid "Veri*Factu Test Environment"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
-#. odoo-python
-#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
-#, python-format
-msgid "Verifactu Document %s"
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_bank_statement_line__l10n_es_edi_verifactu_warning
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_move__l10n_es_edi_verifactu_warning
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_payment__l10n_es_edi_verifactu_warning
+msgid "Veri*Factu Warning"
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_bank_statement_line__l10n_es_edi_verifactu_warning_level
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_move__l10n_es_edi_verifactu_warning_level
+#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_account_payment__l10n_es_edi_verifactu_warning_level
+msgid "Veri*Factu Warning Level"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
 #. odoo-python
-#: code:addons/l10n_es_edi_verifactu/models/account_move.py:0
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
 #, python-format
 msgid "We are waiting to send a Veri*Factu record to the AEAT already."
-msgstr ""
-
-#. module: l10n_es_edi_verifactu
-#. odoo-python
-#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
-#, python-format
-msgid "We can not parse responses with that content type."
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
@@ -675,19 +946,40 @@ msgid ""
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
-#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_document__xml_attachment_id
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid "We only allow a single \"main\" tax per line."
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/verifactu_document.py:0
+#, python-format
+msgid "We only allow a single Veri*Factu Tax Type per document: %(types)s."
+msgstr ""
+
+#. module: l10n_es_edi_verifactu
 #: model_terms:ir.ui.view,arch_db:l10n_es_edi_verifactu.view_l10n_es_edi_verifactu_document_form
 msgid "XML Attachment"
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
-#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_document__xml_attachment_base64
-msgid "XML Attachment (Base64)"
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/account_move.py:0
+#, python-format
+msgid ""
+"You are modifying a journal entry for which a Veri*Factu document has been "
+"sent to the AEAT already."
 msgstr ""
 
 #. module: l10n_es_edi_verifactu
-#: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_document__xml_attachment_filename
-msgid "XML Filename"
+#. odoo-python
+#: code:addons/l10n_es_edi_verifactu/models/account_move.py:0
+#, python-format
+msgid ""
+"You are modifying a journal entry for which a Veri*Factu document is waiting"
+" to be sent."
 msgstr ""
 
 #. module: l10n_es_edi_verifactu

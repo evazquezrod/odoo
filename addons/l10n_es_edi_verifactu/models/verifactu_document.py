@@ -365,8 +365,9 @@ class L10nEsEdiVerifactuDocument(models.Model):
 
         next_trigger_time = None
         for company, documents in documents_per_company:
-            # Avoid sending a document twice due to concurrent calls to `trigger_next_batch`
-            # TODO: Maybe lock the whole company (or sth verifactu specific on the company) to be safe
+            # Avoid sending a document twice due to concurrent calls to `trigger_next_batch`.
+            # This should also avoid concurrently sending in general since the set of documents
+            # in both calls should overlap. (Since we always include all previously unsent documents.)
             try:
                 self.env['res.company']._with_locked_records(documents)
             except UserError:
@@ -809,7 +810,6 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 tipo_factura = 'F1'
             fecha_operacion = delivery_date if delivery_date and delivery_date != invoice_date else None
         elif verifactu_move_type == 'reversal_for_substitution':
-            # TODO: not sure about simplified case
             tipo_rectificativa = None
             if is_simplified and not partner_specified:
                 tipo_factura = 'F2'

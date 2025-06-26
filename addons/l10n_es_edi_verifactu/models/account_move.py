@@ -101,21 +101,21 @@ class AccountMove(models.Model):
             #         - The first format is in case the code and label are the same in both lists
             #         - The second format is in case the code, label pair is only in one of the lists
             # VAT & IGIC
-            ('01', 'General regime operation'), # Operación de régimen general
-            ('02', 'Export'), # Exportación
-            ('11', 'Leasing of business premises'), # Operaciones de arrendamiento de local de negocio
+            ('01', _("General regime operation")), # Operación de régimen general
+            ('02', _("Export")), # Exportación
+            ('11', _("Leasing of business premises")), # Operaciones de arrendamiento de local de negocio
             # VAT only
-            ('17_iva', 'Operation under one of the regimes provided for in Chapter XI of Title IX (OSS and IOSS).'), # Operación acogida a alguno de los regímenes previstos en el Capítulo XI del Título IX (OSS e IOSS)
-            ('18_iva', 'Recargo de equivalencia'), # Recargo de equivalencia
-            ('19_iva', 'Operations of activities included in the Special Regime for Agriculture, Livestock and Fishing (REAGYP)'), # Operaciones de actividades incluidas en el Régimen Especial de Agicultura, Ganadería y Pesca (REAGYP)
-            ('20_iva', 'Simplified Regime'), # Régimen simplificado
+            ('17_iva', _("Operation under one of the regimes provided for in Chapter XI of Title IX (OSS and IOSS).")), # Operación acogida a alguno de los regímenes previstos en el Capítulo XI del Título IX (OSS e IOSS)
+            ('18_iva', _("Recargo de equivalencia")), # Recargo de equivalencia
+            ('19_iva', _("Operations of activities included in the Special Regime for Agriculture, Livestock and Fishing (REAGYP)")), # Operaciones de actividades incluidas en el Régimen Especial de Agicultura, Ganadería y Pesca (REAGYP)
+            ('20_iva', _("Simplified Regime")), # Régimen simplificado
             # IGIC only
-            ('17_igic', 'Special retailer regime'), # Régimen especial de comerciante minorista
+            ('17_igic', _("Special retailer regime")), # Régimen especial de comerciante minorista
         ]
 
     def _l10n_es_edi_verifactu_get_verifactu_tax_type(self):
         """
-        Currently we only support one operation type (Veri*Factu Tax Type / Clave Regimen) for the whole invoice.
+        Currently we only support a single Veri*Factu Tax Type per Veri*Factu document.
         In `_check_record_values` of model 'l10n_es_edi_verifactu.document' we check:
         There is only a single Veri*Factu Tax Type on the whole move.
         """
@@ -123,17 +123,8 @@ class AccountMove(models.Model):
         if not self.l10n_es_edi_verifactu_required:
             return False
 
-        verifactu_tax_type_map = self.env['account.tax']._l10n_es_edi_verifactu_get_tax_types_map()
-
         taxes = self.invoice_line_ids.tax_ids.flatten_taxes_hierarchy()
-        main_taxes = taxes._l10n_es_edi_verifactu_filter_main_taxes()
-
-        # We pick the "first" main tax type (they always have a `l10n_es_applicability`).
-        # In `_check_record_values` of model 'l10n_es_edi_verifactu.document' we check:
-        # There is only a single Veri*Factu Tax Type on the whole move.
-        if not main_taxes:
-            return False
-        return verifactu_tax_type_map.get(main_taxes[0].l10n_es_applicability, False)
+        return taxes._l10n_es_edi_verifactu_get_verifactu_tax_type()
 
     @api.model
     def _l10n_es_edi_verifactu_get_available_clave_regimens_map(self):
@@ -148,7 +139,7 @@ class AccountMove(models.Model):
 
     def _l10n_es_edi_verifactu_get_suggested_clave_regimen(self):
         """
-        Currently we only support one operation type (Veri*Factu Tax Type / Clave Regimen) for the whole invoice.
+        Currently we only support a single Clave Regimen per Veri*Factu document.
         """
         self.ensure_one()
 
@@ -157,42 +148,10 @@ class AccountMove(models.Model):
             return False
 
         taxes = self.invoice_line_ids.tax_ids.flatten_taxes_hierarchy()
-        recargo_taxes = taxes.filtered(lambda tax: tax.l10n_es_type == 'recargo')
-
-        regimen_key = None
-        VAT = verifactu_tax_type == '01'
-        IGIC = verifactu_tax_type == '03'
-        if not (VAT or IGIC):
-            return f'{verifactu_tax_type}_'
-
-        oss_tag = self.env.ref('l10n_eu_oss.tag_oss', raise_if_not_found=False)
-        if self.move_type == 'out_invoice':
-            repartition_lines = taxes.invoice_repartition_line_ids
-        else:
-            # move.move_type == 'out_refund'
-            repartition_lines = taxes.refund_repartition_line_ids
-
-        company_regime = self.company_id.l10n_es_edi_verifactu_special_vat_regime
-
-        if VAT and company_regime == 'simplified' and self.l10n_es_is_simplified:
-            # simplified
-            regimen_key = '20_iva'
-        elif VAT and company_regime == 'reagyp':
-            # REAGYP
-            regimen_key = '19_iva'
-        elif VAT and recargo_taxes:
-            # recargo
-            regimen_key = '18_iva'
-        elif VAT and oss_tag and oss_tag in repartition_lines.tag_ids:
-            # oss
-            regimen_key = '17_iva'
-        elif taxes.filtered(lambda tax: tax.l10n_es_type == 'exento' and tax.l10n_es_exempt_reason == 'E2'):
-            # export
-            regimen_key = '02'
-        else:
-            regimen_key = '01'
-
-        return regimen_key
+        special_regime = self.company_id.l10n_es_edi_verifactu_special_vat_regime
+        return taxes._l10n_es_edi_verifactu_get_suggested_clave_regimen(
+            special_regime, forced_verifactu_tax_type=verifactu_tax_type
+        )
 
     @api.depends('invoice_line_ids.tax_ids')
     def _compute_l10n_es_edi_verifactu_available_clave_regimens(self):

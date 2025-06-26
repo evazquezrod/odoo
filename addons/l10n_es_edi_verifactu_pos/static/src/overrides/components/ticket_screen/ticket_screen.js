@@ -17,7 +17,6 @@ patch(TicketScreen.prototype, {
                 title: _t("Select the refund reason"),
                 list: selectionList,
             });
-            // TODO: differentiate between order / "simple invoice" and "real invoice" case
             if (payload && confirmed) {
                 destinationOrder.l10n_es_edi_verifactu_refund_reason = payload;
             }
