@@ -1,7 +1,11 @@
-import { applyInheritance, applyContextToTextNode } from "@web/core/template_inheritance";
+import {
+    applyContextToTextNode,
+    applyInheritance,
+    deepClone,
+} from "@web/core/template_inheritance";
 
 function getClone(template) {
-    const c = template.cloneNode(true);
+    const c = deepClone(template);
     new Document().append(c); // => c is the documentElement of its ownerDocument
     return c;
 }
@@ -38,7 +42,7 @@ function _getTemplate(name, blockId = null) {
             );
         }
         const element = getClone(processedTemplate);
-        processedTemplate = applyInheritance(parentTemplate, element, info[name].url);
+        processedTemplate = applyInheritance(getClone(parentTemplate), element, info[name].url);
         if (processedTemplate.tagName !== element.tagName) {
             const temp = processedTemplate;
             processedTemplate = new Document().createElement(element.tagName);

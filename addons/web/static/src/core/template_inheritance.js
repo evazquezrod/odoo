@@ -34,7 +34,7 @@ export function applyContextToTextNode() {
     contextByTextNode.clear();
 }
 
-function deepClone(node) {
+export function deepClone(node) {
     const clone = node.cloneNode();
     if (node.nodeType === Node.TEXT_NODE) {
         if (contextByTextNode.has(node)) {
