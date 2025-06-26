@@ -245,7 +245,7 @@
     </xpath>
     <xpath expr="//t[@t-call='web.brand_promotion']/.." position="attributes">
         <attribute name="class" add="o_not_editable" separator=" "/>
-        <attribute name="t-if">not editable</attribute>
+        <!-- <attribute name="t-if">not editable</attribute> -->
     </xpath>
 
     <xpath expr="//div[@id='wrapwrap']" position="after">
@@ -2059,6 +2059,10 @@
             </section>
         </div>
     </xpath>
+
+    <xpath expr="//footer//div[hasclass('o_footer_copyright')]//div[hasclass('row')]" position="attributes">
+        <attribute name="class" add="flex-column" separator=" "/>
+    </xpath>
 </template>
 
 <template id="template_footer_call_to_action" inherit_id="website.layout" name="Call-to-Action" active="False">
@@ -2171,8 +2175,36 @@
 </template>
 
 <template id="footer_copyright_company_name" inherit_id="website.layout">
+    <xpath expr="//footer//div[hasclass('o_footer_copyright')]//div[hasclass('col-sm')]" position="attributes">
+        <attribute name="class" add="d-md-flex align-items-center" separator=" "/>
+    </xpath>
     <xpath expr="//footer//span[hasclass('o_footer_copyright_name')]" position="replace">
         <span class="o_footer_copyright_name me-2">Copyright &amp;copy; Company name</span>
+    </xpath>
+</template>
+
+<!-- Copyright Alignment -->
+<template id="footer_copyright_vertical_alignment" inherit_id="website.layout" active="False">
+    <xpath expr="//footer//div[hasclass('o_footer_copyright')]//div[hasclass('row')]" position="attributes">
+        <attribute name="class" add="flex-column" separator=" "/>
+    </xpath>
+</template>
+
+<template id="footer_copyright_alignment_centered" inherit_id="website.layout" active="False">
+    <xpath expr="//footer//div[hasclass('o_footer_copyright')]//div[hasclass('col-sm')]" position="attributes">
+        <attribute name="class" add="justify-content-center" separator=" "/>
+    </xpath>
+</template>
+
+<template id="footer_copyright_alignment_end" inherit_id="website.layout" active="False">
+    <xpath expr="//footer//div[hasclass('o_footer_copyright')]//div[hasclass('col-sm')]" position="attributes">
+        <attribute name="class" add="justify-content-end" separator=" "/>
+    </xpath>
+</template>
+
+<template id="footer_copyright_alignment_space_between" inherit_id="website.layout" active="False">
+    <xpath expr="//footer//div[hasclass('o_footer_copyright')]//div[hasclass('col-sm')]" position="attributes">
+        <attribute name="class" add="justify-content-between" separator=" "/>
     </xpath>
 </template>
 

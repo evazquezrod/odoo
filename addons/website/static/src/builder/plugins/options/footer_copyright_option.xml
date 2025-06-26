@@ -2,6 +2,51 @@
 <templates xml:space="preserve">
 
 <t t-name="website.FooterCopyrightOption">
+    <BuilderContext action="'websiteConfig'">
+        <BuilderRow label.translate="Verti. Alignment" applyTo="'.row'">
+            <!-- <BuilderCheckbox id="'vertical_align_opt'" classAction="'flex-column'"/> -->
+            <BuilderCheckbox id="'vertical_align_opt'" actionParam="{
+                views: ['website.footer_copyright_vertical_alignment'],
+                resetViewArch: true,
+            }"/>
+            <!-- Continuer -->
+        </BuilderRow>
+        <BuilderRow t-if="isActiveItem('vertical_align_opt')" label.translate="Alignment" applyTo="'.col-sm'">
+            <BuilderSelect>
+                <BuilderSelectItem
+                    actionParam="{
+                        views: [''],
+                        resetViewArch: true,
+                    }">
+                    Left
+                </BuilderSelectItem>
+                <BuilderSelectItem
+                    actionParam="{
+                        views: ['website.footer_copyright_alignment_centered'],
+                        resetViewArch: true,
+                    }">
+                    Center
+                </BuilderSelectItem>
+                <BuilderSelectItem
+                    actionParam="{
+                        views: ['website.footer_copyright_alignment_end'],
+                        resetViewArch: true,
+                    }">
+                    Right
+                </BuilderSelectItem>
+                <BuilderSelectItem
+                    actionParam="{
+                        views: ['website.footer_copyright_alignment_space_between'],
+                        resetViewArch: true,
+                    }">
+                    Space Between
+                </BuilderSelectItem>
+                <!-- <BuilderSelectItem classAction="'justify-content-center'">Center</BuilderSelectItem>
+                <BuilderSelectItem classAction="'justify-content-end'">Right</BuilderSelectItem>
+                <BuilderSelectItem classAction="'justify-content-between'">Space Between</BuilderSelectItem> -->
+            </BuilderSelect>
+        </BuilderRow>
+    </BuilderContext>
     <BuilderRow label.translate="Colors">
         <BuilderColorPicker
             enabledTabs="['theme', 'custom', 'gradient']"
