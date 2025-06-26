@@ -1,16 +1,9 @@
-import {
-    Component,
-    markup,
-    onMounted,
-    onPatched,
-    onWillUnmount,
-    onWillPatch,
-    useRef,
-} from "@odoo/owl";
+import { Component, onMounted, onPatched, onWillUnmount, onWillPatch, useRef } from "@odoo/owl";
 import { _t } from "@web/core/l10n/translation";
 import { useService } from "@web/core/utils/hooks";
 import { InputConfirmationDialog } from "./input_confirmation_dialog";
 import { fuzzyLookup } from "@web/core/utils/search";
+import { getOuterHtml } from "@web/core/utils/html";
 
 export class SnippetViewer extends Component {
     static template = "html_builder.SnippetViewer";
@@ -22,6 +15,7 @@ export class SnippetViewer extends Component {
     };
 
     setup() {
+        this.getOuterHtml = getOuterHtml;
         this.dialog = useService("dialog");
         this.content = useRef("content");
 
@@ -90,10 +84,6 @@ export class SnippetViewer extends Component {
         } else {
             this.props.selectSnippet(snippet);
         }
-    }
-
-    getContent(elem) {
-        return markup(elem.outerHTML);
     }
 
     getButtonInstallName(snippet) {

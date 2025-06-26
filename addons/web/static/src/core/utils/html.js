@@ -29,6 +29,30 @@ export function createElementWithContent(elementName, content) {
 }
 
 /**
+ * Gets innerHTML of the given Element, and wraps it in a Markup object as innerHTML always returns
+ * safe text (assuming the element was safely built).
+ *
+ * @param {Element} element
+ * @returns {ReturnType<markup>}
+ */
+export function getInnerHtml(element) {
+    // markup: innerHTML is safe (assuming element was safely built)
+    return markup(element?.innerHTML ?? "");
+}
+
+/**
+ * Gets outerHTML of the given Element, and wraps it in a Markup object as outerHTML always returns
+ * safe text (assuming the element was safely built).
+ *
+ * @param {Element} element
+ * @returns {ReturnType<markup>}
+ */
+export function getOuterHtml(element) {
+    // markup: outerHTML is safe (assuming element was safely built)
+    return markup(element?.outerHTML ?? "");
+}
+
+/**
  * Same behavior as formatList, but produces safe HTML. If the values are flagged as safe HTML using
  * `markup()` they are set as it is. Otherwise they are escaped.
  *
