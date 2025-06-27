@@ -355,6 +355,7 @@ export class CalendarController extends Component {
     }
 
     async setDate(move) {
+        debugger
         let date = null;
         switch (move) {
             case "next":

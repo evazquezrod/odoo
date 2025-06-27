@@ -39,19 +39,31 @@ export class CalendarRenderer extends Component {
         }
         return this.props;
     }
+    get abstractMonthRendererProps() {
+        return {
+                model: this.props.model,
+                isWeekendVisible: this.props.isWeekendVisible,
+                createRecord: () => {},
+                editRecord: () => {},
+                deleteRecord: () => {},
+                setDate: () => {},
+                "sidePanelMode": "FILTER",
+                multiCreateRecords: () => {},
+                multiDeleteRecords: () => {},
+        }
+    }
     get calendarKey() {
         return `${this.props.model.scale}_${this.props.model.date.valueOf()}`;
     }
     get actionSwiperProps() {
         return {
             onLeftSwipe: this.env.isSmall
-                ? { action: () => this.props.setDate("next") }
+                ? { action: () => this.props.setDate("next"), slot: { component: this.concreteRenderer, props: this.abstractMonthRendererProps } }
                 : undefined,
             onRightSwipe: this.env.isSmall
-                ? { action: () => this.props.setDate("previous") }
+                ? { action: () => this.props.setDate("previous"), slot: { component: this.concreteRenderer, props: this.abstractMonthRendererProps } }
                 : undefined,
-            animationOnMove: false,
-            animationType: "forwards",
+            animationType: "replace",
             swipeDistanceRatio: 6,
             swipeInvalid: () => Boolean(document.querySelector(".o_event.fc-mirror")),
         };

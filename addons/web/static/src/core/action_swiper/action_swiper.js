@@ -32,6 +32,7 @@ export class ActionSwiper extends Component {
                 action: Function,
                 icon: String,
                 bgColor: String,
+                slot: Object,
             },
             optional: true,
         },
@@ -41,6 +42,7 @@ export class ActionSwiper extends Component {
                 action: Function,
                 icon: String,
                 bgColor: String,
+                slot: Object,
             },
             optional: true,
         },
@@ -216,8 +218,22 @@ export class ActionSwiper extends Component {
                 this.resetTimeoutId = browser.setTimeout(() => {
                     prom.resolve();
                     this._reset();
-                }, 100);
-            }, 100);
+                }, 200);
+            }, 200);
+        } else if (this.props.animationType === "replace") {
+            // The action can occur immediately as the transition will hide the main content
+            action()
+            this.state.containerStyle = `transform: translateX(${this.swipedDistance}px)`;
+            this.actionTimeoutId = browser.setTimeout(async () => {
+                const prom = new Deferred();
+                await action(prom);
+                this.state.isSwiping = true;
+                this.state.containerStyle = `transform: translateX(${-this.swipedDistance}px)`;
+                this.resetTimeoutId = browser.setTimeout(() => {
+                    prom.resolve();
+                    this._reset();
+                }, 200);
+            }, 200);
         } else {
             return action(Promise.resolve());
         }

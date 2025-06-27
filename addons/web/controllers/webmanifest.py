@@ -105,20 +105,45 @@ class WebManifest(http.Controller):
         path = f"/{unquote(path)}"
         scoped_app_values = {
             'app_id': app_id,
-            'apple_touch_icon': '/web/static/img/odoo-icon-ios.png',
             'app_name': app_name,
             'path': path,
             'safe_manifest_url': "/web/manifest.scoped_app_manifest?" + urlencode({
                 'app_id': app_id,
                 'path': path,
                 'app_name': app_name
-            })
+            }),
+            'share_qr_code': share_qr_code
         }
         return request.render('web.webclient_scoped_app', scoped_app_values)
 
     @http.route('/scoped_app_icon_png', type='http', auth='public', methods=['GET'])
     def scoped_app_icon_png(self, app_id, add_padding=False):
         """ Returns an app icon created with a fixed size in PNG. It is required for Safari PWAs """
+        # To begin, we take the first icon available for the app
+        app_icon = self._get_scoped_app_icons(app_id)[0]
+
+        if app_icon['type'] == "image/svg+xml":
+            # We don't handle SVG images here, let's look for the module icon if possible
+            manifest = modules.Manifest.for_addon(app_id, display_warning=False)
+            add_padding = True
+            if manifest and manifest['icon']:
+                icon_src = manifest['icon']
+            else:
+                icon_src = f"/{self._icon_path()}"
+        else:
+            icon_src = app_icon['src']
+            if not add_padding:
+                # A valid icon is explicitly provided, we can use it directly
+                return request.redirect(app_icon['src'])
+
+        # Now that we have the image source, we can generate a PNG image
+        with file_open(icon_src.removeprefix('/'), 'rb') as file:
+            image = image_process(file.read(), size=(180, 180), expand=True, colorize=(255, 255, 255), padding=16)
+        return request.make_response(image, headers=[('Content-Type', 'image/png')])
+
+    @http.route('/scoped_app_qr_code', type='http', auth='public', methods=['GET'])
+    def scoped_app_icon_png(self, app_id):
+        """ Returns an QR code with the current URL """
         # To begin, we take the first icon available for the app
         app_icon = self._get_scoped_app_icons(app_id)[0]
 
