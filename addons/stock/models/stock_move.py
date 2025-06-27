@@ -2205,6 +2205,11 @@ Please change the quantity done or the rounding precision of your unit of measur
             else:
                 move.procure_method = 'make_to_order'
 
+    def _break_mto_link(self, parent_move):
+        self.move_orig_ids = [Command.unlink(parent_move.id)]
+        self.procure_method = 'make_to_stock'
+        self._recompute_state()
+
     def _trigger_scheduler(self):
         """ Check for auto-triggered orderpoints and trigger them. """
         if not self or self.env['ir.config_parameter'].sudo().get_param('stock.no_auto_scheduler'):
