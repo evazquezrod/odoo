@@ -480,11 +480,13 @@ $-header-nav-link-height: $nav-link-height;
     @include o-apply-colors('footer-custom');
     @include o-add-gradient('footer-gradient');
 
+    @if o-website-value('footer-template') != 'contact' {
     .o_footer_copyright {
         $-footer-color: o-color('footer-custom') or o-color('footer');
         @include o-apply-colors('copyright', $background: $-footer-color);
         @include o-apply-colors('copyright-custom', $background: $-footer-color);
         @include o-add-gradient('copyright-gradient');
+    }
     }
 }
 

@@ -1974,7 +1974,8 @@
 <template id="template_footer_contact" inherit_id="website.layout" name="Contact" active="False">
     <xpath expr="//div[@id='footer']" position="replace">
         <div id="footer" class="oe_structure oe_structure_solo" t-ignore="true" t-if="not no_footer">
-            <section class="s_text_block pt32 pb16" data-snippet="s_text_block" data-name="Text">
+            <section class="s_text_block pt32 pb16" data-snippet="s_text_block" data-name="Text" data-oe-shape-data="{'shape': 'web_editor/Containers/03', 'colors': {'c5': 'o-color-4'}, 'flip': [], 'showOnMobile': true}">
+            <div class="o_we_shape o_web_editor_Containers_03" style="background-image: url('/web_editor/shape/web_editor/Containers/03.svg?c5=o-color-4');"/>
                 <div class="container">
                     <div class="row o_grid_mode">
                         <div class="col-lg-3 pt16 pb16 o_grid_item g-col-lg-3 o_colored_level g-height-2"
@@ -2060,8 +2061,8 @@
         </div>
     </xpath>
 
-    <xpath expr="//footer//div[hasclass('o_footer_copyright')]//div[hasclass('row')]" position="attributes">
-        <attribute name="class" add="flex-column" separator=" "/>
+    <xpath expr="//footer//div[hasclass('o_footer_copyright')]" position="attributes">
+        <attribute name="class" add="o_cc1" separator=" "/>
     </xpath>
 </template>
 

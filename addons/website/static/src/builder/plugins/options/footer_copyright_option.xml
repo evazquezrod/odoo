@@ -47,7 +47,7 @@
             </BuilderSelect>
         </BuilderRow>
     </BuilderContext>
-    <BuilderRow label.translate="Colors">
+    <BuilderRow label.translate="Colors" t-if="!hasSomeViews(['website.template_footer_contact'])">
         <BuilderColorPicker
             enabledTabs="['theme', 'custom', 'gradient']"
             preview="false"
