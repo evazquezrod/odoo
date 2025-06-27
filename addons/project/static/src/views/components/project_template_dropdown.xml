@@ -1,14 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <templates>
     <t t-name="project.ProjectTemplateDropdown">
+<<<<<<< 18065397b7796aff383a5055db12be1004579948
         <button t-if="!projectTemplates.length" type="button" t-att-class="props.newButtonClasses" t-att-disabled="props.isDisabled" t-att-data-hotkey="props.hotkey" t-on-click.stop="props.onCreate" data-bounce-button="">New</button>
         <Dropdown t-else="">
             <button t-attf-class="{{ props.newButtonClasses }} o-dropdown-caret" t-att-disabled="props.isDisabled" t-att-data-hotkey="props.hotkey" data-bounce-button="">
+||||||| 68904953b67ee0b5626a8637e1b1a241ee0388b8
+        <button t-if="!projectTemplates.length" type="button" t-att-class="props.newButtonClasses" t-att-disabled="props.isDisabled" t-att-data-hotkey="props.hotkey" t-on-click.stop="props.onCreate" data-bounce-button="">New</button>
+        <t t-else="">
+            <a t-attf-class="{{ props.newButtonClasses }} dropdown-toggle" data-bs-toggle="dropdown" t-att-disabled="props.isDisabled" aria-expanded="false" t-att-data-hotkey="props.hotkey" data-bounce-button="">
+=======
+        <button t-if="!state.projectTemplates.length" type="button" t-att-class="props.newButtonClasses" t-att-disabled="props.isDisabled" t-att-data-hotkey="props.hotkey" t-on-click.stop="props.onCreate" data-bounce-button="">New</button>
+        <t t-else="">
+            <a t-attf-class="{{ props.newButtonClasses }} dropdown-toggle" data-bs-toggle="dropdown" t-att-disabled="props.isDisabled" aria-expanded="false" t-att-data-hotkey="props.hotkey" data-bounce-button="">
+>>>>>>> dba6dd33a2a51a76ba39538deed82654e61e63e3
                 New
             </button>
             <t t-set-slot="content">
                 <DropdownItem tag="'button'" class="'btn btn-link'" onSelected="props.onCreate">
                     New Project
+<<<<<<< 18065397b7796aff383a5055db12be1004579948
                 </DropdownItem>
                 <div role="separator" class="dropdown-divider"/>
                 <div class="dropdown-header">Project Templates</div>
@@ -16,6 +27,19 @@
                     <DropdownItem tag="'button'" class="'btn btn-link o-dropdopwn-item-indent'" onSelected="() => this.createProjectFromTemplate(template)">
                         <t t-out="template.name"/>
                     </DropdownItem>
+||||||| 68904953b67ee0b5626a8637e1b1a241ee0388b8
+                </button>
+                <div class="dropdown-divider"/>
+                <div class="dropdown-header" style="padding-left: 20px;">Project Templates</div>
+                <t t-foreach="projectTemplates" t-as="template" t-key="template.id">
+                    <button type="button" class="btn btn-link o-dropdown-item dropdown-item" style="padding-left: 32px;" t-on-click="() => this.createProjectFromTemplate(template)" t-out="template.name"/>
+=======
+                </button>
+                <div class="dropdown-divider"/>
+                <div class="dropdown-header" style="padding-left: 20px;">Project Templates</div>
+                <t t-foreach="state.projectTemplates" t-as="template" t-key="template.id">
+                    <button type="button" class="btn btn-link o-dropdown-item dropdown-item" style="padding-left: 32px;" t-on-click="() => this.createProjectFromTemplate(template)" t-out="template.name"/>
+>>>>>>> dba6dd33a2a51a76ba39538deed82654e61e63e3
                 </t>
             </t>
         </Dropdown>
