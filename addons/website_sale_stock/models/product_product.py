@@ -54,7 +54,7 @@ class ProductProduct(models.Model):
                 continue
             for partner in product.stock_notification_partner_ids:
                 mail_template.with_context(
-                    partner=partner, lang=partner.lang,
+                    partner=partner, lang=partner.lang
                 ).send_mail(
                     product.id, email_values={'email_to': partner.email_formatted},
                 )
