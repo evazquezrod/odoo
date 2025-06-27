@@ -355,6 +355,7 @@ export class CalendarController extends Component {
     }
 
     async setDate(move) {
+        this.model.abortPendingRequests();
         let date = null;
         switch (move) {
             case "next":

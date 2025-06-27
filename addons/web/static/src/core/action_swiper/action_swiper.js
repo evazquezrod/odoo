@@ -5,14 +5,12 @@ import { clamp } from "@web/core/utils/numbers";
 import { Component, onMounted, onWillUnmount, useRef, useState } from "@odoo/owl";
 import { Deferred } from "@web/core/utils/concurrency";
 
-const isScrollSwipable = (scrollables) => {
-    return {
-        left: !scrollables.filter((e) => e.scrollLeft !== 0).length,
-        right: !scrollables.filter(
-            (e) => e.scrollLeft + Math.round(e.getBoundingClientRect().width) !== e.scrollWidth
-        ).length,
-    };
-};
+const isScrollSwipable = (scrollables) => ({
+    left: !scrollables.filter((e) => e.scrollLeft !== 0).length,
+    right: !scrollables.filter(
+        (e) => e.scrollLeft + Math.round(e.getBoundingClientRect().width) !== e.scrollWidth
+    ).length,
+});
 
 /**
  * Action Swiper
@@ -75,9 +73,6 @@ export class ActionSwiper extends Component {
         this.swipedDistance = 0;
         this.isScrollValidated = false;
         onMounted(() => {
-            if (this.targetContainer.el) {
-                this.state.width = this.targetContainer.el.getBoundingClientRect().width;
-            }
             // Forward classes set on component to slot, as we only want to wrap an
             // existing component without altering the DOM structure any more than
             // strictly necessary
@@ -200,26 +195,33 @@ export class ActionSwiper extends Component {
     }
 
     handleSwipe(action) {
+        const _action = async () => {
+            if (this.props.animationOnMove) {
+                await action();
+            } else {
+                action();
+            }
+        };
         if (this.props.animationType === "bounce") {
             this.state.containerStyle = `transform: translateX(${this.swipedDistance}px)`;
             this.actionTimeoutId = browser.setTimeout(async () => {
-                await action(Promise.resolve());
+                await _action();
                 this._reset();
             }, 500);
         } else if (this.props.animationType === "forwards") {
             this.state.containerStyle = `transform: translateX(${this.swipedDistance}px)`;
             this.actionTimeoutId = browser.setTimeout(async () => {
                 const prom = new Deferred();
-                await action(prom);
+                await _action();
                 this.state.isSwiping = true;
                 this.state.containerStyle = `transform: translateX(${-this.swipedDistance}px)`;
                 this.resetTimeoutId = browser.setTimeout(() => {
                     prom.resolve();
                     this._reset();
-                }, 100);
-            }, 100);
+                }, 50);
+            }, 50);
         } else {
-            return action(Promise.resolve());
+            return action();
         }
     }
 }

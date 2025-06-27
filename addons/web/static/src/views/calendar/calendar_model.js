@@ -28,6 +28,12 @@ export class CalendarModel extends Model {
         /** @protected */
         this.keepLast = new KeepLast();
         this.notification = notification;
+        const _orm = this.orm;
+        this.orm = {
+            ..._orm,
+            call: (...args) => this.registerPendingRequest(_orm.call(...args)),
+            searchRead: (...args) => this.registerPendingRequest(_orm.searchRead(...args)),
+        };
 
         const formViewFromConfig = (this.env.config.views || []).find((view) => view[1] === "form");
         const formViewIdFromConfig = formViewFromConfig ? formViewFromConfig[0] : false;
@@ -61,6 +67,8 @@ export class CalendarModel extends Model {
             },
         };
 
+        this.pendingRequests = new Set();
+
         const debouncedLoadDelay = this.constructor.DEBOUNCED_LOAD_DELAY;
         this.debouncedLoad = useDebounced((params) => this.load(params), debouncedLoadDelay);
 
@@ -68,6 +76,16 @@ export class CalendarModel extends Model {
             (data) => this.fetchUnusualDays(data),
             (data) => `${serializeDateTime(data.range.start)},${serializeDateTime(data.range.end)}`
         );
+    }
+    registerPendingRequest(request) {
+        this.pendingRequests.add(request);
+        request.finally(() => {
+            this.pendingRequests.delete(request);
+        });
+        return request;
+    }
+    abortPendingRequests() {
+        this.pendingRequests.forEach((request) => request.abort(false));
     }
     async load(params = {}) {
         Object.assign(this.meta, params);
