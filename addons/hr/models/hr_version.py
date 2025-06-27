@@ -123,10 +123,18 @@ class HrVersion(models.Model):
         ("office", "Office"),
         ("other", "Other")], compute="_compute_work_location_name_type", tracking=True)
 
-    departure_reason_id = fields.Many2one("hr.departure.reason", string="Departure Reason",
-                                          groups="hr.group_hr_user", copy=False, ondelete='restrict', tracking=True)
-    departure_description = fields.Html(string="Additional Information", groups="hr.group_hr_user", copy=False)
-    departure_date = fields.Date(string="Departure Date", groups="hr.group_hr_user", copy=False, tracking=True)
+    departure_id = fields.Many2one('hr.employee.departure', string="Departure", copy=False)
+    departure_reason_id = fields.Many2one(related='departure_id.departure_reason_id', readonly=False, groups="hr.group_hr_user", tracking=True)
+    departure_description = fields.Html(related='departure_id.departure_description', readonly=False, groups="hr.group_hr_user")
+    departure_date = fields.Date(related='departure_id.departure_date', readonly=False, tracking=True, groups="hr.group_hr_user")
+    departure_state = fields.Selection(related='departure_id.state', readonly=False, groups="hr.group_hr_user")
+    departure_action_at = fields.Selection(related='departure_id.action_at', readonly=False, groups="hr.group_hr_user")
+    departure_action_other_date = fields.Date(related='departure_id.action_other_date', readonly=False, groups="hr.group_hr_user")
+    departure_do_archive_employee = fields.Boolean(related='departure_id.do_archive_employee', readonly=False, groups="hr.group_hr_user")
+    departure_do_set_date_end = fields.Boolean(related='departure_id.do_set_date_end', readonly=False, groups="hr.group_hr_user")
+    departure_has_selected_actions = fields.Boolean(related='departure_id.has_selected_actions', groups="hr.group_hr_user")
+    departure_apply_immediately = fields.Boolean(related='departure_id.apply_immediately', groups="hr.group_hr_user")
+    departure_apply_date = fields.Date(related='departure_id.apply_date', groups="hr.group_hr_user")
 
     resource_calendar_id = fields.Many2one('resource.calendar', inverse='_inverse_resource_calendar_id', check_company=True, string="Working Hours", tracking=True)
     is_flexible = fields.Boolean(compute='_compute_is_flexible', store=True, groups="hr.group_hr_user")
@@ -278,6 +286,8 @@ class HrVersion(models.Model):
             dates_vals['contract_date_start'] = values['contract_date_start']
         if 'contract_date_end' in values:
             dates_vals['contract_date_end'] = values['contract_date_end']
+        if 'departure_id' in values:
+            dates_vals['departure_id'] = values['departure_id']
         if dates_vals:
             new_contract_date_start = dates_vals.get('contract_date_start')
             if new_contract_date_start:
