@@ -1,7 +1,6 @@
 import { Component } from "@odoo/owl";
 
 import { registry } from "@web/core/registry";
-import { sprintf } from "@web/core/utils/strings";
 
 const actionRegistry = registry.category("actions");
 
@@ -14,9 +13,7 @@ class QRModalComponent extends Component {
     static template = "hr_expense.QRModalComponent";
 
     setup() {
-        this.url = sprintf(
-            "/report/barcode/?barcode_type=QR&value=%s&width=256&height=256&humanreadable=1&quiet=0",
-            this.props.action.params.url);
+        this.url = `/report/barcode/?barcode_type=QR&value=${this.props.action.params.url}&width=256&height=256&humanreadable=1&quiet=0`;
     }
 }
 

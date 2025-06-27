@@ -1,7 +1,8 @@
+import { markup } from "@odoo/owl";
+
 import { Interaction } from "@web/public/interaction";
 import { registry } from "@web/core/registry";
-
-import { escape, sprintf } from '@web/core/utils/strings';
+import { escape } from '@web/core/utils/strings';
 import { _t } from "@web/core/l10n/translation";
 import { rpc } from "@web/core/network/rpc";
 
@@ -57,10 +58,19 @@ export class SlideLike extends Interaction {
             dislikesIcon.classList.toggle("fa-thumbs-o-down", data.user_vote !== -1);
         } else {
             if (data.error === 'public_user') {
-                const message = data.error_signup_allowed ?
-                    _t('Please <a href="/web/login?redirect=%(url)s">login</a> or <a href="/web/signup?redirect=%(url)s">create an account</a> to vote for this lesson') :
-                    _t('Please <a href="/web/login?redirect=%(url)s">login</a> to vote for this lesson');
-                this.showAlert(sprintf(message, { url: encodeURIComponent(document.URL) }));
+                const redirectUrl = encodeURIComponent(document.URL).replaceAll("'", "%27");
+                const tags = {
+                    loginLinkStart: markup`<a href="/web/login?redirect=${redirectUrl}">`,
+                    signupLinkStart: markup`<a href="/web/signup?redirect=${redirectUrl}">`,
+                    linkEnd: markup`</a>`,
+                };
+                const message = data.error_signup_allowed
+                    ? _t(
+                          "Please %(loginLinkStart)slogin%(linkEnd)s or %(signupLinkStart)screate an account%(linkEnd)s to vote for this lesson",
+                          tags
+                      )
+                    : _t("Please %(loginLinkStart)slogin%(linkEnd)s to vote for this lesson", tags);
+                this.showAlert(message);
             } else if (data.error === 'slide_access') {
                 this.showAlert(escape(_t('You don\'t have access to this lesson')));
             } else if (data.error === 'channel_membership_required') {

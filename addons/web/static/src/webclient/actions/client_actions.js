@@ -2,7 +2,7 @@ import { browser } from "@web/core/browser/browser";
 import { router } from "@web/core/browser/router";
 import { rpc } from "@web/core/network/rpc";
 import { registry } from "@web/core/registry";
-import { escape, sprintf } from "@web/core/utils/strings";
+import { htmlReplace } from "@web/core/utils/html";
 
 import { markup } from "@odoo/owl";
 
@@ -14,10 +14,10 @@ export function displayNotificationAction(env, action) {
         title: params.title,
         type: params.type || "info",
     };
-    const links = (params.links || []).map((link) => {
-        return `<a href="${escape(link.url)}" target="_blank">${escape(link.label)}</a>`;
-    });
-    const message = markup(sprintf(escape(params.message), ...links));
+    const links = (params.links || []).map(
+        (link) => markup`<a href="${link.url}" target="_blank">${link.label}</a>`
+    );
+    const message = htmlReplace(params.message, /%s/g, () => links.unshift());
     env.services.notification.add(message, options);
     return params.next;
 }
