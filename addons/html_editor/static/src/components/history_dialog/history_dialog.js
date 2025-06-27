@@ -44,7 +44,6 @@ export class HistoryDialog extends Component {
         this.size = "xl";
         this.title = this.props.title;
         this.orm = useService("orm");
-        this.notebookTabs = [_t("Content"), _t("Comparison")];
 
         onMounted(() => this.init());
     }

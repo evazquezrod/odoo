@@ -20,6 +20,78 @@
                     </t>
                 </div>
                 <div class="history-container">
+                    <div class="history-content-view">
+                        <div class="history-view-top-bar">
+                            <div></div>
+                            <div>
+                                <div class="text-info">
+                                    <i class="fa fa-info-circle me-1" title="Version date"/>
+                                    Showing the document as it was on #########, submited by #########
+                                </div>
+                            </div>
+                            <div>
+                                <a class="btn btn-secondary">
+                                    <i class="fa fa-eye" title="View comparison" />
+                                    View comparison
+                                </a>
+                            </div>
+                        </div><t t-elif="state.revisionContent?.length">
+                                <div class="pe-none">
+                                    <HtmlViewer config="getConfig('revisionContent')"/>
+                                </div>
+                            </t>
+                        <t t-else="" t-out="props.noContentHelper" />
+                        <div class="history-view-inner">
+                            <t t-if="state.revisionLoading">
+                                <div class="d-flex flex-column justify-content-center align-items-center">
+                                    <img src="/web/static/img/spin.svg" alt="Loading..." class="me-2"
+                                         style="filter: invert(1); opacity: 0.5; width: 30px; height: 30px;"/>
+                                    <p class="m-0 text-muted">
+                                        <em>Loading...</em>
+                                    </p>
+                                </div>
+                            </t>
+                            <t t-elif="state.revisionContent?.length">
+                                <div class="pe-none">
+                                    <HtmlViewer config="getConfig('revisionContent')"/>
+                                </div>
+                            </t>
+                            <t t-else="" t-out="props.noContentHelper" />
+                        </div>
+                    </div>
+                    <div class="history-comparison-view">
+                        <div class="history-view-top-bar">
+                            <div>
+                                <a class="btn btn-secondary">Unified view</a>
+                                <a class="btn btn-secondary">Split view</a>
+                            </div>
+                            <div>
+                                <div class="text-info">
+                                    <i class="fa fa-info-circle me-1" title="Version date"/>
+                                    Showing all updates that happened since ######### changed it on ###########
+                                </div>
+                            </div>
+                            <div>
+                                <a class="btn btn-secondary">
+                                    <i class="fa fa-eye" title="View Content"/>
+                                    View content
+                                </a>
+                            </div>
+                        </div>
+                        <div class="history-view-inner">
+                            <t t-if="state.revisionLoading">
+                                <div class="d-flex flex-column justify-content-center align-items-center">
+                                    <img src="/web/static/img/spin.svg" alt="Loading..." class="me-2"
+                                         style="filter: invert(1); opacity: 0.5; width: 30px; height: 30px;"/>
+                                    <p class="m-0 text-muted">
+                                        <em>Loading...</em>
+                                    </p>
+                                </div>
+                            </t>
+                            // display comparison
+                        </div>
+                    </div>
+
                     <Notebook defaultPage="'history'">
                         <t t-set-slot="history" name="'history'" isVisible="true" title="notebookTabs[0]">
                             <t t-if="state.revisionLoading">
