@@ -2,9 +2,33 @@ import { queryAll, queryAllTexts, queryOne, queryText, queryValue } from "@odoo/
 import { contains, fields, models } from "@web/../tests/web_test_helpers";
 
 import { Domain } from "@web/core/domain";
+import { formatAST, parseExpr } from "@web/core/py_js/py";
+
+export const label = {
+    "=": "is equal to",
+    "!=": "is not equal to",
+    in: "is in",
+    "not in": "is not in",
+    ">": "greater than",
+    "<": "lower than",
+    ilike: "contains",
+    "not ilike": "does not contain",
+    "<=": "lower or equal to",
+    ">=": "greater or equal to",
+
+    set: "is set",
+    "not set": "is not set",
+    "in range": "is in",
+    between: "between",
+    "starts with": "starts with",
+};
 
 export function formatDomain(str) {
     return new Domain(str).toString();
+}
+
+export function formatExpr(str) {
+    return formatAST(parseExpr(str));
 }
 
 /**
@@ -130,7 +154,7 @@ const CHILD_SELECTOR = ["connector", "condition", "complexCondition"]
     .map((k) => SELECTORS[k])
     .join(",");
 
-export function getTreeEditorContent(options = {}) {
+export function getTreeEditorContent() {
     const content = [];
     const nodes = queryAll(SELECTORS.node);
     const mapping = new Map();
@@ -147,9 +171,6 @@ export function getTreeEditorContent(options = {}) {
             nodeValue.value = getCurrentComplexCondition(0, node);
         } else {
             nodeValue.value = getCurrentCondition(0, node);
-        }
-        if (options.node) {
-            nodeValue.node = node;
         }
         content.push(nodeValue);
     }
