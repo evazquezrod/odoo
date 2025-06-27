@@ -225,7 +225,7 @@ class TestCommon(HttpCase):
             'onlineMeetingUrl': None,
             'isOrganizer': True,
             'isReminderOn': True,
-            'location': {'displayName': ''},
+            'location': {'displayName': 'Odoo IN'},  # adding location here so that discuss meeting link is not generated
             'organizer': {
                 'emailAddress': {'address': self.organizer_user.email, 'name': self.organizer_user.display_name},
             },
