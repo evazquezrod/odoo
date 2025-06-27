@@ -2,16 +2,16 @@
 <templates xml:space="preserve">
 
 <t t-name="website.FooterCopyrightOption">
-    <BuilderContext action="'websiteConfig'">
-        <BuilderRow label.translate="Verti. Alignment" applyTo="'.row'">
+    <!-- <BuilderContext action="'websiteConfig'">
+        <BuilderRow label.translate="Verti. Alignment" applyTo="'.row'"> -->
             <!-- <BuilderCheckbox id="'vertical_align_opt'" classAction="'flex-column'"/> -->
-            <BuilderCheckbox id="'vertical_align_opt'" actionParam="{
+            <!-- <BuilderCheckbox id="'vertical_align_opt'" actionParam="{
                 views: ['website.footer_copyright_vertical_alignment'],
                 resetViewArch: true,
-            }"/>
+            }"/> -->
             <!-- Continuer -->
-        </BuilderRow>
-        <BuilderRow t-if="isActiveItem('vertical_align_opt')" label.translate="Alignment" applyTo="'.col-sm'">
+        <!-- </BuilderRow> -->
+        <!-- <BuilderRow label.translate="Alignment" applyTo="'.col-sm'">
             <BuilderSelect>
                 <BuilderSelectItem
                     actionParam="{
@@ -40,13 +40,13 @@
                         resetViewArch: true,
                     }">
                     Space Between
-                </BuilderSelectItem>
+                </BuilderSelectItem> -->
                 <!-- <BuilderSelectItem classAction="'justify-content-center'">Center</BuilderSelectItem>
                 <BuilderSelectItem classAction="'justify-content-end'">Right</BuilderSelectItem>
                 <BuilderSelectItem classAction="'justify-content-between'">Space Between</BuilderSelectItem> -->
-            </BuilderSelect>
-        </BuilderRow>
-    </BuilderContext>
+            <!-- </BuilderSelect> -->
+        <!-- </BuilderRow>
+    </BuilderContext> -->
     <BuilderRow label.translate="Colors" t-if="!hasSomeViews(['website.template_footer_contact'])">
         <BuilderColorPicker
             enabledTabs="['theme', 'custom', 'gradient']"
