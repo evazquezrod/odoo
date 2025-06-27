@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<odoo>
+
+    <!-- Add action entry in the Action Menu for Leads -->
+    <record id="crm_lead_act_window_create_project" model="ir.actions.act_window">
+        <field name="name">Create Project</field>
+        <field name="res_model">project.project</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="crm.model_crm_lead"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+</odoo>
