@@ -31,7 +31,7 @@ class AccountMoveSend(models.TransientModel):
         values['l10n_es_edi_verifactu_send'] = self.l10n_es_edi_verifactu_send_checkbox
         return values
 
-    @api.depends('move_ids.l10n_es_edi_verifactu_state')
+    @api.depends('move_ids.l10n_es_edi_verifactu_required')
     def _compute_l10n_es_edi_verifactu_compute_checkbox(self):
         for wizard in self:
             any_moves_require_verifactu = any(wizard.move_ids.mapped('l10n_es_edi_verifactu_required'))

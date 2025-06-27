@@ -1,4 +1,4 @@
-from odoo import _, api, fields, models
+from odoo import _, api, fields, models, tools
 
 
 class AccountMove(models.Model):
@@ -75,7 +75,7 @@ class AccountMove(models.Model):
         copy=False,
         check_company=True,
     )
-    l10n_es_edi_verifactu_substitution_move_id = fields.One2many(
+    l10n_es_edi_verifactu_substitution_move_ids = fields.One2many(
         string="Substituted by",
         comodel_name='account.move',
         inverse_name='l10n_es_edi_verifactu_substituted_entry_id',
@@ -127,14 +127,15 @@ class AccountMove(models.Model):
         return taxes._l10n_es_edi_verifactu_get_verifactu_tax_type()
 
     @api.model
+    @tools.ormcache()
     def _l10n_es_edi_verifactu_get_available_clave_regimens_map(self):
         """
         Return dictionary (Veri*Factu Tax Type -> set(operation types))
         """
         clave_regimen_selection = self._l10n_es_edi_verifactu_clave_regimen_selection()
         return {
-            'iva': {ot for ot, _desc in clave_regimen_selection if len(ot.removesuffix('_iva')) == 2},
-            'igic': {ot for ot, _desc in clave_regimen_selection if len(ot.removesuffix('_igic')) == 2},
+            '01': {ot for ot, _desc in clave_regimen_selection if len(ot.removesuffix('_iva')) == 2},
+            '03': {ot for ot, _desc in clave_regimen_selection if len(ot.removesuffix('_igic')) == 2},
         }
 
     def _l10n_es_edi_verifactu_get_suggested_clave_regimen(self):
@@ -155,9 +156,6 @@ class AccountMove(models.Model):
 
     @api.depends('invoice_line_ids.tax_ids')
     def _compute_l10n_es_edi_verifactu_available_clave_regimens(self):
-        """
-        Currently we only support one operation type (Veri*Factu Tax Type / Clave Regimen) for the whole invoice.
-        """
         available_clave_regimens = {
             verifactu_tax_type: ','.join(clave_regimens)
             for verifactu_tax_type, clave_regimens in self._l10n_es_edi_verifactu_get_available_clave_regimens_map().items()
@@ -172,7 +170,8 @@ class AccountMove(models.Model):
         available_clave_regimens = self._l10n_es_edi_verifactu_get_available_clave_regimens_map()
         for move in self:
             clave_regimen = move.l10n_es_edi_verifactu_clave_regimen
-            if clave_regimen not in available_clave_regimens.get(clave_regimen, set()):
+            verifactu_tax_type = move._l10n_es_edi_verifactu_get_verifactu_tax_type()
+            if clave_regimen not in available_clave_regimens.get(verifactu_tax_type, set()):
                 clave_regimen = move._l10n_es_edi_verifactu_get_suggested_clave_regimen()
             move.l10n_es_edi_verifactu_clave_regimen = clave_regimen
 
@@ -227,7 +226,7 @@ class AccountMove(models.Model):
             move.l10n_es_edi_verifactu_show_cancel_button = move.l10n_es_edi_verifactu_state in ('registered_with_errors', 'accepted')
 
     @api.depends('l10n_es_edi_verifactu_state', 'l10n_es_edi_verifactu_document_ids',
-                 'l10n_es_edi_verifactu_document_ids.state', 'l10n_es_edi_verifactu_document_ids.json_attachment_id')
+                 'l10n_es_edi_verifactu_document_ids.state', 'l10n_es_edi_verifactu_document_ids.json_attachment_base64')
     def _compute_show_reset_to_draft_button(self):
         """
         Disallow resetting to draft in the following cases:
@@ -251,8 +250,14 @@ class AccountMove(models.Model):
         if self.state != 'posted':
             errors.append(_("The journal entry has to be posted."))
 
-        if not self.l10n_es_edi_verifactu_clave_regimen:
-            errors.append(_("The journal entry has no Veri*Factu Operation Type."))
+        clave_regimen = self.l10n_es_edi_verifactu_clave_regimen
+        if not clave_regimen:
+            errors.append(_("The journal entry has no Veri*Factu Regime Key."))
+
+        verifactu_tax_type = self._l10n_es_edi_verifactu_get_verifactu_tax_type()
+        available_clave_regimens = self._l10n_es_edi_verifactu_get_available_clave_regimens_map()[verifactu_tax_type]
+        if clave_regimen and clave_regimen not in available_clave_regimens:
+            errors.append(_("The Veri*Factu Regime Key is not compatible with the Veri*Factu Tax Type."))
 
         return errors
 
@@ -292,10 +297,10 @@ class AccountMove(models.Model):
             verifactu_move_type = 'correction_substitution'
         elif move_type == 'out_invoice':
             verifactu_move_type = 'invoice'
-        elif move_type == 'out_refund' and reversed_move.l10n_es_edi_verifactu_substitution_move_id:
+        elif move_type == 'out_refund' and reversed_move.l10n_es_edi_verifactu_substitution_move_ids:
             verifactu_move_type = 'reversal_for_substitution'
         else:
-            # move_type == 'out_refund' and not reversed_move.l10n_es_edi_verifactu_substitution_move_id
+            # move_type == 'out_refund' and not reversed_move.l10n_es_edi_verifactu_substitution_move_ids
             verifactu_move_type = 'correction_incremental'
 
         vals.update({
@@ -336,9 +341,9 @@ class AccountMove(models.Model):
             move._l10n_es_edi_verifactu_get_record_values(cancellation=cancellation)
             for move in self
         ]
-        return self.env['l10n_es_edi_verifactu.document']._create_from_record_values_list(record_values_list)
+        return self.env['l10n_es_edi_verifactu.document'].sudo()._create_from_record_values_list(record_values_list)
 
     def _l10n_es_edi_verifactu_mark_for_next_batch(self, cancellation=False):
         document_map = self._l10n_es_edi_verifactu_create_documents(cancellation=cancellation)
-        self.env['l10n_es_edi_verifactu.document'].trigger_next_batch()
+        self.env['l10n_es_edi_verifactu.document'].sudo().trigger_next_batch()
         return document_map

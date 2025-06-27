@@ -1,3 +1,4 @@
+from base64 import b64encode, b64decode
 from datetime import datetime, timedelta
 from pytz import timezone
 from werkzeug.urls import url_quote_plus, url_encode
@@ -84,19 +85,14 @@ class L10nEsEdiVerifactuDocument(models.Model):
         readonly=True,
         required=True,
     )
-    json_attachment_id = fields.Many2one(
-        string="JSON Attachment",
-        comodel_name='ir.attachment',
+    json_attachment_base64 = fields.Binary(
+        string="JSON",
         readonly=True,
+        copy=False,
     )
     json_attachment_filename = fields.Char(
         string="JSON Filename",
         compute='_compute_json_attachment_filename',
-    )
-    # To use the 'binary' widget in the form view to download the attachment
-    json_attachment_base64 = fields.Binary(
-        string="JSON Attachment (Base64)",
-        related='json_attachment_id.datas',
     )
     errors = fields.Html(
         string="Errors",
@@ -131,15 +127,15 @@ class L10nEsEdiVerifactuDocument(models.Model):
     @api.depends('document_type')
     def _compute_json_attachment_filename(self):
         for document in self:
-            document_type = 'annulacion' if document.document_type == 'cancellation' else 'alta'
+            document_type = 'anulacion' if document.document_type == 'cancellation' else 'alta'
             name = f"verifactu_registro_{document.id}_{document_type}.json"
             document.json_attachment_filename = name
 
     def _get_document_dict(self):
         self.ensure_one()
-        if not self.json_attachment_id:
+        if not self.json_attachment_base64:
             return {}
-        json_data = self.json_attachment_id.raw.decode()
+        json_data = b64decode(self.json_attachment_base64)
         return json.loads(json_data)
 
     @api.model
@@ -154,65 +150,57 @@ class L10nEsEdiVerifactuDocument(models.Model):
     def _check_record_values(self, vals):
         errors = []
 
-        company = vals['company']
-        name = vals['name']
-        invoice_date = vals['invoice_date']
-        move_type = vals['move_type']
-        documents = vals['documents']
-        refunded_document = vals['refunded_document']
-        substituted_document = vals['substituted_document']
-        substituted_document_reversal_document = vals['substituted_document_reversal_document']
-        refund_reason = vals['refund_reason']
-        verifactu_move_type = vals['verifactu_move_type']
-        verifactu_tax_type = vals['verifactu_tax_type']
-        tax_details = vals['tax_details']
-
-        company_values = company._l10n_es_edi_verifactu_get_values()
+        company_values = vals['company'].partner_id._l10n_es_edi_verifactu_get_values()
         company_NIF = company_values['NIF']
         if not company_NIF or len(company_NIF) != 9:  # NIFType
             errors.append(_("The NIF '%(company_NIF)s' of the company is not exactly 9 characters long.",
                             company_NIF=company_NIF))
 
-        if not name or len(name) > 60:
+        if not vals['name'] or len(vals['name']) > 60:
             errors.append(_("The name of the record is not between 1 and 60 characters long: %(name)s.",
-                            name=name))
+                            name=vals['name']))
 
-        if documents and documents._filter_waiting():
+        if vals['documents'] and vals['documents']._filter_waiting():
             errors.append(_("We are waiting to send a Veri*Factu record to the AEAT already."))
 
-        certificate = company.sudo()._l10n_es_edi_verifactu_get_certificate()
+        # We currently do not support cancelling records that are not registered or were registered outside odoo.
+        verifactu_registered = vals['verifactu_state'] in ('registered_with_errors', 'accepted')
+        if vals['cancellation'] and not verifactu_registered:
+            errors.append(_("The cancelled record is not Veri*Factu registered (inside Odoo)."))
+
+        certificate = vals['company'].sudo()._l10n_es_edi_verifactu_get_certificate()
         if not certificate:
             errors.append(_("There is no certificate configured for Veri*Factu on the company."))
 
-        if not invoice_date:
+        if not vals['invoice_date']:
             errors.append(_("The invoice date is missing."))
 
-        if move_type not in ['out_invoice', 'out_refund']:
+        if vals['move_type'] not in ['out_invoice', 'out_refund']:
             errors.append(_("The record has to be an invoice or a credit note."))
 
-        if verifactu_move_type not in ['invoice', 'correction_incremental', 'correction_substitution', 'reversal_for_substitution']:
+        if vals['verifactu_move_type'] not in ['invoice', 'correction_incremental', 'correction_substitution', 'reversal_for_substitution']:
             errors.append(_("Programming error: Invalid `verifactu_move_type`."))
 
-        if verifactu_move_type == 'correction_substitution' and not substituted_document:
+        if vals['verifactu_move_type'] == 'correction_substitution' and not vals['substituted_document']:
             errors.append(_("There is no Veri*Factu document for the substituted record."))
 
-        if verifactu_move_type == 'correction_substitution' and not substituted_document_reversal_document:
+        if vals['verifactu_move_type'] == 'correction_substitution' and not vals['substituted_document_reversal_document']:
             errors.append(_("There is no Veri*Factu document for the reversal of the substituted record."))
 
-        if verifactu_move_type in ('correction_incremental', 'reversal_for_substitution') and not refunded_document:
+        if vals['verifactu_move_type'] in ('correction_incremental', 'reversal_for_substitution') and not vals['refunded_document']:
             errors.append(_("There is no Veri*Factu document for the refunded record."))
 
-        need_refund_reason = verifactu_move_type in ('correction_incremental', 'correction_substitution')
-        if need_refund_reason and not refund_reason:
+        need_refund_reason = vals['verifactu_move_type'] in ('correction_incremental', 'correction_substitution')
+        if need_refund_reason and not vals['refund_reason']:
             errors.append(_("The refund reason is not specified."))
 
         sujeto_tax_types = self.env['account.tax']._l10n_es_get_sujeto_tax_types()
         ignored_tax_types = ['ignore', 'retencion']
         supported_tax_types = sujeto_tax_types + ignored_tax_types + ['no_sujeto', 'no_sujeto_loc', 'recargo', 'exento']
         tax_type_description = self.env['account.tax']._fields['l10n_es_type'].get_description(self.env)
-        if not tax_details['tax_details']:
+        if not vals['tax_details']['tax_details']:
             errors.append(_("There are no taxes set on the invoice"))
-        for tax_detail in tax_details['tax_details'].values():
+        for tax_detail in vals['tax_details']['tax_details'].values():
             tax_type = tax_detail['l10n_es_type']
             if tax_type not in supported_tax_types:
                 # tax_type in ('no_deducible', 'dua')
@@ -220,7 +208,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 errors.append(_("A tax with value '%(tax_type)s' as %(field)s is not supported.",
                                 field=tax_type_description['string'],
                                 tax_type=dict(tax_type_description['selection'])[tax_type]))
-            elif tax_type in ('no_sujeto', 'no_sujeto_loc') and verifactu_tax_type == '01':
+            elif tax_type in ('no_sujeto', 'no_sujeto_loc') and tax_detail['verifactu_tax_type'] == '01':
                 tax_percentage = tax_detail['amount']
                 tax_amount = tax_detail['tax_amount']
                 if float_round(tax_percentage, precision_digits=2) or float_round(tax_amount, precision_digits=2):
@@ -230,7 +218,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
 
         verifactu_tax_types = {
             tax_detail['verifactu_tax_type']
-            for tax_detail in tax_details['tax_details'].values()
+            for tax_detail in vals['tax_details']['tax_details'].values()
             if tax_detail['is_main_tax']
         }
         if len(verifactu_tax_types) > 1:
@@ -239,25 +227,21 @@ class L10nEsEdiVerifactuDocument(models.Model):
             errors.append(_("We only allow a single Veri*Factu Tax Type per document: %(types)s.",
                             types=', '.join(human_readable_types)))
 
-        for record_detail in tax_details['tax_details_per_record'].values():
+        for record_detail in vals['tax_details']['tax_details_per_record'].values():
             main_tax_details = [tax_detail for key, tax_detail in record_detail['tax_details'].items() if key['is_main_tax']]
             if len(main_tax_details) > 1 or any(len(tax_detail['group_tax_details']) > 1 for tax_detail in main_tax_details):
                 errors.append(_("We only allow a single \"main\" tax per line."))
-                # Giving the errors once should be enough
-                break
+                break  # Giving the errors once should be enough
 
         return errors
 
     def _create_for_record(self, record_values, previous_record_identifier=None):
         """Note: In case we succesfully create a JSON we delete all linked documents that failed the JSON creation."""
-        company = record_values['company']
         document_vals = record_values['document_vals']
-        generation_errors = record_values['errors']
 
-        json_string = None
-        if generation_errors:
+        if record_values['errors']:
             error_title = _("The Veri*Factu document could not be created")
-            document_vals['errors'] = self._format_errors(error_title, generation_errors)
+            document_vals['errors'] = self._format_errors(error_title, record_values['errors'])
         else:
             render_vals = self._render_vals(
                 record_values, previous_record_identifier=previous_record_identifier,
@@ -266,7 +250,10 @@ class L10nEsEdiVerifactuDocument(models.Model):
             record_identifier = render_vals['record_identifier']
             old_record_identifier = record_values['record_identifier']
             if old_record_identifier:
-                keys_to_check = ['IDEmisorFactura', 'NumSerieFactura', 'FechaExpedicionFactura', 'ImporteTotal']
+                # A cancellation does not specify 'ImporteTotal'
+                keys_to_check = ['IDEmisorFactura', 'NumSerieFactura', 'FechaExpedicionFactura']
+                if not render_vals['cancellation']:
+                    keys_to_check.append('ImporteTotal')
                 changed_identifiers = {
                     key: (old_record_identifier[key], record_identifier[key])
                     for key in keys_to_check
@@ -280,24 +267,16 @@ class L10nEsEdiVerifactuDocument(models.Model):
                     document_vals['errors'] = self._format_errors(error_title, errors)
             if not document_vals.get('errors'):
                 document_dict = {render_vals['record_type']: render_vals[render_vals['record_type']]}
-                json_string = json.dumps(document_dict)
                 document_vals.update({
                     'record_identifier': record_identifier,
-                    'chain_index': company._l10n_es_edi_verifactu_get_next_chain_index(),
+                    'chain_index': record_values['company']._l10n_es_edi_verifactu_get_next_chain_index(),
+                    'json_attachment_base64': b64encode(json.dumps(document_dict, indent=4).encode()),
                 })
 
         document = self.create(document_vals)
 
-        if json_string:
-            record = record_values['record']
-            document.json_attachment_id = self.env['ir.attachment'].create({
-                'raw': json_string,
-                'name': document.json_attachment_filename,
-                'res_id': record.id,
-                'res_model': record._name,
-                'mimetype': 'application/json',
-            })
-            record_values['documents'].filtered(lambda rd: not rd.json_attachment_id).unlink()
+        if document.json_attachment_base64:
+            record_values['documents'].filtered(lambda rd: not rd.json_attachment_base64).unlink()
 
         return document
 
@@ -351,7 +330,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
         2. Trigger the cron again at a later date to send the documents we could not send
         """
         unsent_domain = [
-            ('json_attachment_id', '!=', False),
+            ('json_attachment_base64', '!=', False),
             ('state', '=', False),
         ]
         documents_per_company = self._read_group(
@@ -589,7 +568,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
         errors = []
         company = self.env.company  # sending company
 
-        company_values = company._l10n_es_edi_verifactu_get_values()
+        company_values = company.partner_id._l10n_es_edi_verifactu_get_values()
         company_NIF = company_values['NIF']
         if not company_NIF or len(company_NIF) != 9:  # NIFType
             errors.append(_("The NIF '%(company_NIF)s' of the company is not exactly 9 characters long.",
@@ -607,12 +586,12 @@ class L10nEsEdiVerifactuDocument(models.Model):
     @api.model
     def _get_batch_dict(self, document_dict_list, incident=False):
         company = self.env.company
-        company_values = company._l10n_es_edi_verifactu_get_values()
+        company_values = company.partner_id._l10n_es_edi_verifactu_get_values()
 
         batch_dict = {
           "Cabecera": {
               "ObligadoEmision": {
-                  "NombreRazon": company_values['name'],
+                  "NombreRazon": company_values['NombreRazon'],
                   "NIF": company_values['NIF'],
               },
               "RemisionVoluntaria": {
@@ -681,6 +660,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
 
     @api.model
     def _format_date_fecha_type(self, date):
+        if not date:
+            return None
         # Format as 'fecha' type from xsd
         return date.strftime('%d-%m-%Y')
 
@@ -711,14 +692,12 @@ class L10nEsEdiVerifactuDocument(models.Model):
             else:
                 return value
 
-        cancellation = vals['cancellation']
-        company = vals['company']
-        record_type = 'RegistroAnulacion' if cancellation else 'RegistroAlta'
+        record_type = 'RegistroAnulacion' if vals['cancellation'] else 'RegistroAlta'
         render_vals = {
-            'company': company,
+            'company': vals['company'],
             'record_type': record_type,
             'record': vals['record'],
-            'cancellation': cancellation,
+            'cancellation': vals['cancellation'],
             'vals': vals,
             'previous_record_identifier': previous_record_identifier,
         }
@@ -752,77 +731,60 @@ class L10nEsEdiVerifactuDocument(models.Model):
 
     @api.model
     def _render_vals_operation(self, vals):
-        company = vals['company']
-        cancellation = vals['cancellation']
+        company_values = vals['company'].partner_id._l10n_es_edi_verifactu_get_values()
         invoice_date = self._format_date_fecha_type(vals['invoice_date'])
-        is_simplified = vals['is_simplified']
-        name = vals['name']
-        partner = vals['partner']
-        refunded_document = vals['refunded_document']
-        substituted_document = vals['substituted_document']
-        verifactu_move_type = vals['verifactu_move_type']
 
-        company_values = company._l10n_es_edi_verifactu_get_values()
-        company_NIF = company_values['NIF']
-        company_name = company_values['name']
-
-        if cancellation:
+        if vals['cancellation']:
             render_vals = {
                 'IDFactura': {
-                    'IDEmisorFacturaAnulada': company_NIF,
-                    'NumSerieFacturaAnulada': name,
+                    'IDEmisorFacturaAnulada': company_values['NIF'],
+                    'NumSerieFacturaAnulada': vals['name'],
                     'FechaExpedicionFacturaAnulada': invoice_date,
                 }
             }
             return render_vals
 
         render_vals = {
-            'NombreRazonEmisor': company_name,
+            'NombreRazonEmisor': company_values['NombreRazon'],
             'IDFactura': {
-                'IDEmisorFactura': company_NIF,
-                'NumSerieFactura': name,
+                'IDEmisorFactura': company_values['NIF'],
+                'NumSerieFactura': vals['name'],
                 'FechaExpedicionFactura': invoice_date,
             }
         }
 
         simplified_partner = self.env.ref('l10n_es.partner_simplified', raise_if_not_found=False)
-        partner_is_simplified_partner = simplified_partner and partner == simplified_partner
-        partner_specified = partner and not partner_is_simplified_partner
+        partner_is_simplified_partner = simplified_partner and vals['partner'] == simplified_partner
+        partner_specified = vals['partner'] and not partner_is_simplified_partner
 
-        if partner and not partner_is_simplified_partner:
+        if partner_specified:
             render_vals['Destinatarios'] = {
-                'IDDestinatario': [{
-                    'NombreRazon': (partner.name or '')[:120],
-                    ** partner._l10n_es_edi_get_partner_info(),
-                }]
+                'IDDestinatario': [vals['partner']._l10n_es_edi_verifactu_get_values()]
             }
 
-        delivery_date = vals['delivery_date']
-        if delivery_date:
-            delivery_date = self._format_date_fecha_type(delivery_date)
-
-        rectified_document = refunded_document or substituted_document
-        if verifactu_move_type == 'invoice':
+        rectified_document = vals['refunded_document'] or vals['substituted_document']
+        if vals['verifactu_move_type'] == 'invoice':
             tipo_rectificativa = None
-            if is_simplified and not partner_specified:
+            if vals['is_simplified'] and not partner_specified:
                 tipo_factura = 'F2'
             else:
                 tipo_factura = 'F1'
+            delivery_date = self._format_date_fecha_type(vals['delivery_date'])
             fecha_operacion = delivery_date if delivery_date and delivery_date != invoice_date else None
-        elif verifactu_move_type == 'reversal_for_substitution':
+        elif vals['verifactu_move_type'] == 'reversal_for_substitution':
             tipo_rectificativa = None
-            if is_simplified and not partner_specified:
+            if vals['is_simplified'] and not partner_specified:
                 tipo_factura = 'F2'
             else:
                 tipo_factura = 'F1'
             fecha_operacion = None
-        elif verifactu_move_type == 'correction_substitution':
+        elif vals['verifactu_move_type'] == 'correction_substitution':
             tipo_rectificativa = 'S'
             tipo_factura = vals['refund_reason']
             rectified = rectified_document.record_identifier
             fecha_operacion = rectified['FechaOperacion'] or rectified['FechaExpedicionFactura']
         else:
-            # verifactu_move_type == 'correction_incremental':
+            # vals['verifactu_move_type'] == 'correction_incremental':
             tipo_rectificativa = 'I'
             tipo_factura = vals['refund_reason']
             rectified = rectified_document.record_identifier
@@ -836,11 +798,11 @@ class L10nEsEdiVerifactuDocument(models.Model):
             # Note: error [1183]
             # El campo FacturaSimplificadaArticulos7273 solo se podrá rellenar con S
             # si TipoFactura es de tipo F1 o F3 o R1 o R2 o R3 o R4.
-            'FacturaSimplificadaArt7273': 'S' if is_simplified and partner_specified else None,
-            'FacturaSinIdentifDestinatarioArt61d': 'S' if is_simplified and not partner_specified else None,
+            'FacturaSimplificadaArt7273': 'S' if vals['is_simplified'] and partner_specified else None,
+            'FacturaSinIdentifDestinatarioArt61d': 'S' if vals['is_simplified'] and not partner_specified else None,
         })
 
-        if verifactu_move_type in ('correction_incremental', 'correction_substitution'):
+        if vals['verifactu_move_type'] in ('correction_incremental', 'correction_substitution'):
             rectified_record_identifier = rectified_document.record_identifier
             render_vals.update({
                 'FacturasRectificadas': [{
@@ -851,7 +813,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
                     }
                 }],
             })
-        if verifactu_move_type == 'correction_substitution':
+        # [1118] Si la factura es de tipo rectificativa por sustitución el bloque ImporteRectificacion es obligatorio.
+        if vals['verifactu_move_type'] == 'correction_substitution':
             # We only support substitution if we also send an invoice that cancels out the amounts of the original invoice.
             # ('Opción 2' in the FAQ under '¿Cómo registra el emisor una factura rectificativa por sustitución “S”?')
             render_vals.update({
@@ -869,9 +832,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
         render_vals = {}
 
         # Note: We do not allow generating documents that would change the record identifier (i.e. the keys in the QR code)
-        verifactu_state = vals['verifactu_state']
-        submission_rejected_before = vals['rejected_before']
-        verifactu_registered_with_document = verifactu_state in ('registered_with_errors', 'accepted')
+        verifactu_registered_with_document = vals['verifactu_state'] in ('registered_with_errors', 'accepted')
         # In some cases we may not have the document / response which led to the registration
         verifactu_registered_without_document = bool(
             # We may not know it is registered due to a timeout (we sent it but did not get / process the response).
@@ -892,7 +853,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
             render_vals = {
                 # A cancelled record can e.g. not exist at the AEAT when we switch to Veri*Factu after the original invoice was created
                 'SinRegistroPrevio': 'S' if not verifactu_registered else 'N',
-                'RechazoPrevio': 'S' if submission_rejected_before else 'N',
+                'RechazoPrevio': 'S' if vals['rejected_before'] else 'N',
             }
         else:
             substitution = verifactu_registered or otherwise_known_to_AEAT
@@ -900,7 +861,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 # Cases: ALTA DE SUBSANACIÓN SIN REGISTRO PREVIO, ALTA POR RECHAZO DE SUBSANACIÓN SIN REGISTRO PREVIO
                 # Note: This case can only happen after `otherwise_known_to_AEAT` is implemented
                 previously_rejected_state = 'X'
-            elif submission_rejected_before:
+            elif vals['rejected_before']:
                 # Cases: ALTA POR RECHAZO, ALTA POR RECHAZO DE SUBSANACIÓN
                 previously_rejected_state = 'S' if substitution else 'X'
             else:
@@ -908,7 +869,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 previously_rejected_state = None  # 'N'
             render_vals = {
                 # We only put 'N' for 'Subsanacion' in case ALTA (we also put 'S' in case ALTA POR RECHAZO)
-                'Subsanacion': 'S' if substitution or submission_rejected_before else 'N',
+                'Subsanacion': 'S' if substitution or vals['rejected_before'] else 'N',
                 'RechazoPrevio': previously_rejected_state,
             }
 
@@ -916,20 +877,16 @@ class L10nEsEdiVerifactuDocument(models.Model):
 
     @api.model
     def _render_vals_monetary_amounts(self, vals):
+        # Note: We only support a single verifactu tax type / clave regimen per record.
+        # For moves the clave regime is stored on each move in field `l10n_es_edi_verifactu_clave_regimen`
         if vals['cancellation']:
             return {}
-        # We only support a single verifactu tax type / clave regimen per record.
-        # For moves the clave regime is stored on each move in field `l10n_es_edi_verifactu_clave_regimen`
-        verifactu_tax_type = vals['verifactu_tax_type']
-        clave_regimen = vals['clave_regimen']
 
+        sign = -1 if vals['move_type'] == 'out_refund' else 1
         sujeto_tax_types = self.env['account.tax']._l10n_es_get_sujeto_tax_types()
 
-        detalles = []
-        tax_details = vals['tax_details']
-
         recargo_tax_details_key = {}  # dict (tax_key -> recargo_tax_key)
-        for tax_details_per_record in tax_details['tax_details_per_record'].values():
+        for tax_details_per_record in vals['tax_details']['tax_details_per_record'].values():
             record_tax_details = tax_details_per_record['tax_details']
             main_key = None
             recargo_key = None
@@ -944,8 +901,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
                     break
             recargo_tax_details_key[main_key] = recargo_key
 
-        sign = -1 if vals['move_type'] == 'out_refund' else 1
-        for key, tax_detail in tax_details['tax_details'].items():
+        detalles = []
+        for key, tax_detail in vals['tax_details']['tax_details'].items():
             tax_type = tax_detail['l10n_es_type']
             # Tax types 'ignore' and 'retencion' are ignored when generating the `tax_details`
             # See `filter_to_apply` in function `_l10n_es_edi_verifactu_get_tax_details_functions` on 'account.tax'
@@ -966,7 +923,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 calificacion_operacion = 'S2' if tax_type == 'sujeto_isp' else 'S1'
                 if tax_detail['recargo_taxes']:
                     recargo_key = recargo_tax_details_key.get(key)
-                    recargo_tax_detail = tax_details['tax_details'][recargo_key]
+                    recargo_tax_detail = vals['tax_details']['tax_details'][recargo_key]
                     recargo_tax_percentage = recargo_tax_detail['amount']
                     recargo_tax_amount = math.copysign(recargo_tax_detail['tax_amount'], base_amount)
                     recargo_equivalencia.update({
@@ -998,13 +955,13 @@ class L10nEsEdiVerifactuDocument(models.Model):
             # See the following errors
             # [1198]
             #     Si CalificacionOperacion es S2 TipoImpositivo y CuotaRepercutida deberan tener valor 0.
-            if calificacion_operacion in ('N1', 'N2') and verifactu_tax_type == '01':
+            if calificacion_operacion in ('N1', 'N2') and vals['verifactu_tax_type'] == '01':
                 tax_percentage = None
                 tax_amount = None
 
             detalle = {
-                'Impuesto': verifactu_tax_type,
-                'ClaveRegimen': clave_regimen,
+                'Impuesto': vals['verifactu_tax_type'],
+                'ClaveRegimen': vals['clave_regimen'],
                 'CalificacionOperacion': calificacion_operacion,
                 'OperacionExenta': exempt_reason,
                 'TipoImpositivo': self._format_number_Tipo2_2(tax_percentage),
@@ -1016,8 +973,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
 
             detalles.append(detalle)
 
-        total_amount = sign * (tax_details['base_amount'] + tax_details['tax_amount'])
-        tax_amount = sign * (tax_details['tax_amount'])
+        total_amount = sign * (vals['tax_details']['base_amount'] + vals['tax_details']['tax_amount'])
+        tax_amount = sign * (vals['tax_details']['tax_amount'])
 
         render_vals = {
             'Macrodato': 'S' if abs(total_amount) >= 100000000 else None,
@@ -1150,12 +1107,14 @@ class L10nEsEdiVerifactuDocument(models.Model):
         return _sha256(string)
 
     def _filter_waiting(self):
-        return self.filtered(lambda doc: not doc.state and doc.json_attachment_id)
+        return self.filtered(lambda doc: not doc.state and doc.json_attachment_base64)
 
     def _get_last(self, document_type):
-        return self.filtered(lambda doc: doc.document_type == document_type and doc.json_attachment_id).sorted()[:1]
+        return self.filtered(lambda doc: doc.document_type == document_type and doc.json_attachment_base64).sorted()[:1]
 
     def _get_state(self):
+        # Helper method to get the most recent state from a set of documents.
+        # It should only be used on all the documents associated with a move or pos order.
         last_registered_document = self.filtered(lambda doc: doc.state in ('registered_with_errors', 'accepted')).sorted()[:1]
         if last_registered_document:
             cancellation = last_registered_document.document_type == 'cancellation'
