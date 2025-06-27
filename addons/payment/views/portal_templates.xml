@@ -280,6 +280,7 @@
             - tx: The transaction whose status must be displayed.
             - is_processing: Whether the transaction is being processed.
         -->
+        <t t-set="alert_style" t-value="''"/>
         <t t-set="waiting_heading">
             <p>Please wait...</p>
         </t>
@@ -303,7 +304,7 @@
             <t t-if="is_processing" t-set="status_heading" t-value="waiting_heading"/>
             <t t-set="status_message" t-value="tx.provider_id.sudo().auth_msg"/>
         </t>
-        <t t-elif="tx.state == 'done'">
+        <t name="o_payment_done_state" t-elif="tx.state == 'done'">
             <t t-set="alert_style" t-value="'success'"/>
             <t t-if="not is_processing" t-set="status_heading">
                 <p>Thank you!</p>

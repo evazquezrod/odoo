@@ -843,4 +843,14 @@
             </t>
         </table>
     </template>
+
+    <template id="sale_payment_state_header" inherit_id="payment.state_header">
+        <t name="o_payment_done_state" position="attributes">
+            <attribute
+                name="t-elif"
+                add="(is_processing or not (tx.sale_order_ids and len(tx.invoice_ids) == 1 and tx.invoice_ids.state == 'posted'))"
+                separator="and"
+            />
+        </t>
+    </template>
 </odoo>
