@@ -217,20 +217,53 @@ class Website(Home):
         fields = country.get_address_fields()
         return dict(fields=fields, states=[(st.id, st.name, st.code) for st in country.state_ids], phone_code=country.phone_code)
 
+    def _get_robots_directives(self):
+        """
+        Returns the robots.txt configuration for the website.
+
+        This method can be overridden by subclasses or modules
+        to customize the behavior of robots.txt generation.
+
+        :returns: A dictionary representing the robots configuration with the following structure:
+                {
+                    'user_agent_name': {
+                        'allow': [list of allowed paths],
+                        'disallow': [list of disallowed paths],
+                    },
+                }
+        """
+        return {
+            '*': {
+                'allowed': self._get_allowed_robots_routes(),
+            }
+        }
+
     @http.route(['/robots.txt'], type='http', auth="public", website=True, multilang=False, sitemap=False)
     def robots(self, **kwargs):
         # Don't use `request.website.domain` here, the template is in charge of
         # detecting if the current URL is the domain one and add a `Disallow: /`
         # if it's not the case to prevent the crawler to continue.
-        allowed_routes = self._get_allowed_robots_routes()
         content = request.env['ir.ui.view']._render_template('website.robots',
             {'url_root': request.httprequest.url_root})
 
-        if allowed_routes:
-            content += '\nUser-agent: *'
-            content += '\n' + '\n'.join(f"Allow: {route}" for route in allowed_routes)
+        robots_config = self._get_robots_directives()
+        content = self._format_robots_content(robots_config) + content
 
         return request.make_response(content, headers=[('Content-Type', 'text/plain')])
+
+    def _format_robots_content(self, config):
+        """Format the robots configuration into proper robots.txt syntax"""
+        sections = []
+
+        for user_agent, directives in config.items():
+            lines = [f"User-agent: {user_agent}"]
+
+            lines.extend(f"Allow: {path}" for path in directives.get('allow', []))
+            lines.extend(f"Disallow: {path}" for path in directives.get('disallow', []))
+
+            sections.append('\n'.join(lines))
+
+        return '\n\n'.join(sections)
 
     @http.route('/sitemap.xml', type='http', auth="public", website=True, multilang=False, sitemap=False)
     def sitemap_xml_index(self, **kwargs):
