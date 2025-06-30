@@ -6,6 +6,7 @@ import {
     isContentEditable,
     isEditorTab,
     isEmpty,
+    isFilebox,
     isInPre,
     isMediaElement,
     isProtected,
@@ -630,7 +631,11 @@ export class DeletePlugin extends Plugin {
             // The joinable in this case is its sibling (previous for the start
             // side, next for the end side), but only if inline.
             const sibling = childNodes(commonAncestor)[side === "start" ? offset - 1 : offset];
-            if (sibling && !isBlock(sibling) && !(sibling.nodeType === Node.TEXT_NODE && !isVisibleTextNode(sibling))) {
+            if (
+                sibling &&
+                !isBlock(sibling) &&
+                !(sibling.nodeType === Node.TEXT_NODE && !isVisibleTextNode(sibling))
+            ) {
                 return { node: sibling, type: "inline" };
             }
             // No fragment to join.
@@ -1116,7 +1121,9 @@ export class DeletePlugin extends Plugin {
         }
         // @todo: register these as resources by other plugins?
         if (
-            [isSelfClosingElement, isMediaElement, isEditorTab].some((predicate) => predicate(leaf))
+            [isSelfClosingElement, isMediaElement, isEditorTab, isFilebox].some((predicate) =>
+                predicate(leaf)
+            )
         ) {
             return false;
         }
