@@ -491,6 +491,20 @@ publicWidget.registry.WebsiteSale = publicWidget.Widget.extend(VariantMixin, car
                 $("label[for='state_id']").get(0).toggleAttribute('required', !!data.state_required);
             }
         });
+        this._adaptMoroccanAddressForm();
+    },
+    /**
+     * @private
+     */
+    _adaptMoroccanAddressForm: function () {
+        var selectedCountry = $("#country_id").find(':selected').attr('code');
+        var $companyRegistryBlock = this.$('.div_company_registry');
+        if (selectedCountry === 'MA') {
+            $companyRegistryBlock.removeClass('d-none')
+        } else {
+            $companyRegistryBlock.addClass('d-none')
+            $companyRegistryBlock.find('input[name="company_registry"]').val('');
+        }
     },
     /**
      * This is overridden to handle the "List View of Variants" of the web shop.

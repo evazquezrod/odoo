@@ -1847,6 +1847,11 @@
                                                     <input type="text" name="vat" t-attf-class="form-control #{error.get('vat') and 'is-invalid' or ''}" t-att-value="'vat' in checkout and checkout['vat']" t-att-readonly="'1' if vat_warning else None"/>
                                                     <small t-if="vat_warning" class="form-text text-muted d-block d-lg-none">Changing VAT number is not allowed once document(s) have been issued for your account. Please contact us directly for this operation.</small>
                                                 </div>
+                                                <div t-attf-class="mb-3 #{error.get('company_registry') and 'o_has_error' or ''} col-lg-6 div_company_registry mb-0 d-none">
+                                                    <label class="col-form-label fw-normal label-optional" for="vat">ICE</label>
+                                                    <input type="text" name="company_registry" t-attf-class="form-control #{error.get('company_registry') and 'is-invalid' or ''}" t-att-value="'company_registry' in checkout and checkout['company_registry']" t-att-readonly="'1' if vat_warning else None"/>
+                                                    <small t-if="vat_warning" class="form-text text-muted d-block d-lg-none">Changing ICE number is not allowed once document(s) have been issued for your account. Please contact us directly for this operation.</small>
+                                                </div>
                                                 <div t-if="vat_warning" class="col-12 d-none d-lg-block mb-1">
                                                     <small class="form-text text-muted">Changing company name or VAT number is not allowed once document(s) have been issued for your account. Please contact us directly for this operation.</small>
                                                 </div>
@@ -1885,7 +1890,7 @@
                                             <select id="country_id" name="country_id" t-attf-class="form-select #{error.get('country_id') and 'is-invalid' or ''}" t-att-mode="mode[1]">
                                                 <option value="">Country...</option>
                                                 <t t-foreach="countries" t-as="c">
-                                                    <option t-att-value="c.id" t-att-selected="c.id == (country and country.id or -1)">
+                                                    <option t-att-value="c.id" t-att-selected="c.id == (country and country.id or -1)" t-att-code="c.code">
                                                         <t t-esc="c.name" />
                                                     </option>
                                                 </t>

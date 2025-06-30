@@ -34,11 +34,25 @@ publicWidget.registry.portalDetails = publicWidget.Widget.extend({
      */
     _adaptAddressForm: function () {
         var $country = this.$('select[name="country_id"]');
+        this._adaptMoroccanAddressForm();
         var countryID = ($country.val() || 0);
         this.$stateOptions.detach();
         var $displayedState = this.$stateOptions.filter('[data-country_id=' + countryID + ']');
         var nb = $displayedState.appendTo(this.$state).show().length;
         this.$state.parent().toggle(nb >= 1);
+    },
+    /**
+     * @private
+     */
+    _adaptMoroccanAddressForm: function () {
+        var selectedCountry = this.$('select[name="country_id"]').find(':selected').attr('code');
+        var $companyRegistryBlock = this.$('.o_company_registry');
+        if (selectedCountry === 'MA') {
+            $companyRegistryBlock.removeClass('d-none')
+        } else {
+            $companyRegistryBlock.addClass('d-none');
+            $companyRegistryBlock.find('input[name="company_registry"]').val('');
+        }
     },
 
     //--------------------------------------------------------------------------
