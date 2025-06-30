@@ -1,3 +1,5 @@
+/* global Prism */
+
 import { Plugin } from "@html_editor/plugin";
 import { loadBundle } from "@web/core/assets";
 import { CodeToolbar } from "./code_toolbar";
@@ -45,7 +47,7 @@ export class SyntaxHighlightingPlugin extends Plugin {
         this.prepareCodeBlocks();
         const pres = this.editable.querySelectorAll("pre");
         if (pres.length) {
-            this.loadPrism();
+            loadBundle("html_editor.assets_prism");
         }
     }
 
@@ -132,15 +134,6 @@ export class SyntaxHighlightingPlugin extends Plugin {
         codeBlock.addEventListener("input", this.boundOnCodeBlockInput);
         codeBlock.addEventListener("keydown", this.boundOnCodeBlockKeydown);
         textarea.addEventListener("scroll", this.boundOnTextareaScroll);
-    }
-
-    async loadPrism() {
-        this.prismPromise = loadBundle("html_editor.assets_prism");
-        return this.prismPromise.then(() => {
-            this.Prism = window.Prism;
-            this.Prism.manual = true;
-            this.prismPromise = undefined;
-        });
     }
 
     onCodeBlockInput(ev) {
@@ -240,15 +233,15 @@ export class SyntaxHighlightingPlugin extends Plugin {
     }
 
     async highlight(codeBlock) {
-        if (!this.Prism) {
-            await (this.prismPromise || this.loadPrism());
+        if (!Prism) {
+            await loadBundle("html_editor.assets_prism");
         }
         const pre = codeBlock.querySelector("pre");
         const textarea = codeBlock.querySelector("textarea.o_prism_source");
         const languageId = codeBlock.dataset.languageId || DEFAULT_LANGUAGE_ID;
-        const html = this.Prism.highlight(
+        const html = Prism.highlight(
             textarea.value,
-            this.Prism.languages[languageId] || this.Prism.languages[DEFAULT_LANGUAGE_ID],
+            Prism.languages[languageId] || Prism.languages[DEFAULT_LANGUAGE_ID],
             languageId || DEFAULT_LANGUAGE_ID
         )
             // Handle trailing BRs. Eg, <span>ab\n</span> -> <span>ab</span><br><br>
