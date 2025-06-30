@@ -148,17 +148,13 @@ export class SyntaxHighlightingPlugin extends Plugin {
             const tab = " ".repeat(tabSize);
             const { selectionStart, selectionEnd } = textarea;
             const collapsed = selectionStart === selectionEnd;
-            let start = [...textarea.value.slice(0, selectionStart)].findLastIndex(
-                (char) => char === "\n"
-            );
+            let start = textarea.value.slice(0, selectionStart).lastIndexOf("\n");
             start = start === -1 ? 0 : start;
             let newValue = "";
             let spacesRemovedAtStart = 0;
             if (ev.shiftKey) {
                 // Remove tabs.
-                let end = [...textarea.value.slice(selectionEnd, textarea.value.length)].findIndex(
-                    (char) => char === "\n"
-                );
+                let end = textarea.value.slice(selectionEnd, textarea.value.length).indexOf("\n");
                 end = end === -1 ? 0 : end;
                 end = selectionEnd + end;
                 // From 0 to the last \n before selection start.
