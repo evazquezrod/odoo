@@ -41,8 +41,8 @@ export class HtmlMigrationsInteraction extends Interaction {
         this.isUpgrading = true;
         this.services["public.interactions"].stopInteractions(this.container);
         const htmlUpgradeManager = new HtmlUpgradeManager();
-        const initialValue = this.container.innerHTML;
-        const upgradedValue = htmlUpgradeManager.processForUpgrade(markup(initialValue));
+        const initialValue = markup(this.container.innerHTML);
+        const upgradedValue = htmlUpgradeManager.processForUpgrade(initialValue);
         if (initialValue !== upgradedValue) {
             this.container.innerHTML = upgradedValue;
         }
