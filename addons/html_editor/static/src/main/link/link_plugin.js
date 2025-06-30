@@ -336,9 +336,12 @@ export class LinkPlugin extends Plugin {
      *
      * @return {HTMLElement} link
      */
-    createLink(url, label = "") {
+    createLink(url, relvalue, label = "") {
         const link = this.document.createElement("a");
         link.setAttribute("href", url);
+        if(relvalue){
+        link.setAttribute("rel", relvalue);
+        }
         for (const [param, value] of Object.entries(this.config.defaultLinkAttributes || {})) {
             link.setAttribute(param, `${value}`);
         }
@@ -449,7 +452,7 @@ export class LinkPlugin extends Plugin {
         const selectionTextContent = selection?.textContent();
         const isImage = !!findInSelection(selection, "img");
 
-        const applyCallback = (url, label, classes, customStyle, linkTarget, attachmentId) => {
+        const applyCallback = (url, label, classes, customStyle, linkTarget, attachmentId, relvalue) => {
             if (this.linkInDocument) {
                 if (url) {
                     this.linkInDocument.href = url;
@@ -485,7 +488,7 @@ export class LinkPlugin extends Plugin {
 
                 // create a new link with current selection as a content
                 if ((selectionTextContent && selectionTextContent === label) || isImage) {
-                    const link = this.createLink(url);
+                    const link = this.createLink(url,relvalue);
                     if (classes) {
                         link.className = classes;
                     }
