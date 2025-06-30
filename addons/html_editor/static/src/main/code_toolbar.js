@@ -8,7 +8,7 @@ export class CodeToolbar extends Component {
     static props = {
         target: { validate: (el) => el.nodeType === Node.ELEMENT_NODE },
         prismSource: { validate: (el) => el.nodeType === Node.ELEMENT_NODE },
-        languages: { type: Array, element: Object },
+        languages: { type: Object },
         onLanguageChange: { type: Function },
     };
     static components = { Dropdown, DropdownItem, CopyButton };
@@ -16,12 +16,10 @@ export class CodeToolbar extends Component {
     setup() {
         super.setup();
         this.state = useState({
-            language: this.props.languages.find(
-                (language) => language.id === this.props.target.dataset.languageId
-            ),
+            language: this.props.target.dataset.languageId,
         });
         useEffect(
-            () => this.props.onLanguageChange(this.props.target, this.state.language.id),
+            () => this.props.onLanguageChange(this.props.target, this.state.language),
             () => [this.state.language]
         );
     }

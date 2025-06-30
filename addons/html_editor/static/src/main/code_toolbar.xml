@@ -4,15 +4,15 @@
         <div class="o_code_toolbar">
             <div data-prevent-closing-overlay="true">
                 <Dropdown menuClass="'o_language_selector'">
-                    <button class="btn btn-light" t-att-title="state.language.displayName" name="language">
-                        <span class="px-1" t-esc="state.language.displayName"/>
+                    <button class="btn btn-light" t-att-title="props.languages[state.language]" name="language">
+                        <span class="px-1" t-esc="props.languages[state.language]"/>
                     </button>
                     <t t-set-slot="content">
-                        <t t-foreach="props.languages" t-as="language" t-key="language_index">
+                        <t t-foreach="Object.entries(props.languages)" t-as="language" t-key="language[0]">
                             <DropdownItem
-                                attrs="{ name: language.displayName }"
-                                onSelected="() => this.selectLanguage(language)" t-on-pointerdown.prevent="() => {}">
-                                <t t-esc="language.displayName"/>
+                                attrs="{ name: language[1] }"
+                                onSelected="() => this.selectLanguage(language[0])" t-on-pointerdown.prevent="() => {}">
+                                <t t-esc="language[1]"/>
                             </DropdownItem>
                         </t>
                     </t>

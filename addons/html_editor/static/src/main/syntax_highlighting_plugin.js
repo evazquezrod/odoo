@@ -4,34 +4,32 @@ import { CodeToolbar } from "./code_toolbar";
 import { xml } from "@odoo/owl";
 import { renderToElement } from "@web/core/utils/render";
 
-const LANGUAGES = [
-    { displayName: "Plain Text", id: "plaintext", default: true },
-    { displayName: "Markdown", id: "markdown" },
-    { displayName: "Javascript", id: "javascript" },
-    { displayName: "Typescript", id: "typescript" },
-    { displayName: "JSDoc", id: "jsdoc" },
-    { displayName: "Java", id: "java" },
-    { displayName: "Python", id: "python" },
-    { displayName: "HTML", id: "html" },
-    { displayName: "XML", id: "xml" },
-    { displayName: "SVG", id: "svg" },
-    { displayName: "JSON", id: "json" },
-    { displayName: "CSS", id: "css" },
-    { displayName: "SASS", id: "sass" },
-    { displayName: "SCSS", id: "scss" },
-    { displayName: "SQL", id: "sql" },
-    { displayName: "Diff", id: "diff" },
-];
-const DEFAULT_LANGUAGE = LANGUAGES.find((language) => language.default);
+const LANGUAGES = {
+    plaintext: "Plain Text",
+    markdown: "Markdown",
+    javascript: "Javascript",
+    typescript: "Typescript",
+    jsdoc: "JSDoc",
+    java: "Java",
+    python: "Python",
+    html: "HTML",
+    xml: "XML",
+    svg: "SVG",
+    json: "JSON",
+    css: "CSS",
+    sass: "SASS",
+    scss: "SCSS",
+    sql: "SQL",
+    diff: "Diff",
+};
+const DEFAULT_LANGUAGE_ID = "plaintext";
 
 export class SyntaxHighlightingPlugin extends Plugin {
     static id = "syntaxHighlighting";
     static dependencies = ["overlay", "history", "selection", "protectedNode"];
     resources = {
         normalize_handlers: (root) => this.prepareCodeBlocks(root, true),
-        post_undo_handlers: () => {
-            this.prepareCodeBlocks(this.editable, true);
-        },
+        post_undo_handlers: () => this.prepareCodeBlocks(this.editable, true),
     };
 
     setup() {
@@ -71,7 +69,7 @@ export class SyntaxHighlightingPlugin extends Plugin {
             if (!pre.closest("div.o_syntax_highlighting")) {
                 const font = getComputedStyle(pre).font.replaceAll('"', "'");
                 const div = renderToElement(
-                    xml`<div class="o_syntax_highlighting" data-language-id="${DEFAULT_LANGUAGE.id}" style="font: ${font};"/>`
+                    xml`<div class="o_syntax_highlighting" data-language-id="${DEFAULT_LANGUAGE_ID}" style="font: ${font};"/>`
                 );
                 pre.before(div);
                 div.append(pre);
@@ -247,11 +245,11 @@ export class SyntaxHighlightingPlugin extends Plugin {
         }
         const pre = codeBlock.querySelector("pre");
         const textarea = codeBlock.querySelector("textarea.o_prism_source");
-        const languageId = codeBlock.dataset.languageId || DEFAULT_LANGUAGE.id;
+        const languageId = codeBlock.dataset.languageId || DEFAULT_LANGUAGE_ID;
         const html = this.Prism.highlight(
             textarea.value,
-            this.Prism.languages[languageId] || this.Prism.languages[DEFAULT_LANGUAGE.id],
-            languageId || DEFAULT_LANGUAGE.id
+            this.Prism.languages[languageId] || this.Prism.languages[DEFAULT_LANGUAGE_ID],
+            languageId || DEFAULT_LANGUAGE_ID
         )
             // Handle trailing BRs. Eg, <span>ab\n</span> -> <span>ab</span><br><br>
             .replace(/(\n+)((<\/[^>]+>)*)$/, "$2\n$1")
