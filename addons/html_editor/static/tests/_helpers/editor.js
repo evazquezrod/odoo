@@ -212,9 +212,6 @@ export async function testEditor(config) {
 export async function setupWysiwyg(props = {}) {
     const content = props.content;
     delete props.content;
-    if (props.config && props.config.content) {
-        props.config.content = markup(props.config.content);
-    }
     const wysiwyg = await mountWithCleanup(Wysiwyg, { props });
     const el = /** @type {HTMLElement} **/ (
         queryOne(`${props.iframe ? ":iframe " : ""}.odoo-editor-editable`)
