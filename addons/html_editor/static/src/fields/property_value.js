@@ -41,7 +41,7 @@ patch(PropertyValue.prototype, {
     },
 
     async onEditorBlur() {
-        const value = this.editor.getContent();
+        const value = markup(this.editor.getContent());
         if (normalizeHTML(value) !== normalizeHTML(this.lastHtmlValue)) {
             this.onValueChange(value);
             this.lastHtmlValue = value;
@@ -68,7 +68,7 @@ patch(PropertyValue.prototype, {
         }
 
         return {
-            content: markup(this.propertyValue),
+            content: this.propertyValue,
             debug: !!this.env.debug,
             direction: localization.direction || "ltr",
             onChange: this.onWysiwygChange.bind(this),
