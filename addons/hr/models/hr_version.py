@@ -252,8 +252,9 @@ class HrVersion(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_last_version(self):
-        if self.employee_id.versions_count == len(self):
-            raise ValidationError(_('An employee must always have at least one version.'))
+        active_versions_to_unlink = self.filtered(lambda r: r.active)
+        if self.employee_id.versions_count == len(active_versions_to_unlink):
+            raise ValidationError(self.env._('An employee must always have at least one active version.'))
 
     def write(self, values):
         # Employee Versions Validation
