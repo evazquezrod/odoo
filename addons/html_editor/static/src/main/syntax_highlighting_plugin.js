@@ -3,6 +3,7 @@
 import { Plugin } from "@html_editor/plugin";
 import { loadBundle } from "@web/core/assets";
 import { CodeToolbar } from "./code_toolbar";
+import { descendants, lastLeaf } from "@html_editor/utils/dom_traversal";
 
 const LANGUAGES = {
     plaintext: "Plain Text",
@@ -235,28 +236,34 @@ export class SyntaxHighlightingPlugin extends Plugin {
         const pre = codeBlock.querySelector("pre");
         const textarea = codeBlock.querySelector("textarea.o_prism_source");
         const languageId = codeBlock.dataset.languageId || DEFAULT_LANGUAGE_ID;
-        const html = Prism.highlight(
-            textarea.value,
-            Prism.languages[languageId] || Prism.languages[DEFAULT_LANGUAGE_ID],
-            languageId || DEFAULT_LANGUAGE_ID
-        )
-            // Handle trailing BRs. Eg, <span>ab\n</span> -> <span>ab</span><br><br>
-            .replace(/(\n+)((<\/[^>]+>)*)$/, "$2\n$1")
-            .replaceAll("\n", "<br>");
         // Make sure the step is properly recorded to include the code block's
         // data attribute and the PRE's content.
         this.dependencies.protectedNode.setProtectingNode(codeBlock, false);
-        // Render and replace the PRE's contents.
-        const fakeElement = this.document.createElement("fake-element");
-        fakeElement.innerHTML = html || "<br>";
-        for (const child of [...pre.childNodes]) {
-            child.remove();
+        // Highlight.
+        pre.innerHTML = Prism.highlight(textarea.value, Prism.languages[languageId], languageId);
+        // Post-process the inserted HTML:
+        // 1. Replace \n with <br>.
+        for (const node of descendants(pre).filter((node) => node.nodeType === Node.TEXT_NODE)) {
+            let newline = node.textContent.indexOf("\n");
+            while (newline !== -1) {
+                node.before(this.document.createTextNode(node.textContent.slice(0, newline)));
+                node.before(this.document.createElement("BR"));
+                node.textContent = node.textContent.slice(newline + 1);
+                newline = node.textContent.indexOf("\n");
+            }
+            if (!node.textContent) {
+                node.remove(); // Prevent empty trailing text node that would become the last leaf.
+            }
         }
-        for (const child of [...fakeElement.childNodes]) {
-            pre.append(child);
+        // 2. Handle trailing BRs. Eg, <span>ab\n</span> -> <span>ab</span><br><br>
+        const trailingBr = lastLeaf(pre);
+        if (trailingBr?.nodeName === "BR") {
+            pre.append(trailingBr); // <span>ab<br></span> -> <span>ab</span><br>
+            trailingBr.after(this.document.createElement("BR")); // <br></pre> -> <br><br></pre>
         }
         this.dependencies.history.addStep();
-        this.dependencies.protectedNode.setProtectingNode(codeBlock, true); // actually not needed because done in normalize handler
+        // Will be done in normalize handler triggered by addStep:
+        // this.dependencies.protectedNode.setProtectingNode(codeBlock, true);
         textarea.focus({ preventScroll: true });
     }
 
