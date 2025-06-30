@@ -658,6 +658,8 @@ export class GraphRenderer extends Component {
             const measureWidget = metaData.fieldAttrs[measure]?.widget;
             if (dataset.currencyIds?.[index]) {
                 value = formatMonetary(value, { currencyId: dataset.currencyIds[index] });
+            } else if (dataset.currencyIds?.[index] === false) {
+                value = formatMonetary(value) + " —";
             } else {
                 value = this.formatValue(value, allIntegers, measureWidget);
             }

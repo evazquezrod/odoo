@@ -4627,10 +4627,10 @@ test(`monetary aggregates in grouped list`, async () => {
     // it is bad practice and the server won't send the information anyway
     expect(`.o_group_header:first`).toHaveText("USD (3)\n $ 800.00 19.00");
     expect(`.o_group_header:last`).toHaveText("EUR (1)\n 1,200.00 € 0.40");
-    expect(`.o_list_footer .o_list_number span`).toHaveText("—");
-    expect(`.o_list_footer .o_list_number span`).toHaveAttribute(
+    expect(`.o_list_footer .o_list_number span:first`).toHaveText("2,000.00 —");
+    expect(`.o_list_footer .o_list_number span:first`).toHaveAttribute(
         "data-tooltip",
-        "Different currencies cannot be aggregated"
+        "Invalid value: different currencies cannot be aggregated"
     );
 });
 
@@ -4651,15 +4651,15 @@ test(`monetary aggregates in grouped list (different currencies in same group)`,
     await contains(`.o_group_header:first`).click();
     await contains(`.o_group_header:last`).click();
     expect(`.o_group_header:first`).toHaveText("No (1)\n $ 0.00");
-    expect(`.o_group_header:last`).toHaveText("Yes (3)\n —");
+    expect(`.o_group_header:last`).toHaveText("Yes (3)\n 2,000.00 —");
     expect(`.o_group_header:last .o_list_number span`).toHaveAttribute(
         "data-tooltip",
-        "Different currencies cannot be aggregated"
+        "Invalid value: different currencies cannot be aggregated"
     );
-    expect(`.o_list_footer .o_list_number span`).toHaveText("—");
+    expect(`.o_list_footer .o_list_number span`).toHaveText("2,000.00 —");
     expect(`.o_list_footer .o_list_number span`).toHaveAttribute(
         "data-tooltip",
-        "Different currencies cannot be aggregated"
+        "Invalid value: different currencies cannot be aggregated"
     );
 });
 
@@ -4669,7 +4669,6 @@ test(`handle false values in aggregates`, async () => {
     onRpc("web_read_group", ({ parent }) => {
         expect.step("web_read_group");
         const res = parent();
-        expect(res.groups[1]["amount:sum"]).toBe(false);
         res.groups[1]["qux:sum"] = false;
         res.groups[1]["false_amount:sum"] = false;
         return res;
@@ -4689,7 +4688,7 @@ test(`handle false values in aggregates`, async () => {
     });
     expect.verifySteps(["web_read_group"]);
     expect(`.o_group_header:first`).toHaveText("No (1)\n 9.00 $ 0.00 $ 0.00");
-    expect(`.o_group_header:last`).toHaveText("Yes (3)\n —", {
+    expect(`.o_group_header:last`).toHaveText("Yes (3)\n 2,000.00 —", {
         message: "false values are just hidden except for monetary field with multiple currencies",
     });
 });
@@ -4796,8 +4795,8 @@ test(`aggregates of monetary field with no currency field`, async () => {
     expect(`.o_data_row td:not(.o_list_record_selector):eq(0)`).toHaveText("1,200.00", {
         message: "field should still be formatted based on currency",
     });
-    expect(`tfoot`).toHaveText("—", {
-        message: "aggregates monetary should never work if no currency field is present",
+    expect(`tfoot`).toHaveText("2,000.00", {
+        message: "aggregates monetary should still be displayed without currency",
     });
 });
 
@@ -4840,7 +4839,7 @@ test(`aggregates monetary (different currencies)`, async () => {
         "$ 300.00",
         "$ 0.00",
     ]);
-    expect(`tfoot`).toHaveText("—");
+    expect(`tfoot`).toHaveText("2,000.00 —");
 });
 
 test(`aggregates monetary (currency field not in view)`, async () => {
@@ -4862,7 +4861,7 @@ test(`aggregates monetary (currency field not in view)`, async () => {
         "300.00",
         "0.00",
     ]);
-    expect(`tfoot`).toHaveText("—");
+    expect(`tfoot`).toHaveText("2,000.00");
 });
 
 test(`aggregates monetary (currency field in view)`, async () => {
@@ -4966,8 +4965,8 @@ test(`currency_field is taken into account when formatting monetary values`, asy
     expect(`.o_data_row:eq(0) td[name=amount_currency]`).toHaveText("$ 1,100.00", {
         message: "field should be formatted based on company_currency_id",
     });
-    expect(`tfoot td.o_list_number`).toHaveText("—", {
-        message: "aggregates monetary should never work if different currencies are used",
+    expect(`tfoot td.o_list_number`).toHaveText("2,000.00 —", {
+        message: "aggregates monetary should indicate when different currencies are used",
     });
     expect(`tfoot td.o_list_number ~ td`).toHaveCount(0, {
         message:

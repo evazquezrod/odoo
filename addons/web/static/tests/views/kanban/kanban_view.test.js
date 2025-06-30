@@ -9290,13 +9290,6 @@ test("progress bar recompute after filter selection (aggregates)", async () => {
 });
 
 test("progress bar with false aggregate value", async () => {
-    // false aggregate values happen in case of different currencies being used
-    // inside the same group
-    onRpc("web_read_group", ({ parent }) => {
-        const result = parent();
-        result.groups[0]["salary:sum"] = false;
-        return result;
-    });
     await mountView({
         type: "kanban",
         resModel: "partner",
@@ -9312,14 +9305,13 @@ test("progress bar with false aggregate value", async () => {
         groupBy: ["product_id"],
     });
 
-    expect(".o_kanban_counter:first .o_animated_number").toHaveCount(0);
-    expect(".o_kanban_counter:last .o_animated_number").toHaveCount(1);
+    expect(".o_kanban_counter .o_animated_number").toHaveCount(2);
 
     expect(".o_kanban_counter:last .o_animated_number").toHaveText("$3,722");
-    expect(".o_kanban_counter:first b").toHaveText("—");
-    expect(".o_kanban_counter:first b").toHaveAttribute(
+    expect(".o_kanban_counter:first .o_animated_number").toHaveText("3,750—");
+    expect(".o_kanban_counter:first .o_animated_number b:eq(1)").toHaveAttribute(
         "data-tooltip",
-        "Different currencies cannot be aggregated"
+        "Invalid value: different currencies cannot be aggregated"
     );
 });
 
