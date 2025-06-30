@@ -189,8 +189,8 @@ export class SyntaxHighlightingPlugin extends Plugin {
             textarea.value = newValue;
             const newStart = selectionStart + (ev.shiftKey ? -spacesRemovedAtStart : tabSize);
             const newEnd = collapsed ? newStart : selectionEnd + insertedChars;
-            this.highlight(ev.currentTarget);
             textarea.setSelectionRange(newStart, newEnd, textarea.selectionDirection);
+            this.highlight(ev.currentTarget);
         }
     }
 
@@ -280,7 +280,6 @@ export class SyntaxHighlightingPlugin extends Plugin {
                     onLanguageChange: this.onLanguageChange.bind(this),
                 },
             });
-            codeBlock.querySelector("textarea").focus();
         }
     }
 }
