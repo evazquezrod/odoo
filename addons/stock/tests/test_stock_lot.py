@@ -281,6 +281,11 @@ class TestLotSerial(TestStockCommon):
 
     def test_lot_search_partner_ids(self):
         """Test that the correct lots show when doing searches based on partner_ids"""
+        # ensure clean lots regardless of demo install or not
+        lots = self.env['stock.lot'].search([('product_id', 'not in', (self.productA | self.productB).ids)])
+        self.env['stock.quant'].search([('product_id', 'in', lots.product_id.ids)]).unlink()
+        lots.unlink()
+
         customer = self.PartnerObj.create({'name': 'bob'})
         picking1 = self.env['stock.picking'].create({
             'name': 'Picking 1',
