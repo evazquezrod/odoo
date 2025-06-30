@@ -74,13 +74,6 @@ class TestFiscalPosition(common.TransactionCase):
 
         george, jc, ben, alberto = self.george, self.jc, self.ben, self.alberto
 
-        # B2B has precedence over B2C for same country even when sequence gives lower precedence
-        self.assertGreater(self.fr_b2b.sequence, self.fr_b2c.sequence)
-        assert_fp(george, self.fr_b2b, "FR-B2B should have precedence over FR-B2C")
-        self.fr_b2b.auto_apply = False
-        assert_fp(george, self.fr_b2c, "FR-B2C should match now")
-        self.fr_b2b.auto_apply = True
-
         # Create positions matching on Country Group and on NO country at all
         self.eu_intra_b2b = self.fp.create(dict(
                                          name="EU-INTRA B2B",

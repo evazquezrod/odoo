@@ -205,46 +205,88 @@ class AccountFiscalPosition(models.Model):
                 vals['zip_from'], vals['zip_to'] = self._convert_zip_values(zip_from or rec.zip_from, zip_to or rec.zip_to)
         return super(AccountFiscalPosition, self).write(vals)
 
-    def _get_fpos_ranking_functions(self, partner):
-        """Get comparison functions to rank fiscal positions.
+    def _get_best_matching_fpos(self, partner):
+        def triviality_compare(a, b):
+            # triviality can be "True" instead of a dict, dict is favored over "True"
+            if a is True and b is True:
+                return 0
+            if b is True:
+                return 1
+            if a is True:
+                return -1
+            # compare dicts, keys are major weights, values are minor weights.
+            keys = sorted(set(a) | set(b))
+            for key in keys:
+                if a.get(key, float('inf')) < b.get(key, float('inf')):
+                    return 1
+                if b.get(key, float('inf')) < a.get(key, float('inf')):
+                    return -1
+            return 0
 
-        All functions are applied to the fiscal position and return a value.
-        These values are taken in order to build a tuple that will be the comparator
-        value between fiscal positions.
+        returned_fpos = self.env['account.fiscal.position']
+        returned_fpos_triviality = {}
+        functions = self._get_fpos_validation_functions(partner)
+        for fpos in self:
+            trivialities = [fn(fpos) for fn in functions]
+            lowest = {}
+            for triviality in trivialities:
+                if not triviality:
+                    # if any function returns False, fiscal position is filtered out
+                    lowest = False
+                    break
+                if isinstance(triviality, tuple):
+                    weight, value = triviality
+                    lowest[weight] = min(lowest.get(weight, float('inf')), value)
+            if lowest and triviality_compare(lowest, returned_fpos_triviality) == 1:
+                returned_fpos = fpos
+                returned_fpos_triviality = lowest
 
-        If the value returned by one of the function is falsy, the fiscal position is
-        filtered out and not even considered for the ranking.
+        return returned_fpos
 
-        :param partner: the partner to consider for the ranking of the fiscal positions
-        :type partner: :class:`res.partner`
-        :return: a list of tuples with a name and the function to apply. The name is only
-            used to facilitate extending the comparators.
-        :rtype: list[tuple[str, function]
+    def _get_fpos_validation_functions(self, partner):
+        """ Returns a list of functions to validate fiscal positions against a partner.
+        Each function takes a fiscal position as an argument and returns a tuple
+        with the weight and the triviality of the fiscal position for the given partner.
+        The weight is the first priority criteria to priritize fiscal positions from the
+        company, then location, and lastly the sequence.
+        The second value is the triviality inside a same primary criteria (company inheritance level
+        for companies, zip > state > ... for location).
+        A function can also return True if a condition is match that must not influence the
+        priority, or False if the fiscal position must be filtered out.
+        The lower the triviality, the higher the priority of the fiscal position.
         """
         return [
-            ('vat_required', lambda fpos: (
-                not fpos.vat_required
-                or (partner._get_vat_required_valid(company=self.env.company) and 2)
-            )),
-            ('company_id', lambda fpos: len(fpos.company_id.parent_ids)),
-            ('zipcode', lambda fpos:(
+            # vat required
+            lambda fpos: (
+                not fpos.vat_required or partner._get_vat_required_valid(company=self.env.company)
+            ),
+            # company
+            lambda fpos: (
+                (0, -len_ids) if (len_ids := len(fpos.company_id.parent_ids)) else False
+            ),
+            # zip code
+            lambda fpos:(
                 not (fpos.zip_from and fpos.zip_to)
-                or (partner.zip and (fpos.zip_from <= partner.zip <= fpos.zip_to) and 2)
-            )),
-            ('state_id', lambda fpos: (
+                or (partner.zip and (fpos.zip_from <= partner.zip <= fpos.zip_to) and (1, 1))
+            ),
+            # state
+            lambda fpos: (
                 not fpos.state_ids
-                or (partner.state_id in fpos.state_ids and 2)
-            )),
-            ('country_id', lambda fpos: (
+                or (partner.state_id in fpos.state_ids and (1, 2))
+            ),
+            # country
+            lambda fpos: (
                 not fpos.country_id
-                or (partner.country_id == fpos.country_id and 2)
-            )),
-            ('country_group', lambda fpos: (
+                or (partner.country_id == fpos.country_id and (1, 3))
+            ),
+            # country group
+            lambda fpos: (
                 not fpos.country_group_id
                 or (partner.country_id in fpos.country_group_id.country_ids and
-                    (not partner.state_id or partner.state_id not in fpos.country_group_id.exclude_state_ids) and 2)
-            )),
-            ('sequence', lambda fpos: -(fpos.sequence or 0.1)),  # do not filter out sequence=0, priority to lowest sequence in `max` method
+                    (not partner.state_id or partner.state_id not in fpos.country_group_id.exclude_state_ids) and (1, 4))
+            ),
+            # sequence
+            lambda fpos: (2, fpos.sequence),
         ]
 
     @api.model
@@ -278,19 +320,21 @@ class AccountFiscalPosition(models.Model):
         if not partner.country_id:
             return self.env['account.fiscal.position']
 
-        # Search for a auto applied fiscal position matching the partner
-        ranking_subfunctions = self._get_fpos_ranking_functions(delivery)
-        def ranking_function(fpos):
-            return tuple(rank[1](fpos) for rank in ranking_subfunctions)
+        # # Search for a auto applied fiscal position matching the partner
+        # ranking_subfunctions = self._get_fpos_ranking_functions(delivery)
+        # def ranking_function(fpos):
+        #     return tuple(rank[1](fpos) for rank in ranking_subfunctions)
 
         all_auto_apply_fpos = self.search(self._check_company_domain(self.env.company) + [('auto_apply', '=', True)])
-        fpo_with_ranking = ((fpos, ranking_function(fpos)) for fpos in all_auto_apply_fpos)
-        valid_auto_apply_fpos = filter(lambda x: all(x[1]), fpo_with_ranking)
-        return max(
-            valid_auto_apply_fpos,
-            key=lambda x: x[1],
-            default=(self.env['account.fiscal.position'], False)
-        )[0]
+
+        return all_auto_apply_fpos._get_best_matching_fpos(delivery)
+        # fpo_with_ranking = ((fpos, ranking_function(fpos)) for fpos in all_auto_apply_fpos)
+        # valid_auto_apply_fpos = filter(lambda x: all(x[1]), fpo_with_ranking)
+        # return max(
+        #     valid_auto_apply_fpos,
+        #     key=lambda x: x[1],
+        #     default=(self.env['account.fiscal.position'], False)
+        # )[0]
 
     def action_open_related_taxes(self):
         return self.tax_ids._get_records_action(name=_("%s taxes", self.display_name))
