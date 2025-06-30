@@ -8,9 +8,10 @@
         <field name="view_mode">form</field>
         <field name="target">new</field>
         <field name="context">{
+            'default_lead_id': active_id,
             'default_billable': True,
         }</field>
-        <field name="binding_model_id" ref="crm.model_crm_lead"/>
+        <field name="binding_model_id" ref="crm.model_crm_lead" />
         <field name="binding_view_types">form</field>
     </record>
 

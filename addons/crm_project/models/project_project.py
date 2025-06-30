@@ -2,6 +2,7 @@
 
 
 from odoo import api, models
+from odoo.tools.translate import _
 
 
 class ProjectProject(models.Model):
@@ -11,7 +12,17 @@ class ProjectProject(models.Model):
     def default_get(self, fields_list):
         defaults = super().default_get(fields_list)
         allow_billable = self.env.context.get("default_billable", False)
-        partner_id = self.env.context.get("default_partner_id", False)
-        defaults.update({"allow_billable": allow_billable,
-                         "partner_id": partner_id})
+        updates = {
+            "allow_billable": allow_billable,
+        }
+        if "default_lead_id" in self.env.context:
+            lead_id = self.env.context.get("default_lead_id")
+            lead = self.env["crm.lead"].browse(lead_id)
+            partner_id = lead.partner_id.id if lead else False
+            name = lead.name if lead else False
+            updates.update({
+                "name": _("Project for Lead: ") + name,
+                "partner_id": partner_id,
+            })
+        defaults.update(updates)
         return defaults
