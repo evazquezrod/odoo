@@ -7,6 +7,7 @@
     "depends": [
         "project",
         "crm",
+        "sale_management",
     ],
     "data": [
         "views/crm_lead_views.xml",
