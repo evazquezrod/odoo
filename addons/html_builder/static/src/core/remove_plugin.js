@@ -115,7 +115,7 @@ export class RemovePlugin extends Plugin {
 
     removeElement(el) {
         const elementToSelect = this.removeCurrentTarget(el);
-        this.dispatchTo("after_remove_handlers", el);
+        this.dispatchTo("after_remove_handlers", {elementRemoved: el, elementToSelect});
         return elementToSelect;
     }
 
