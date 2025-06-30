@@ -219,6 +219,87 @@ class TestMailFlow(MailCommon, TestRecipients):
             msg_cc_lst=[],
         )
 
+    def test_lead_email_to_inbox(self):
+        # customer incoming email creates a new lead
+        email_to = f'lead@{self.alias_domain}'
+        with self.mock_mail_gateway(), self.mock_mail_app():
+            lead = self.format_and_process(
+                MAIL_TEMPLATE,
+                self.test_emails[0],
+                email_to,
+                subject='Inquiry',
+                target_model='mail.test.lead',
+            )
+        lead_as_emp = lead.with_user(self.user_employee)
+        self.assertFalse(lead_as_emp.partner_id)
+
+        # employee rpelies through chatter
+        suggested_all = lead_as_emp._message_get_suggested_recipients(
+            reply_discussion=True, no_create=False,
+        )
+        print('suggested_all', suggested_all)
+        partner_sylvie = self.env['res.partner'].search(
+            [('email_normalized', '=', 'sylvie.lelitre@zboing.com')]
+        )
+        expected_all = [
+            {
+                'create_values': {},
+                'email': 'sylvie.lelitre@zboing.com',
+                'name': 'Sylvie Lelitre',
+                'partner_id': partner_sylvie.id,  # suggested recipient creates partners
+            },
+        ]
+        for suggested, expected in zip(suggested_all, expected_all, strict=True):
+            self.assertDictEqual(suggested, expected)
+
+        # finally post the message with recipients
+        with self.mock_mail_gateway():
+            emp_answer = lead_as_emp.message_post(
+                body='<p>Well received !',
+                partner_ids=partner_sylvie.ids,
+                message_type='comment',
+                subject=f'Re: {lead.name}',
+                subtype_id=self.env.ref('mail.mt_comment').id,
+            )
+        # self.assertFalse(lead_as_emp.message_partner_ids, 'No followers added by default anymore')
+        self.assertSMTPEmailsSent(
+            mail_server=self.mail_server_notification,
+            msg_from=formataddr(
+                (self.partner_employee.name, f'{self.default_from}@{self.alias_domain}')
+            ),
+            smtp_from=self.mail_server_notification.from_filter,
+            smtp_to_list=[partner_sylvie.email_normalized],
+            msg_to_lst=[partner_sylvie.email_formatted],
+        )
+
+        # customer replies from their email reader, addins a fellow customer
+        cust_reply = self.gateway_mail_reply_from_smtp_email(
+            MAIL_TEMPLATE_SHORT, [self.customer_zboing.email_normalized], reply_all=True,
+            add_to_lst=[self.test_emails[1]],
+        )
+        self.assertMailNotifications(
+            cust_reply,
+            [
+                {
+                    'content': "Eli alla à l'eau",
+                    'message_type': 'email',
+                    'message_values': {
+                        'author_id': partner_sylvie,
+                        'email_from': partner_sylvie.email_formatted,
+                        'incoming_email_cc': False,
+                        # be sure to not have catchall.test inside the incoming_email_to !
+                        'incoming_email_to': self.test_emails[1],
+                        'notified_partner_ids': self.partner_employee,
+                        # only recognized partners
+                        'partner_ids': self.env['res.partner'],
+                        'subject': 'Re: False',
+                        'subtype_id': self.env.ref('mail.mt_comment'),
+                    },
+                    'notif': [{'partner': self.user_employee.partner_id, 'type': 'email'}],
+                },
+            ],
+        )
+
     def test_lead_mailgateway(self):
         """ Flow of this test
         * incoming email creating a lead -> email set as first message
