@@ -39,20 +39,19 @@ export class ShortCutPlugin extends Plugin {
                 },
                 {
                     isAvailable: command.isAvailable,
-                    isRestricted: shortcut.restricted,
                 }
             );
         }
     }
 
-    addShortcut(hotkey, action, { isAvailable, isRestricted }) {
+    addShortcut(hotkey, action, { isAvailable }) {
         this.services.hotkey.add(hotkey, action, {
             area: () => this.editable,
             bypassEditableProtection: true,
             allowRepeat: true,
             isAvailable: (target) =>
                 (!isAvailable || isAvailable(this.dependencies.selection.getEditableSelection())) &&
-                (!isRestricted || isValidTargetForDomListener(target)),
+                isValidTargetForDomListener(target),
         });
     }
 }
