@@ -1,8 +1,6 @@
 import { Plugin } from "@html_editor/plugin";
 import { loadBundle } from "@web/core/assets";
 import { CodeToolbar } from "./code_toolbar";
-import { xml } from "@odoo/owl";
-import { renderToElement } from "@web/core/utils/render";
 
 const LANGUAGES = {
     plaintext: "Plain Text",
@@ -68,9 +66,10 @@ export class SyntaxHighlightingPlugin extends Plugin {
         for (const pre of root.querySelectorAll("pre")) {
             if (!pre.closest("div.o_syntax_highlighting")) {
                 const font = getComputedStyle(pre).font.replaceAll('"', "'");
-                const div = renderToElement(
-                    xml`<div class="o_syntax_highlighting" data-language-id="${DEFAULT_LANGUAGE_ID}" style="font: ${font};"/>`
-                );
+                const div = this.document.createElement("div");
+                div.classList.add("o_syntax_highlighting");
+                div.dataset.languageId = DEFAULT_LANGUAGE_ID;
+                div.style.font = font;
                 pre.before(div);
                 div.append(pre);
             }
@@ -81,10 +80,11 @@ export class SyntaxHighlightingPlugin extends Plugin {
             const preStyle = getComputedStyle(pre);
             let textarea = codeBlock.querySelector("textarea.o_prism_source");
             if (!textarea) {
-                textarea = renderToElement(
-                    xml`<textarea class="o_prism_source" contenteditable="true"
-                        style="padding: ${preStyle.padding}; margin: ${preStyle.margin};"/>`
-                );
+                textarea = this.document.createElement("textarea");
+                textarea.classList.add("o_prism_source");
+                textarea.setAttribute("contenteditable", "true");
+                textarea.style.padding = preStyle.padding;
+                textarea.style.margin = preStyle.margin;
                 codeBlock.append(textarea);
                 activeTextarea = activate && textarea; // It's the latest inserted one.
             }
