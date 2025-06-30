@@ -99,6 +99,27 @@ class HrLeave(models.Model):
         start = datetime.combine(min(start_dates) - relativedelta(days=1), time.min)
         stop = datetime.combine(max(stop_dates) + relativedelta(days=1), time.max)
         with self.env['hr.work.entry']._error_checking(start=start, stop=stop, skip=skip_check, employee_ids=employee_ids):
+            # Any change in approved(validate) stage by leave officer -> regenerate work entry
+            # if 'state' not in vals:
+            #     validated_leaves = self.filtered(lambda leave: leave.state == 'validate')
+            #     res = super().write(vals)
+            #     work_entry_regen_emp_ids = []
+            #     for leave in validated_leaves:
+            #         work_entry_regen_emp_ids.append(leave.employee_id.id)
+
+            # start_dates = validated_leaves.filtered('request_date_from').mapped('request_date_from') + [fields.Date.to_date(vals.get('request_date_from', False)) or datetime.max.date()]
+            # stop_dates = validated_leaves.filtered('request_date_to').mapped('request_date_to') + [fields.Date.to_date(vals.get('request_date_to', False)) or datetime.min.date()]
+            # start = datetime.combine(min(start_dates) - relativedelta(days=1), time.min)
+            # stop = datetime.combine(max(stop_dates) + relativedelta(days=1), time.max)
+            # if validated_leaves and work_entry_regen_emp_ids:
+            #     test = self.env['hr.work.entry.regeneration.wizard'].create({
+            #         'employee_ids': work_entry_regen_emp_ids,
+            #         'date_from': datetime.min.date(),
+            #         'date_to': datetime.max.date(),
+            #     })
+            #     test.write({'date_from': test.earliest_available_date, 'date_to': test.latest_available_date})
+            #     test.sudo().regenerate_work_entries()
+            # return res
             return super().write(vals)
 
     @api.model_create_multi
