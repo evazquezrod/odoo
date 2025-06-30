@@ -137,7 +137,7 @@ export class SyntaxHighlightingPlugin extends Plugin {
     async loadPrism() {
         this.prismPromise = loadBundle("html_editor.assets_prism");
         return this.prismPromise.then(() => {
-            this.Prism = window.top.Prism;
+            this.Prism = window.Prism;
             this.Prism.manual = true;
             this.prismPromise = undefined;
         });
