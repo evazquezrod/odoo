@@ -54,7 +54,7 @@ export class MultiProductAttribute extends BaseProductAttribute {
         super.setup(...arguments);
         this.state = useState({
             is_value_selected: this.props.attribute.values().reduce((acc, value) => {
-                acc[value.id] = false;
+                acc[value.id] = this.props.selected.includes(value);
                 return acc;
             }, {}),
         });
@@ -79,21 +79,40 @@ export class ProductConfiguratorPopup extends Component {
         MultiProductAttribute,
         Dialog,
     };
-    static props = ["productTemplate", "getPayload", "close"];
+    static props = [
+        "productTemplate",
+        "getPayload",
+        "close",
+        "defaultAttributeIds?",
+        "defaultCustomAttributeIds?",
+    ];
 
     setup() {
         this.pos = usePos();
         this.state = useState({
             attributes: this.props.productTemplate.attribute_line_ids.reduce((acc, attribute) => {
-                acc[attribute.attribute_id.id] = {
-                    selected: [],
-                    custom_value: "",
+                const attrId = attribute.attribute_id.id;
+                const defaultSelected = this.props.defaultAttributeIds?.filter(
+                    (a) => a.attribute_id.id === attrId
+                );
+                const defaultCustomSelected = this.props.defaultCustomAttributeIds?.find(
+                    (a) => a.custom_product_template_attribute_value_id.attribute_id.id === attrId
+                );
+
+                acc[attrId] = {
+                    selected:
+                        (attribute.attribute_id.display_type === "multi"
+                            ? defaultSelected
+                            : defaultSelected?.[0]) || [],
+                    custom_value: defaultCustomSelected?.custom_value || "",
                 };
                 return acc;
             }, {}),
         });
 
-        this.initAttributes();
+        if (!this.props.defaultAttributeIds) {
+            this.initAttributes();
+        }
     }
 
     get attributes() {
