@@ -139,9 +139,11 @@ publicWidget.registry.ProductWishlist = publicWidget.Widget.extend(VariantMixin,
         const wishlistQuantity = document.querySelector('.my_wish_quantity');
         if (this.wishlistProductIDs.length != 0) {
             wishlistQuantity.classList.remove('d-none');
+            $('#empty-wishlist-message').addClass('d-none');
         }
         else {
             wishlistQuantity.classList.add('d-none');
+            $('#empty-wishlist-message').removeClass('d-none');
         }
     },
     /**

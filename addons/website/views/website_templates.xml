@@ -2799,7 +2799,17 @@ Sitemap: <t t-esc="url_root"/>sitemap.xml
                 </t>
                 <h1 class="mt24 h3-fs">Search Results</h1>
                 <t t-if="not results">
-                    <div class="alert alert-warning mt8" role="alert">
+                    <div class="d-flex flex-column w-100 justify-content-center align-items-center" role="alert">
+                        <svg class="my-5" width="100%" height="100" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <g clip-path="url(#clip0_26_16)">
+                            <path d="M5.15488 8.21832C12.9057 -1.37202 26.9795 -2.80037 36.566 5.15758C45.8416 12.8574 47.2881 26.2882 40.1665 35.8385L56 51.6723L51.6723 56L36.0735 40.4014C27.7497 46.7785 16.1437 46.5934 8.01043 39.8461C-1.57606 31.8881 -2.5959 17.8087 5.15488 8.21832ZM22.2923 6.19231C13.2282 6.19231 5.97692 13.4436 5.97692 22.5077C5.97692 31.5718 13.4095 38.8231 22.2923 38.8231C31.3564 38.8231 38.6077 31.5718 38.6077 22.5077C38.6077 13.4436 31.3564 6.19231 22.2923 6.19231Z" fill="currentColor"/>
+                            </g>
+                            <defs>
+                            <clipPath id="clip0_26_16">
+                            <rect width="56" height="56" fill="white"/>
+                            </clipPath>
+                            </defs>
+                        </svg>
                         <t t-if="search">
                             Your search '<t t-esc="search" />' did not match anything.
                         </t>
@@ -2809,7 +2819,17 @@ Sitemap: <t t-esc="url_root"/>sitemap.xml
                     </div>
                 </t>
                 <t t-elif="fuzzy_search">
-                    <div class="alert alert-warning mt8" role="alert">
+                    <div class="d-flex flex-column w-100 justify-content-center align-items-center" role="alert">
+                        <svg class="my-5" width="100%" height="100" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <g clip-path="url(#clip0_26_16)">
+                            <path d="M5.15488 8.21832C12.9057 -1.37202 26.9795 -2.80037 36.566 5.15758C45.8416 12.8574 47.2881 26.2882 40.1665 35.8385L56 51.6723L51.6723 56L36.0735 40.4014C27.7497 46.7785 16.1437 46.5934 8.01043 39.8461C-1.57606 31.8881 -2.5959 17.8087 5.15488 8.21832ZM22.2923 6.19231C13.2282 6.19231 5.97692 13.4436 5.97692 22.5077C5.97692 31.5718 13.4095 38.8231 22.2923 38.8231C31.3564 38.8231 38.6077 31.5718 38.6077 22.5077C38.6077 13.4436 31.3564 6.19231 22.2923 6.19231Z" fill="currentColor"/>
+                            </g>
+                            <defs>
+                            <clipPath id="clip0_26_16">
+                            <rect width="56" height="56" fill="white"/>
+                            </clipPath>
+                            </defs>
+                        </svg>
                         Your search '<t t-esc="search" />' did not match anything.
                         Results are displayed for '<t t-esc="fuzzy_search"/>'.
                     </div>
