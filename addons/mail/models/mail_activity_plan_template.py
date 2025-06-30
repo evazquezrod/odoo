@@ -155,6 +155,12 @@ class MailActivityPlanTemplate(models.Model):
             responsible = self.responsible_id
         elif self.responsible_type == 'on_demand':
             responsible = on_demand_responsible
+            if (user_field_name := self.env.context.get('mail_activity_server_action_plan_user_field_name')):
+                responsible = applied_on_record[user_field_name]
+                if responsible:
+                    # if x2m field, assign to the first user found
+                    # (same behavior as Field.traverse_related)
+                    responsible = responsible[0]
             if not responsible:
                 error = _('No responsible specified for %(activity_type_name)s: %(activity_summary)s.',
                           activity_type_name=self.activity_type_id.name,

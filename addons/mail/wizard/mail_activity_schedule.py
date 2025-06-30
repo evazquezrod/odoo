@@ -332,6 +332,12 @@ class MailActivitySchedule(models.TransientModel):
             for template in self._plan_filter_activity_templates_to_schedule():
                 if template.responsible_type == 'on_demand':
                     responsible = self.plan_on_demand_user_id
+                    if (user_field_name := self.env.context.get('mail_activity_server_action_plan_user_field_name')):
+                        responsible = record[user_field_name]
+                        if responsible:
+                            # if x2m field, assign to the first user found
+                            # (same behavior as Field.traverse_related)
+                            responsible = responsible[0]
                 else:
                     responsible = template._determine_responsible(self.plan_on_demand_user_id, record)['responsible']
                 date_deadline = template._get_date_deadline(self.plan_date)

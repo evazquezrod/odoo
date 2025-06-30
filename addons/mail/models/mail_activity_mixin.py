@@ -398,6 +398,12 @@ class MailActivityMixin(models.AbstractModel):
                 'res_id': record.id,
             }
             create_vals.update(act_values)
+            if (user_field_name := self.env.context.get('mail_activity_server_action_activity_user_field_name')):
+                user = record[user_field_name]
+                if user:
+                    # if x2m field, assign to the first user found
+                    # (same behavior as Field.traverse_related)
+                    create_vals['user_id'] = user.ids[0]
             if not create_vals.get('user_id') and activity_type.default_user_id:
                 create_vals['user_id'] = activity_type.default_user_id.id
             create_vals_list.append(create_vals)

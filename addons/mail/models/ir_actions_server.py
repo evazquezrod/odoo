@@ -3,7 +3,7 @@
 
 from dateutil.relativedelta import relativedelta
 
-from odoo import _, api, fields, models
+from odoo import _, api, Command, fields, models
 
 
 class IrActionsServer(models.Model):
@@ -74,20 +74,34 @@ class IrActionsServer(models.Model):
         compute='_compute_mail_post_method',
         readonly=False, store=True)
 
-    # Next Activity
+    # Next Activity: plan-based
+    activity_plan_available_ids = fields.Many2many(
+        'mail.activity.plan', compute='_compute_activity_plan_info', store=True)
+    activity_plan_id = fields.Many2one(
+        'mail.activity.plan', string='Activity Plans',
+        domain="[('id', 'in', activity_plan_available_ids)]",
+        compute='_compute_activity_plan_info', readonly=False, store=True)
+    activity_plan_has_user_on_demand = fields.Boolean(related='activity_plan_id.has_user_on_demand')
+    activity_plan_schedule_line_ids = fields.Many2many(
+        'mail.activity.schedule.line',
+        string='Plan Summary',
+        help="Summary of the plan's activities, as if the plan was scheduled for today.",
+        compute='_compute_activity_plan_schedule_line_ids')
+    # Next Activity: activity-based
     activity_type_id = fields.Many2one(
-        'mail.activity.type', string='Activity Type',
+        'mail.activity.type', string='Activity Types',
         domain="['|', ('res_model', '=', False), ('res_model', '=', model_name)]",
         compute='_compute_activity_info', readonly=False, store=True,
         ondelete='restrict')
     activity_summary = fields.Char(
-        'Title',
+        'Summary',
         compute='_compute_activity_info', readonly=False, store=True)
     activity_note = fields.Html(
         'Note',
         compute='_compute_activity_info', readonly=False, store=True)
+    # Next Activity: common
     activity_date_deadline_range = fields.Integer(
-        string='Due Date In',
+        string='Due In',
         compute='_compute_activity_info', readonly=False, store=True)
     activity_date_deadline_range_type = fields.Selection(
         [('days', 'Days'),
@@ -109,7 +123,7 @@ class IrActionsServer(models.Model):
         compute='_compute_activity_user_info', readonly=False, store=True)
 
     def _name_depends(self):
-        return [*super()._name_depends(), "template_id", "activity_type_id"]
+        return [*super()._name_depends(), "template_id", "activity_type_id", "activity_plan_id"]
 
     def _generate_action_name(self):
         self.ensure_one()
@@ -117,6 +131,8 @@ class IrActionsServer(models.Model):
             return _('Send %(template_name)s', template_name=self.template_id.name)
         if self.state == 'next_activity' and self.activity_type_id:
             return _('Create %(activity_name)s', activity_name=self.activity_type_id.name)
+        if self.state == 'next_activity' and self.activity_plan_id:
+            return _('Plan activities: %(activity_plan_name)s', activity_plan_name=self.activity_plan_id.name)
         return super()._generate_action_name()
 
     @api.depends('state')
@@ -181,7 +197,7 @@ class IrActionsServer(models.Model):
                 action.partner_ids = False
                 action.followers_partner_field_name = False
 
-    @api.depends('model_id', 'state')
+    @api.depends('model_id', 'state', 'activity_plan_id', 'activity_type_id')
     def _compute_activity_info(self):
         to_reset = self.filtered(lambda act: not act.model_id or act.state != 'next_activity')
         if to_reset:
@@ -192,14 +208,101 @@ class IrActionsServer(models.Model):
             to_reset.activity_date_deadline_range_type = False
             to_reset.activity_user_type = False
         for action in (self - to_reset):
-            if action.activity_type_id.res_model and action.model_id.model != action.activity_type_id.res_model:
+            if action.activity_plan_id:
                 action.activity_type_id = False
-            if not action.activity_summary:
-                action.activity_summary = action.activity_type_id.summary
+            elif not action.activity_type_id or (
+                action.activity_type_id.res_model and action.model_id.model != action.activity_type_id.res_model
+            ):
+                action.activity_type_id = action.env['mail.activity']._default_activity_type_for_model(action.model_id.model)
+            action.activity_summary = action.activity_type_id.summary
             if not action.activity_date_deadline_range_type:
                 action.activity_date_deadline_range_type = 'days'
             if not action.activity_user_type:
                 action.activity_user_type = 'specific'
+
+    @api.depends('model_id', 'state', 'activity_type_id')
+    def _compute_activity_plan_info(self):
+        self.activity_plan_available_ids = False
+        for action in self:
+            if action.state != 'next_activity':
+                action.activity_plan_id = False
+                continue
+
+            action.activity_plan_available_ids = self.env['mail.activity.plan'].search(
+                fields.Domain.AND([
+                    ['|', ('res_model', '=', False), ('res_model', '=', action.model_id.model)],
+                    [('template_ids', '!=', False)],  # exclude plan without activities
+                ])
+            )
+
+            if action.activity_type_id:
+                action.activity_plan_id = False
+                continue
+            if action.activity_plan_id.id not in action.activity_plan_available_ids.ids:
+                action.activity_plan_id = False
+                continue
+            if action.activity_plan_id.res_model and action.model_id.model != action.activity_plan_id.res_model:
+                action.activity_plan_id = False
+                continue
+
+    @api.depends('activity_plan_id', 'activity_date_deadline_range', 'activity_date_deadline_range_type', 'activity_user_id')
+    def _compute_activity_plan_schedule_line_ids(self):
+        self.activity_plan_schedule_line_ids = False
+        for action in self.filtered('activity_plan_id'):
+            plan_date = fields.Date.context_today(action) + relativedelta(**{
+                action.activity_date_deadline_range_type or 'days': action.activity_date_deadline_range})
+
+            schedule_line_values_list = []
+            for template in action.activity_plan_id.template_ids:
+                schedule_line_values = {
+                    'line_description': template.summary or template.activity_type_id.name,
+                }
+
+                # try to determine responsible user, light re-coding of '_determine_responsible' but
+                # we never have a target record here
+                responsible_user = False
+                if template.responsible_id:
+                    responsible_user = template.responsible_id
+                elif template.responsible_type == 'on_demand' and action.activity_user_type == 'specific':
+                    responsible_user = action.activity_user_id
+
+                if responsible_user:
+                    schedule_line_values['responsible_user_id'] = responsible_user.id
+
+                activity_date_deadline = template._get_date_deadline(plan_date)
+                schedule_line_values['line_date_deadline'] = activity_date_deadline
+
+                # append main line before handling next activities
+                schedule_line_values_list.append(schedule_line_values)
+
+                activity_type = template.activity_type_id
+                if activity_type.triggered_next_type_id:
+                    next_activity = activity_type.triggered_next_type_id
+                    schedule_line_values = {
+                        'line_description': next_activity.summary or next_activity.name,
+                        'responsible_user_id': next_activity.default_user_id.id or False,
+                    }
+                    if activity_date_deadline:
+                        schedule_line_values['line_date_deadline'] = next_activity.with_context(
+                            activity_previous_deadline=activity_date_deadline
+                        )._get_date_deadline()
+
+                    schedule_line_values_list.append(schedule_line_values)
+                elif activity_type.suggested_next_type_ids:
+                    for suggested in activity_type.suggested_next_type_ids:
+                        schedule_line_values = {
+                            'line_description': suggested.summary or suggested.name,
+                            'responsible_user_id': suggested.default_user_id.id or False,
+                        }
+                        if activity_date_deadline:
+                            schedule_line_values['line_date_deadline'] = suggested.with_context(
+                                activity_previous_deadline=activity_date_deadline
+                            )._get_date_deadline()
+
+                        schedule_line_values_list.append(schedule_line_values)
+
+            schedule_line_ids = action.env['mail.activity.schedule.line'].create(schedule_line_values_list)
+            action.activity_plan_schedule_line_ids = schedule_line_ids
 
     @api.depends('model_id', 'activity_user_type')
     def _compute_activity_user_info(self):
@@ -235,7 +338,7 @@ class IrActionsServer(models.Model):
         warnings = super()._get_warning_messages()
 
         if self.activity_date_deadline_range < 0:
-            warnings.append(_("The 'Due Date In' value can't be negative."))
+            warnings.append(_("The 'Due In' value can't be negative."))
 
         if self.state == 'mail_post' and self.template_id and self.template_id.model_id != self.model_id:
             warnings.append(_("Mail template model of $(action_name)s does not match action model.", action_name=self.name))
@@ -357,31 +460,28 @@ class IrActionsServer(models.Model):
                 )
         return False
 
-    def _run_action_next_activity(self, eval_context=None):
-        if not self.activity_type_id or not self.env.context.get('active_id') or self._is_recompute():
-            return False
-
-        records = self.env[self.model_name].browse(self.env.context.get('active_ids', self.env.context.get('active_id')))
-
-        vals = {
-            'summary': self.activity_summary or '',
-            'note': self.activity_note or '',
-            'activity_type_id': self.activity_type_id.id,
-        }
-        if self.activity_date_deadline_range > 0:
-            vals['date_deadline'] = fields.Date.context_today(self) + relativedelta(**{
+    def _run_action_next_activity_multi(self, eval_context=None):
+        ActivitySchedule = self.env['mail.activity.schedule']
+        base_date = fields.Date.context_today(self) + relativedelta(**{
                 self.activity_date_deadline_range_type or 'days': self.activity_date_deadline_range})
-        for record in records:
-            user = False
-            if self.activity_user_type == 'specific':
-                user = self.activity_user_id
-            elif self.activity_user_type == 'generic' and self.activity_user_field_name in record:
-                user = record[self.activity_user_field_name]
-            if user:
-                # if x2m field, assign to the first user found
-                # (same behavior as Field.traverse_related)
-                vals['user_id'] = user.ids[0]
-            record.activity_schedule(**vals)
+        if self.activity_plan_id:
+            if self.activity_user_type == 'generic':
+                ActivitySchedule = ActivitySchedule.with_context(mail_activity_server_action_plan_user_field_name=self.activity_user_field_name)
+            ActivitySchedule.create({
+                "plan_date": base_date,
+                "plan_id": self.activity_plan_id.id,
+                "plan_on_demand_user_id": self.activity_user_id.id,
+            }).action_schedule_plan()
+        else:
+            if self.activity_user_type == 'generic':
+                ActivitySchedule = ActivitySchedule.with_context(mail_activity_server_action_activity_user_field_name=self.activity_user_field_name)
+            ActivitySchedule.create({
+                "activity_type_id": self.activity_type_id.id,
+                "activity_user_id": self.activity_user_id.id,
+                "date_deadline": base_date,
+                "note": self.activity_note,
+                "summary": self.activity_summary,
+            }).action_schedule_activities()
         return False
 
     @api.model
