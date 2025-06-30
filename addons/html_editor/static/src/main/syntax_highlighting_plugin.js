@@ -145,7 +145,7 @@ export class SyntaxHighlightingPlugin extends Plugin {
             ev.preventDefault();
             const textarea = ev.currentTarget.querySelector("textarea");
             const tabSize = +getComputedStyle(textarea).tabSize || 4;
-            const tab = new Array(tabSize + 1).join(" ");
+            const tab = " ".repeat(tabSize);
             const { selectionStart, selectionEnd } = textarea;
             const collapsed = selectionStart === selectionEnd;
             let start = [...textarea.value.slice(0, selectionStart)].findLastIndex(
