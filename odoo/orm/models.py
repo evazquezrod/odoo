@@ -6743,6 +6743,19 @@ class ModelAlias(SQL):
 
     __getattr__ = __getitem__
 
+    def _left_join(self, field_name: str, alias_name: str | None = None) -> ModelAlias:
+        field = self._model._fields[field_name]
+        if field.type != 'many2one':
+            raise ValueError(f"Invalid field {field_name}: _left_join() only deals with many2one fields")
+        comodel = self._model.env[field.comodel_name]
+        if alias_name is None:
+            alias_name = self._query.make_alias(self._name, field_name)
+        coalias = ModelAlias(alias_name, comodel, self._query)
+        self._query.add_join(
+            'LEFT JOIN', alias_name, comodel._table, SQL("%s = %s", self[field_name], coalias.id),
+        )
+        return coalias
+
 
 @functools.total_ordering
 class ReversibleComparator:

@@ -168,3 +168,33 @@ class TestQuery(TransactionCase):
         field_alias = model_alias.name
         self.assertIsInstance(field_alias, SQL)
         self.assertEqual(field_alias.code, '"res_partner_category"."name"->>%s')
+
+        model = self.env['res.partner']
+        query = Query(model)
+        model_alias = ModelAlias(query.table, query._model, query)
+        self.assertIsInstance(model_alias, SQL)
+        self.assertEqual(model_alias.code, '"res_partner"')
+        self.assertEqual(model_alias._name, 'res_partner')
+
+        field_alias = model_alias.company_id
+        self.assertIsInstance(field_alias, SQL)
+        self.assertEqual(field_alias.code, '"res_partner"."company_id"')
+
+        coalias = model_alias._left_join('company_id')
+        self.assertIsInstance(coalias, SQL)
+        self.assertEqual(coalias.code, '"res_partner__company_id"')
+        self.assertEqual(coalias._name, 'res_partner__company_id')
+        self.assertEqual(coalias._model._name, 'res.company')
+        self.assertEqual(coalias._query, query)
+
+        field_alias = coalias.name
+        self.assertIsInstance(field_alias, SQL)
+        self.assertEqual(field_alias.code, '"res_partner__company_id"."name"')
+
+        with self.assertQueries(['''
+            SELECT "res_partner__company_id"."name"
+            FROM "res_partner"
+            LEFT JOIN "res_company" AS "res_partner__company_id"
+                ON ("res_partner"."company_id" = "res_partner__company_id"."id")
+        ''']):
+            self.env.execute_query(query.select(field_alias))

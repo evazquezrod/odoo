@@ -803,25 +803,14 @@ class Field(typing.Generic[T]):
         if not (model.env.su or self.compute_sudo or self.inherited):
             raise ValueError(f'Cannot convert {self} to SQL because it is not a sudoed related or inherited self')
 
-        model = model.sudo(model.env.su or self.compute_sudo)
-        query = alias._query
-        alias = alias._name
+        if self.compute_sudo:
+            alias = _models.ModelAlias(alias._name, model.sudo(), alias._query)
+
         *path_fnames, last_fname = self.related.split('.')
         for path_fname in path_fnames:
-            path_field = model._fields[path_fname]
-            if path_field.type != 'many2one':
-                raise ValueError(f'Cannot convert {self} (related={self.related}) to SQL because {path_fname} is not a Many2one')
+            alias = alias._left_join(path_fname)
 
-            comodel = model.env[path_field.comodel_name]
-            coalias = query.make_alias(alias, path_fname)
-            query.add_join('LEFT JOIN', coalias, comodel._table, SQL(
-                "%s = %s",
-                model._field_to_sql(alias, path_fname, query),
-                SQL.identifier(coalias, 'id'),
-            ))
-            model, alias = comodel, coalias
-
-        return ModelAlias(alias, model, query), model._fields[last_fname]
+        return alias, alias._model._fields[last_fname]
 
     # properties used by setup_related() to copy values from related field
     _related_comodel_name = property(attrgetter('comodel_name'))
