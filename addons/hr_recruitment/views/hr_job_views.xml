@@ -107,10 +107,10 @@
                                         </div>
                                         <div class="col">
                                             <div class="d-flex">
-                                                <field name="application_count" class="number"/>
+                                                <field name="open_application_count" class="number"/>
                                                 <div class="number_description">
                                                 <span>Open</span>
-                                                    <t t-if="record.application_count.raw_value == 1">Application</t>
+                                                    <t t-if="record.open_application_count.raw_value == 1">Application</t>
                                                     <t t-else="">Applications</t>
                                                 </div>
                                             </div>
@@ -157,7 +157,7 @@
                                                 <field name="user_id" widget="many2one_avatar_user"
                                                     options="{'display_avatar_name': False}"/>
                                                 <field name="no_of_recruitment"/>
-                                                <field name="application_count"/>
+                                                <field name="open_application_count"/>
                                             </div>
                                             <div class="d-flex flex-column">
                                                 <field name="user_id"/>
@@ -179,7 +179,7 @@
                                                     <t t-if="record.no_of_recruitment.raw_value == 1">Open Slot</t>
                                                     <t t-else="">Open Slots</t>
                                                 </span>
-                                                <t t-if="record.application_count.raw_value == 1">Open Application</t>
+                                                <t t-if="record.open_application_count.raw_value == 1">Open Application</t>
                                                 <t t-else="">Open Applications</t>
                                             </div>
                                         </div>
@@ -370,7 +370,7 @@
         <field name="arch" type="xml">
             <field name="name" position="after">
                 <field name="department_id"/>
-                <field name="application_count" string="Applications" groups="hr_recruitment.group_hr_recruitment_interviewer"/>
+                <field name="open_application_count" string="Open Applications" groups="hr_recruitment.group_hr_recruitment_interviewer"/>
                 <field name="no_of_recruitment"/>
             </field>
             <field name="no_of_employee" position="after">
