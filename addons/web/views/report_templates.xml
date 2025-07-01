@@ -309,7 +309,7 @@
                     <img t-if="company.logo" class="o_company_logo_big" t-att-src="image_data_uri(company.logo)" alt="Logo"/>
                     <div t-if="company.report_header" t-field="company.report_header" class="o_company_tagline fw-bold mt-2">Company tagline</div>
                 </div>
-                <div class="ms-3" name="company_address">
+                <div class=" w-50 ms-3" name="company_address">
                     <ul class="list-unstyled" name="company_address_list">
                         <li t-if="company.is_company_details_empty">
                             <span t-field="company.partner_id" t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": true}'>
@@ -320,7 +320,7 @@
                             </span>
                         </li>
                         <li t-else="">
-                            <span t-field="company.company_details" class="text-nowrap">
+                            <span t-field="company.company_details">
                                 <div class="bg-light border-1 rounded h-100 d-flex flex-column align-items-center justify-content-center p-4 w-100 opacity-75 text-muted text-center">
                                     <strong>Company details block</strong>
                                     <div>Contains the company details.</div>
@@ -366,7 +366,7 @@
                     <img t-if="company.logo" class="o_company_logo_big" t-att-src="image_data_uri(company.logo)" alt="Logo"/>
                 </div>
                 <div class="col-8 text-end mb4">
-                    <div name="company_address" class="float-end mb4">
+                    <div name="company_address" class="mb4">
                         <ul class="list-unstyled" name="company_address_list">
                             <li t-if="company.is_company_details_empty"><span t-field="company.partner_id" t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": true}'>
                                 <div class="bg-light border-1 rounded h-100 d-flex flex-column align-items-center justify-content-center p-4 w-100 opacity-75 text-muted text-center">
@@ -375,7 +375,7 @@
                                 </div>
                             </span></li>
                             <li t-else="">
-                                <span t-field="company.company_details" class="text-nowrap">
+                                <span t-field="company.company_details">
                                     <div class="bg-light border-1 rounded h-100 d-flex flex-column align-items-center justify-content-center p-4 w-100 opacity-75 text-muted text-center">
                                         <strong>Company details block</strong>
                                         <div>Contains the company details.</div>
@@ -434,7 +434,7 @@
                             </div>
                         </span></li>
                         <li t-else="">
-                            <span t-field="company.company_details" class="text-nowrap">
+                            <span t-field="company.company_details">
                                 <div class="bg-light border-1 rounded h-100 d-flex flex-column align-items-center justify-content-center p-4 w-100 opacity-75 text-muted text-center">
                                     <strong>Company details block</strong>
                                     <div>Contains the company details.</div>
@@ -494,7 +494,7 @@
                             </div>
                         </span></li>
                         <li t-else="">
-                            <span t-field="company.company_details" class="text-nowrap">
+                            <span t-field="company.company_details">
                                 <div class="bg-light border-1 rounded h-100 d-flex flex-column align-items-center justify-content-center p-4 w-100 opacity-75 text-muted text-center">
                                     <strong>Company details block</strong>
                                     <div>Contains the company details.</div>
@@ -559,7 +559,7 @@
                     <img t-if="company.logo" class="o_company_logo_big mb-2" t-att-src="image_data_uri(company.logo)" alt="Logo"/>
                     <div t-if="company.report_header" t-field="company.report_header" class="o_company_tagline fw-bold">Company tagline</div>
                 </div>
-                <div name="company_address" class="text-end">
+                <div name="company_address" class="w-50 text-end">
                     <ul class="list-unstyled" name="company_address_list">
                         <li t-if="company.is_company_details_empty"><span t-field="company.partner_id" t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": true}'>
                             <div class="d-flex flex-column align-items-center justify-content-center border-1 rounded p-4 h-100 w-100 bg-light opacity-75 text-muted text-center">
@@ -568,7 +568,7 @@
                             </div>
                         </span></li>
                         <li t-else="">
-                            <span t-field="company.company_details" class="text-nowrap">
+                            <span t-field="company.company_details">
                                 <div class="d-flex flex-column align-items-center justify-content-center border-1 rounded p-4 h-100 w-100 bg-light opacity-75 text-muted text-center">
                                     <strong>Company details block</strong>
                                     <div>Contains the company details.</div>
@@ -628,7 +628,7 @@
                     <img t-if="company.logo" class="o_company_logo mb-2" t-att-src="image_data_uri(company.logo)" alt="Logo"/>
                     <div t-if="company.report_header" t-field="company.report_header" class="o_company_tagline fw-bold">Company tagline</div>
                 </div>
-                <div name="company_address" class="text-end">
+                <div name="company_address" class="w-50 text-end">
                     <ul class="list-unstyled" name="company_address_list">
                         <li t-if="company.is_company_details_empty"><span t-field="company.partner_id" t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": true}'>
                             <div class="d-flex flex-column align-items-center justify-content-center border-1 rounded p-4 h-100 w-100 bg-light opacity-75 text-muted text-center">
@@ -637,7 +637,7 @@
                             </div>
                         </span></li>
                         <li t-else="">
-                            <span t-field="company.company_details" class="text-nowrap">
+                            <span t-field="company.company_details">
                                 <div class="d-flex flex-column align-items-center justify-content-center border-1 rounded p-4 h-100 w-100 bg-light opacity-75 text-muted text-center">
                                     <strong>Company details block</strong>
                                     <div>Contains the company details.</div>
@@ -689,12 +689,54 @@
             <svg t-attf-class="o_shape_bubble_1 z-n1 {{report_type == 'pdf' and 'position-fixed' or 'position-absolute'}}" width="1100" height="1100" xmlns="http://www.w3.org/2000/svg">
                <circle cx="550" cy="550" r="550" t-att-fill="company.primary_color" fill-opacity=".1"/>
             </svg>
+<<<<<<< 6c04e426d8f320d35251ec39d9e490d884099b60
             <table class="o_ignore_layout_styling table table-borderless mb-0">
                 <tbody>
                     <tr>
                         <td t-if="company.report_header" class="o_company_tagline fw-bold p-0 pe-2">
                             <span t-field="company.report_header">
                                 Company tagline
+||||||| 4232f275a19b7d75d76745e37f626391bbc66846
+            <div class="d-flex justify-content-between">
+                <div>
+                    <img t-if="company.logo" class="o_company_logo mb-2" t-att-src="image_data_uri(company.logo)" alt="Logo"/>
+                    <div t-if="company.report_header" t-field="company.report_header" class="o_company_tagline fw-bold">Company tagline</div>
+                </div>
+                <div name="company_address" class="text-end">
+                    <ul class="list-unstyled" name="company_address_list">
+                        <li t-if="company.is_company_details_empty"><span t-field="company.partner_id" t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": true}'>
+                            <div class="d-flex flex-column align-items-center justify-content-center border-1 rounded p-4 h-100 w-100 bg-light opacity-75 text-muted text-center">
+                                <strong>Company address block</strong>
+                                <div>Contains the company address.</div>
+                            </div>
+                        </span></li>
+                        <li t-else="">
+                            <span t-field="company.company_details" class="text-nowrap">
+                                <div class="d-flex flex-column align-items-center justify-content-center border-1 rounded p-4 h-100 w-100 bg-light opacity-75 text-muted text-center">
+                                    <strong>Company details block</strong>
+                                    <div>Contains the company details.</div>
+                                </div>
+=======
+            <div class="d-flex justify-content-between">
+                <div>
+                    <img t-if="company.logo" class="o_company_logo mb-2" t-att-src="image_data_uri(company.logo)" alt="Logo"/>
+                    <div t-if="company.report_header" t-field="company.report_header" class="o_company_tagline fw-bold">Company tagline</div>
+                </div>
+                <div name="company_address" class="w-50 text-end">
+                    <ul class="list-unstyled" name="company_address_list">
+                        <li t-if="company.is_company_details_empty"><span t-field="company.partner_id" t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": true}'>
+                            <div class="d-flex flex-column align-items-center justify-content-center border-1 rounded p-4 h-100 w-100 bg-light opacity-75 text-muted text-center">
+                                <strong>Company address block</strong>
+                                <div>Contains the company address.</div>
+                            </div>
+                        </span></li>
+                        <li t-else="">
+                            <span t-field="company.company_details">
+                                <div class="d-flex flex-column align-items-center justify-content-center border-1 rounded p-4 h-100 w-100 bg-light opacity-75 text-muted text-center">
+                                    <strong>Company details block</strong>
+                                    <div>Contains the company details.</div>
+                                </div>
+>>>>>>> e67847e2e32518fd1d155a941ab53a001716de18
                             </span>
                         </td>
                         <td class="p-0 text-end">
