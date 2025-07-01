@@ -1,5 +1,6 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+from odoo.orm.models import ModelAlias
 from odoo.tests.common import BaseCase, TransactionCase
 from odoo.tools import Query, SQL
 
@@ -147,3 +148,23 @@ class TestQuery(TransactionCase):
         self.assertEqual(list(query), records.ids)
         self.cr.execute(query.select())
         self.assertEqual([row[0] for row in self.cr.fetchall()], records.ids)
+
+    def test_aliases(self):
+        model = self.env['res.partner.category']
+        query = Query(model)
+        model_alias = ModelAlias(query.table, query._model, query)
+        self.assertIsInstance(model_alias, SQL)
+        self.assertEqual(model_alias.code, '"res_partner_category"')
+        self.assertEqual(model_alias._name, 'res_partner_category')
+        self.assertEqual(model_alias._model, model)
+        self.assertEqual(model_alias._query, query)
+
+        field_alias = model_alias.active
+        self.assertIsInstance(field_alias, SQL)
+        self.assertEqual(field_alias.code, '"res_partner_category"."active"')
+
+        # name is translated, check that model_alias delegates to the field
+        self.assertTrue(model._fields['name'].translate)
+        field_alias = model_alias.name
+        self.assertIsInstance(field_alias, SQL)
+        self.assertEqual(field_alias.code, '"res_partner_category"."name"->>%s')

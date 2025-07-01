@@ -6755,6 +6755,22 @@ class Model(AbstractModel):
     _abstract: typing.Literal[False] = False  # not abstract
 
 
+class ModelAlias(SQL):
+    """ Helper object to generate SQL table and field expressions. """
+    __slots__ = ('_model', '_name', '_query')
+
+    def __init__(self, name: str, model: BaseModel, query: Query):
+        super().__init__(f'"{name}"')
+        self._name = name
+        self._model = model
+        self._query = query
+
+    def __getitem__(self, field_expr: str) -> SQL:
+        return self._model._field_to_sql(self._name, field_expr, self._query)
+
+    __getattr__ = __getitem__
+
+
 @functools.total_ordering
 class ReversibleComparator:
     __slots__ = ('__item', '__none_first', '__reverse')
