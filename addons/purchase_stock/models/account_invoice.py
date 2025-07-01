@@ -113,32 +113,33 @@ class AccountMove(models.Model):
                     lines_vals_list.append(vals)
         return lines_vals_list
 
+    def button_draft(self):
+        return super().button_draft()
+
     def _post(self, soft=True):
         if not self._context.get('move_reverse_cancel'):
             self.env['account.move.line'].create(self._stock_account_prepare_anglo_saxon_in_lines_vals())
 
-        # Create correction layer and impact accounts if invoice price is different
+        posted = super()._post(soft)
+
         valued_lines = self.env['account.move.line'].sudo()
         for invoice in self:
             if invoice.move_type in ('in_invoice', 'in_refund', 'in_receipt'):
                 valued_lines |= invoice.invoice_line_ids.filtered(
                     lambda l: l.product_id and l.product_id.cost_method != 'standard')
 
-        valued_moves = self.env['stock.move']
-        for product, company in unique((m.product_id, m.company_id) for m in valued_moves):
+        for product, company in unique((l.product_id, l.company_id) for l in valued_lines):
             product = product.with_company(company.id)
-            if not product.uom_id.is_zero(product.quantity_svl):
+            if not product.uom_id.is_zero(product.qty_available):
                 product.sudo()._update_standard_price()
 
-        for lot, company in unique((ml.lot_id, ml.company_id) for ml in valued_moves._get_in_move_lines()):
-            if not lot:
-                continue
-            lot = lot.with_company(company.id)
-            if not lot.product_id.uom_id.is_zero(lot.quantity_svl):
-                lot.sudo()._update_standard_price()
+        # for lot, company in unique((ml.lot_id, ml.company_id) for ml in valued_moves._get_in_move_lines()):
+        #     if not lot:
+        #         continue
+        #     lot = lot.with_company(company.id)
+        #     if not lot.product_id.uom_id.is_zero(lot.product_qty):
+        #         lot.sudo()._update_standard_price()
 
-        posted = super(AccountMove, self.with_context(skip_cogs_reconciliation=True))._post(soft)
-        # self._stock_account_anglo_saxon_reconcile_valuation()
         return posted
 
     def _stock_account_get_last_step_stock_moves(self):

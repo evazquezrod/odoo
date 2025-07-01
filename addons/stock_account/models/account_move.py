@@ -35,12 +35,7 @@ class AccountMove(models.Model):
         self.env['account.move.line'].create(self._stock_account_prepare_anglo_saxon_out_lines_vals())
 
         # Post entries.
-        posted = super()._post(soft)
-
-        # Reconcile COGS lines in case of anglo-saxon accounting with perpetual valuation.
-        if not self.env.context.get('skip_cogs_reconciliation'):
-            posted._stock_account_anglo_saxon_reconcile_valuation()
-        return posted
+        return super()._post(soft)
 
     def button_draft(self):
         res = super().button_draft()

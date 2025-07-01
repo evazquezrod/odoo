@@ -130,7 +130,6 @@ class ProductProduct(models.Model):
         """Compute totals of multiple svl related values"""
         company_id = self.env.company
         self.company_currency_id = company_id.currency_id
-        import pudb; pudb.set_trace()
 
         for product in self:
             qty_available = product.sudo(False).qty_available

@@ -108,11 +108,20 @@ class StockMove(models.Model):
     def _get_value_from_account_move(self, quantity):
         if not (self.purchase_line_id and self.is_in and self.purchase_line_id):
             return 0, 0
-        moves_stack = self.purchase_line_id.move_ids
-        aml_stack = self.purchase_line_id.invoice_lines
-        import pudb; pudb.set_trace()
 
-        return 0, 0
+        quantity = 0
+        value = 0
+        for aml in self.purchase_line_id.invoice_lines:
+            if aml.move_id.state != 'posted':
+                continue
+            if aml.move_type == 'in_invoice':
+                quantity += aml.quantity
+                value += aml.price_subtotal
+            elif aml.move_type == 'in_refund':
+                quantity -= aml.quantity
+                value -= aml.price_subtotal
+
+        return value, quantity
 
     def _get_value_from_quotation(self, quantity):
         # TODO: Start from global value
