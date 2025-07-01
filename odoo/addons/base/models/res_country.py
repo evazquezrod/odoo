@@ -5,6 +5,7 @@ import re
 import logging
 from odoo import api, fields, models, tools
 from odoo.osv import expression
+from odoo.osv.expression import NEGATIVE_TERM_OPERATORS
 from odoo.exceptions import UserError
 from psycopg2 import IntegrityError
 from odoo.tools.translate import _
@@ -89,6 +90,11 @@ class Country(models.Model):
         ids = []
         if len(name) == 2:
             ids = list(self._search([('code', 'ilike', name)] + domain, limit=limit, order=order))
+        elif operator in ('=', '!=', 'in', 'not in'):
+            if isinstance(name, str):
+                name = name.capitalize()
+            else:
+                name = [nm.capitalize() for nm in name]
 
         search_domain = [('name', operator, name)]
         if ids:
