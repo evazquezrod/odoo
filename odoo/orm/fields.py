@@ -790,6 +790,35 @@ class Field(typing.Generic[T]):
                 domain |= Domain(field.name, '=', False)
         return domain
 
+    def _traverse_related_sql(self, alias: str, model: BaseModel, query: Query) -> tuple[BaseModel, Field, str]:
+        """ Traverse the related `field` and add needed join to the `query`.
+
+        :returns: tuple ``(model, field, alias)``, where ``field`` is the last
+            field in the sequence, ``model`` is that field's model, and
+            ``alias`` is the model's table alias
+        """
+        assert self.related and not self.store
+        if not (model.env.su or self.compute_sudo or self.inherited):
+            raise ValueError(f'Cannot convert {self} to SQL because it is not a sudoed related or inherited self')
+
+        model = model.sudo(model.env.su or self.compute_sudo)
+        *path_fnames, last_fname = self.related.split('.')
+        for path_fname in path_fnames:
+            path_field = model._fields[path_fname]
+            if path_field.type != 'many2one':
+                raise ValueError(f'Cannot convert {self} (related={self.related}) to SQL because {path_fname} is not a Many2one')
+
+            comodel = model.env[path_field.comodel_name]
+            coalias = query.make_alias(alias, path_fname)
+            query.add_join('LEFT JOIN', coalias, comodel._table, SQL(
+                "%s = %s",
+                model._field_to_sql(alias, path_fname, query),
+                SQL.identifier(coalias, 'id'),
+            ))
+            model, alias = comodel, coalias
+
+        return model, model._fields[last_fname], alias
+
     # properties used by setup_related() to copy values from related field
     _related_comodel_name = property(attrgetter('comodel_name'))
     _related_string = property(attrgetter('string'))
