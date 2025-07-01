@@ -2575,9 +2575,10 @@ class BaseModel(metaclass=MetaModel):
 
         self._check_field_access(field, 'read')
 
-        sql = field.to_sql(ModelAlias(alias, self, query))
+        alias = ModelAlias(alias, self, query)
+        sql = field.to_sql(alias)
         if property_name:
-            sql = field.property_to_sql(sql, property_name, self, alias, query)
+            sql = field.property_to_sql(sql, property_name, alias)
         return sql
 
     def _read_group_groupby_properties(self, field: Field, property_name: str, query: Query) -> SQL:

@@ -1277,7 +1277,7 @@ class Field(typing.Generic[T]):
 
         return sql_field
 
-    def property_to_sql(self, field_sql: SQL, property_name: str, model: BaseModel, alias: str, query: Query) -> SQL:
+    def property_to_sql(self, field_sql: SQL, property_name: str, alias: ModelAlias) -> SQL:
         """ Return an :class:`SQL` object that represents the value of the given
         expression from the given table alias.
 

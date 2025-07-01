@@ -14,9 +14,8 @@ from .utils import parse_field_expr, READ_GROUP_NUMBER_GRANULARITY
 
 if typing.TYPE_CHECKING:
     from collections.abc import Callable
-    from odoo.tools import Query
 
-    from .models import BaseModel
+    from .models import BaseModel, ModelAlias
 
 T = typing.TypeVar("T")
 
@@ -77,9 +76,9 @@ class BaseDate(Field[T | typing.Literal[False]], typing.Generic[T]):
             f"Only {', '.join(READ_GROUP_NUMBER_GRANULARITY.keys())} are supported"
         )
 
-    def property_to_sql(self, field_sql: SQL, property_name: str, model: BaseModel, alias: str, query: Query) -> SQL:
+    def property_to_sql(self, field_sql: SQL, property_name: str, alias: ModelAlias) -> SQL:
         sql_expr = field_sql
-        timezone = model.env.context.get('tz')
+        timezone = alias._model.env.context.get('tz')
         if self.type == 'datetime' and timezone:
             if timezone in pytz.all_timezones_set:
                 sql_expr = SQL("timezone(%s, timezone('UTC', %s))", timezone, sql_expr)
