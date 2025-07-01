@@ -13,6 +13,22 @@
         }</field>
         <field name="binding_model_id" ref="crm.model_crm_lead" />
         <field name="binding_view_types">form</field>
+        <field name="group_ids" eval="[(4, ref('project.group_project_manager'))]" />
     </record>
 
+    <!-- Add stat button for linked projects -->
+    <record id="crm_lead_view_form_inherit_crm_project" model="ir.ui.view">
+        <field name="name">crm.lead.form.inherit.crm.project</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <button name="action_schedule_meeting" position="after">
+                <button name="open_linked_projects" type="object"
+                    class="oe_stat_button" icon="fa-puzzle-piece"
+                    invisible="linked_project_count == 0">
+                    <field name="linked_project_count" widget="statinfo" string="Projects"/>
+                </button>
+            </button>
+        </field>
+    </record>
 </odoo>
