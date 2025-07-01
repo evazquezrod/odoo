@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates>
+    <t t-name="stock_account.StockValuationReport.InventoryValuationLine">
+        <tr t-att-class="props.class">
+            <td class="line_name">
+                <div class="wrapper">
+                    <button class="btn btn_foldable_empty" tabindex="-1"/>
+                    <span t-if="props.label" t-out="props.label"/>
+                </div>
+            </td>
+            <td>
+                <a href="#" t-on-click="onClick" t-out="formattedValue"/>
+            </td>
+        </tr>
+    </t>
+</templates>

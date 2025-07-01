@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates>
+    <t t-name="stock_account.StockValuationReport">
+        <div class="o_action account_report">
+            <ControlPanel>
+                <!-- Buttons bar -->
+                <!-- <t t-set-slot="control-panel-create-button">
+                    <AccountReportButtonsBar/>
+                </t>
+                <t t-set-slot="control-panel-additional-actions">
+                    <AccountReportCogMenu/>
+                </t> -->
+
+                <!-- Filters -->
+                <t t-set-slot="layout-actions">
+                   <div class="d-flex gap-1 flex-wrap">
+                       <StockValuationReportFilters/>
+                   </div>
+                </t>
+            </ControlPanel>
+            <div class="o_content">
+                <div class="mx-auto fit-content w-print-100">
+                    <table class="table table-borderless table-hover w-print-100">
+                        <tbody>
+                            <t t-call="stock_account.StockValuationReport.InventoryValuation"/>
+                            <t t-call="stock_account.StockValuationReport.EmptyLine"/>
+                            <!-- <t t-call="stock_account.StockValuationReport.Footer"/> -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="stock_account.StockValuationReport.EmptyLine">
+        <tr class="empty"><td/><td/></tr>
+    </t>
+
+    <t t-name="stock_account.StockValuationReport.InventoryValuation">
+        <tr t-att-class="{'unfolded': state.displayInventoryValuationLine}">
+            <td t-on-click="toggleInventoryValuationFold">
+                <div class="wrapper">
+                    <button class="btn btn_foldable">
+                        <i t-attf-class="fa fa-caret-#{state.displayInventoryValuationLine ? 'down' : 'right'}"/>
+                    </button>
+                    <span>Inventory Valuation</span>
+                </div>
+            </td>
+            <td>
+                <a t-if="!state.displayInventoryValuationLine" href="#"
+                   t-on-click="() => this.openStockReport(line)"
+                   t-out="inventoryValuation"/>
+            </td>
+        </tr>
+        <t t-if="state.displayInventoryValuationLine" t-call="stock_account.StockValuationReport.InventoryValuationLines"/>
+    </t>
+
+    <t t-name="stock_account.StockValuationReport.InventoryValuationLines">
+        <t t-foreach="data.inventory_valuation.lines" t-as="line" t-key="line.id">
+            <StockValuationReportLine class="'line_level_2'"
+                line="line"
+                value="line.total_value"
+                label="line.display_name"
+                onClickMethod.bind="openStockReport"/>
+        </t>
+        <StockValuationReportLine class="'total line_level_1'"
+            label="'Total Inventory Valuation'"
+            value="data.inventory_valuation.total"
+            onClickMethod.bind="openStockReport"/>
+    </t>
+
+    <t t-name="stock_account.StockValuationReport.Footer">
+        <tr class="unfolded">
+            <td>
+                <div>Account Stock Valuation</div>
+            </td>
+            <td>
+                <div t-out="accountingStockValuation"/>
+            </td>
+        </tr>
+        <tr class="unfolded">
+            <td>
+                <div>- Stock Initial</div>
+            </td>
+            <td>
+                <div t-out="stockInitial"/>
+            </td>
+        </tr>
+        <tr class="unfolded">
+            <td>
+                <div>= Stock Variation</div>
+            </td>
+            <td>
+                <div t-out="stockVariation"/>
+            </td>
+        </tr>
+    </t>
+</templates>
