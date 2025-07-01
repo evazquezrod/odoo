@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates>
+    <t t-inherit="stock_account.StockValuationReport" t-inherit-mode="extension">
+        <xpath expr="//t[@t-call='stock_account.StockValuationReport.InventoryValuation']" position="after">
+            <t t-call="stock_account.StockValuationReport.EmptyLine"/>
+            <t t-call="purchase_stock.StockValuationReport.NotInvoicedValuation"/>
+        </xpath>
+    </t>
+
+    <t t-name="purchase_stock.StockValuationReport.NotInvoicedValuation">
+        <tr t-att-class="{'unfolded': state.displayNotInvoicedReceivedGoods}">
+            <td t-on-click="toggleNotInvoicedReceivedGoodsFold">
+                <div class="wrapper">
+                    <button class="btn btn_foldable">
+                        <i t-attf-class="fa fa-caret-#{state.displayNotInvoicedReceivedGoods ? 'down' : 'right'}"/>
+                    </button>
+                    <span>Goods Received Not Invoiced</span>
+                </div>
+            </td>
+            <td>
+                <a t-if="!state.displayNotInvoicedReceivedGoods" href="#"
+                   t-on-click="() => this.openPurchaseOrder()"
+                   t-out="notInvoicedReceivedValuation"/>
+            </td>
+        </tr>
+        <t t-if="state.displayNotInvoicedReceivedGoods" t-call="purchase_stock.StockValuationReport.NotInvoicedValuationLines"/>
+    </t>
+
+    <t t-name="purchase_stock.StockValuationReport.NotInvoicedValuationLines">
+        <t t-foreach="data.not_invoiced_received_goods.lines" t-as="line" t-key="line.id">
+            <tr>
+                <td>
+                    <div class="ms-4" t-out="line.display_name"/>
+                </td>
+                <td>
+                    <a href="#" t-on-click="() => this.openPurchaseOrder(line)"
+                       t-out="formatMonetary(line.total_value)"/>
+                </td>
+            </tr>
+        </t>
+        <tr class="total">
+            <td>
+                <div>Total</div>
+            </td>
+            <td>
+                <a href="#" t-on-click="() => this.openPurchaseOrder()" t-out="notInvoicedReceivedValuation"/>
+            </td>
+        </tr>
+    </t>
+</templates>
