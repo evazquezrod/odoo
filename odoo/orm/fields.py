@@ -791,7 +791,7 @@ class Field(typing.Generic[T]):
                 domain |= Domain(field.name, '=', False)
         return domain
 
-    def _traverse_related_sql(self, alias: str, model: BaseModel, query: Query) -> tuple[BaseModel, Field, str]:
+    def _traverse_related_sql(self, alias: ModelAlias) -> tuple[ModelAlias, Field]:
         """ Traverse the related `field` and add needed join to the `query`.
 
         :returns: tuple ``(model, field, alias)``, where ``field`` is the last
@@ -799,10 +799,13 @@ class Field(typing.Generic[T]):
             ``alias`` is the model's table alias
         """
         assert self.related and not self.store
+        model = alias._model
         if not (model.env.su or self.compute_sudo or self.inherited):
             raise ValueError(f'Cannot convert {self} to SQL because it is not a sudoed related or inherited self')
 
         model = model.sudo(model.env.su or self.compute_sudo)
+        query = alias._query
+        alias = alias._name
         *path_fnames, last_fname = self.related.split('.')
         for path_fname in path_fnames:
             path_field = model._fields[path_fname]
@@ -818,7 +821,7 @@ class Field(typing.Generic[T]):
             ))
             model, alias = comodel, coalias
 
-        return model, model._fields[last_fname], alias
+        return ModelAlias(alias, model, query), model._fields[last_fname]
 
     # properties used by setup_related() to copy values from related field
     _related_comodel_name = property(attrgetter('comodel_name'))

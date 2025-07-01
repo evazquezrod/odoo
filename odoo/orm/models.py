@@ -1730,9 +1730,9 @@ class BaseModel(metaclass=MetaModel):
             raise ValueError(f"Granularity set on a no-datetime field or property: {groupby_spec!r}")
 
         elif field.type == 'many2many':
-            alias = self._table
+            alias = ModelAlias(self._table, self, query)
             if field.related and not field.store:
-                _model, field, alias = field._traverse_related_sql(alias, self, query)
+                alias, field = field._traverse_related_sql(alias)
 
             if not field.store:
                 raise ValueError(f"Group by non-stored many2many field: {groupby_spec!r}")
@@ -1745,10 +1745,10 @@ class BaseModel(metaclass=MetaModel):
             # LEFT JOIN {field.relation} AS rel_alias ON
             #     alias.id = rel_alias.{field.column1}
             #     AND rel_alias.{field.column2} IN ({coquery})
-            rel_alias = query.make_alias(alias, field.name)
+            rel_alias = query.make_alias(alias._name, field.name)
             condition = SQL(
                 "%s = %s",
-                SQL.identifier(alias, 'id'),
+                SQL.identifier(alias._name, 'id'),
                 SQL.identifier(rel_alias, field.column1),
             )
             if coquery.where_clause:
@@ -2569,9 +2569,10 @@ class BaseModel(metaclass=MetaModel):
             raise ValueError(f"Invalid field {fname!r} on model {self._name!r}")
 
         if field.related and not field.store:
-            model, field, alias = field._traverse_related_sql(alias, self, query)
+            alias = ModelAlias(alias, self, query)
+            alias, field = field._traverse_related_sql(alias)
             related_expr = field.name if not property_name else f"{field.name}.{property_name}"
-            return model._field_to_sql(alias, related_expr, query)
+            return alias[related_expr]
 
         self._check_field_access(field, 'read')
 
