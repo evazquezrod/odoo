@@ -65,6 +65,9 @@ export const CLIPBOARD_WHITELISTS = {
         "BR",
         "A",
         ".fa",
+        "FIGURE",
+        "FIGCAPTION",
+        "INPUT",
     ],
     classes: [
         // Media
@@ -89,8 +92,20 @@ export const CLIPBOARD_WHITELISTS = {
         // Miscellaneous
         /^btn/,
         /^fa/,
+        // Odoo contenteditable
+        "o-contenteditable-false",
     ],
-    attributes: ["class", "href", "src", "target"],
+    attributes: [
+        "class",
+        "href",
+        "src",
+        "target",
+        "data-caption-id",
+        "data-caption",
+        "data-embedded-props",
+        "data-embedded",
+        "data-oe-protected",
+    ],
     styledTags: ["SPAN", "B", "STRONG", "I", "S", "U", "FONT", "TD"],
 };
 
@@ -552,8 +567,11 @@ export class ClipboardPlugin extends Plugin {
      * @param {DragEvent} ev
      */
     onDragStart(ev) {
-        if (ev.target.nodeName === "IMG") {
-            this.dragImage = ev.target instanceof HTMLElement && ev.target;
+        const targetedNodes = this.dependencies.selection.getTargetedNodes();
+        if (ev.target.nodeName === "IMG" && targetedNodes.length === 1) {
+            const captionImage = closestElement(ev.target, "figure");
+            const dragImage = captionImage || ev.target;
+            this.dragImage = dragImage instanceof HTMLElement && dragImage;
             ev.dataTransfer.setData(
                 "application/vnd.odoo.odoo-editor-node",
                 this.dragImage.outerHTML
@@ -696,7 +714,6 @@ function getImageUrl(file) {
         };
     });
 }
-
 
 /**
  * Add origin to relative img src.

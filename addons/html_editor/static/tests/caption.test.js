@@ -1,7 +1,7 @@
 import { expect, test } from "@odoo/hoot";
 import { manuallyDispatchProgrammaticEvent, click, press, queryOne, waitFor } from "@odoo/hoot-dom";
 import { animationFrame } from "@odoo/hoot-mock";
-import { contains, makeMockEnv, onRpc } from "@web/../tests/web_test_helpers";
+import { contains, makeMockEnv, onRpc, patchWithCleanup } from "@web/../tests/web_test_helpers";
 import { CaptionPlugin } from "@html_editor/others/embedded_components/plugins/caption_plugin/caption_plugin";
 import { MAIN_PLUGINS, EMBEDDED_COMPONENT_PLUGINS } from "@html_editor/plugin_sets";
 import { MAIN_EMBEDDINGS } from "@html_editor/others/embedded_components/embedding_sets";
@@ -12,6 +12,7 @@ import { deleteBackward, deleteForward, insertText } from "./_helpers/user_actio
 import { cleanHints } from "./_helpers/dispatch";
 import { getContent } from "./_helpers/selection";
 import { expectElementCount } from "./_helpers/ui_expectations";
+import { nodeSize } from "@html_editor/utils/position";
 
 class CaptionPluginWithPredictableId extends CaptionPlugin {
     getCaptionId() {
@@ -864,4 +865,55 @@ test("previewing an image without caption doesn't show the caption as title (eve
     await animationFrame();
     titleSpan = queryOne(".o-FileViewer .o-FileViewer-header span.text-truncate");
     expect(titleSpan.textContent).toBe(base64Img.replaceAll("\n", "%0A"));
+});
+
+test("should drag and drop image with its caption", async () => {
+    const captionId = 1;
+    const caption = "Hello";
+    const { el } = await setupEditorWithEmbeddedCaption(
+        unformat(
+            `<p>a</p>
+            <figure contenteditable="false">
+                <img class="img-fluid test-image o_editable_media" src="${base64Img}">
+                <figcaption>${caption}</figcaption>
+            </figure>
+            <p>b</p>`
+        )
+    );
+    const imgElement = el.querySelector("img");
+    const targetNodeForDrop = el.lastChild;
+    patchWithCleanup(document, {
+        caretPositionFromPoint: () => ({
+            offsetNode: targetNodeForDrop,
+            offset: nodeSize(targetNodeForDrop),
+        }),
+    });
+
+    const dragdata = new DataTransfer();
+    await manuallyDispatchProgrammaticEvent(imgElement, "dragstart", { dataTransfer: dragdata });
+    await animationFrame();
+    const imageHTML = dragdata.getData("application/vnd.odoo.odoo-editor-node");
+    const dropData = new DataTransfer();
+    dropData.setData(
+        "text/html",
+        `<meta http-equiv="Content-Type" content="text/html;charset=UTF-8"><img src="${base64Img}">`
+    );
+    // Simulate the application/vnd.odoo.odoo-editor-node data that the browser would do.
+    dropData.setData("application/vnd.odoo.odoo-editor-node", imageHTML);
+    await manuallyDispatchProgrammaticEvent(targetNodeForDrop, "drop", { dataTransfer: dropData });
+    await animationFrame();
+
+    expect(getContent(el)).toBe(
+        unformat(
+            `<p>a</p>
+            <p>b</p>
+            <figure contenteditable="false">
+                <img class="img-fluid test-image o_editable_media" src="${base64Img}" data-caption-id="${captionId}" data-caption="${caption}">
+                <figcaption ${getFigcaptionAttributes(captionId, caption)}>
+                    <input ${CAPTION_INPUT_ATTRIBUTES}>
+                </figcaption>
+            </figure>
+            <p o-we-hint-text='Type "/" for commands' class="o-we-hint">[]<br></p>`
+        )
+    );
 });

@@ -49,6 +49,7 @@ export class CaptionPlugin extends Plugin {
         ],
         image_name_predicates: [this.getImageName.bind(this)],
         link_compatible_selection_predicates: [this.isLinkAllowedOnSelection.bind(this)],
+        delete_range_overrides: this.handleDeleteRange.bind(this),
     };
 
     setup() {
@@ -288,5 +289,21 @@ export class CaptionPlugin extends Plugin {
             this.dependencies.history.addStep();
             return true;
         }
+    }
+
+    handleDeleteRange(range) {
+        const startFigure = closestElement(range.startContainer, "figure");
+        const endFigure = closestElement(range.endContainer, "figure");
+
+        if (startFigure && startFigure === endFigure) {
+            const sibling = startFigure.nextSibling || startFigure.previousSibling;
+            startFigure.remove();
+            this.dependencies.selection.setSelection({
+                anchorNode: sibling,
+                anchorOffset: 0,
+            });
+            return true;
+        }
+        return false;
     }
 }
