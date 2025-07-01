@@ -2575,7 +2575,7 @@ class BaseModel(metaclass=MetaModel):
 
         self._check_field_access(field, 'read')
 
-        sql = field.to_sql(self, alias)
+        sql = field.to_sql(ModelAlias(alias, self, query))
         if property_name:
             sql = field.property_to_sql(sql, property_name, self, alias, query)
         return sql

@@ -440,10 +440,10 @@ class Many2one(_Relational):
                 ids1 = tuple(unique((ids0 or ()) + valid_records._ids))
                 invf._update_cache(corecord, ids1)
 
-    def to_sql(self, model: BaseModel, alias: str) -> SQL:
-        sql_field = super().to_sql(model, alias)
+    def to_sql(self, alias) -> SQL:
+        sql_field = super().to_sql(alias)
         if self.company_dependent:
-            comodel = model.env[self.comodel_name]
+            comodel = alias._model.env[self.comodel_name]
             sql_field = SQL(
                 '''(SELECT %(cotable_alias)s.id
                     FROM %(cotable)s AS %(cotable_alias)s

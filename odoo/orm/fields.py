@@ -29,6 +29,7 @@ if typing.TYPE_CHECKING:
 
     from .environments import Environment
     from .identifiers import IdType
+    from .models import ModelAlias
     from .registry import Registry
     from .types import BaseModel, DomainType, ModelType, Self, ValuesType
     M = typing.TypeVar("M", bound=BaseModel)
@@ -1243,7 +1244,7 @@ class Field(typing.Generic[T]):
     # SQL generation methods
     #
 
-    def to_sql(self, model: BaseModel, alias: str) -> SQL:
+    def to_sql(self, alias: ModelAlias) -> SQL:
         """ Return an :class:`SQL` object that represents the value of the given
         field from the given table alias.
 
@@ -1251,8 +1252,9 @@ class Field(typing.Generic[T]):
         """
         if not self.store or not self.column_type:
             raise ValueError(f"Cannot convert {self} to SQL because it is not stored")
-        sql_field = SQL.identifier(alias, self.name, to_flush=self)
+        sql_field = SQL("%s.%s", alias, SQL.identifier(self.name, to_flush=self))
         if self.company_dependent:
+            model = alias._model
             fallback = self.get_company_dependent_fallback(model)
             fallback = self.convert_to_column(self.convert_to_write(fallback, model), model)
             # in _read_group_orderby the result of field to sql will be mogrified and split to
