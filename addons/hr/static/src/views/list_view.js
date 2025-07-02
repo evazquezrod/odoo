@@ -27,7 +27,36 @@ export class EmployeeListController extends ListController {
     }
 }
 
+class HrVersionListController extends ListController {
+    async openRecord(event) {
+        const versionId = event?.resId;
+        const employeeId = event?.evalContext?.employee_id;
+
+        if (employeeId) {
+            await this.actionService.doAction({
+                type: "ir.actions.act_window",
+                res_model: "hr.employee",
+                res_id: employeeId,
+                views: [[false, "form"]],
+                target: "current",
+                context: {
+                    version_id: versionId,
+                },
+            });
+        } else {
+            this.notification.add("No employee linked to this version.", {
+                type: "warning",
+            });
+        }
+    }
+}
+
 registry.category('views').add('hr_employee_list', {
     ...listView,
     Controller: EmployeeListController,
+});
+
+registry.category("views").add("hr_version_list", {
+    ...listView,
+    Controller: HrVersionListController,
 });
