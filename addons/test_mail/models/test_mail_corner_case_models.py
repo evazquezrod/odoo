@@ -173,6 +173,27 @@ class MailTestTrackDurationMixin(models.Model):
         return ['customer_id']
 
 
+class MailTestStageField(models.Model):
+    _description = 'Fake model to be a stage to help test rotting implementation'
+    _name = 'mail.test.rotting.stage.mixin'
+
+    name = fields.Char()
+
+    day_rot = fields.Integer()
+
+
+class MailTestRottingMixin(models.Model):
+    _description = 'Fake model to test the rotting part of the mixin mail.tracking.duration.mixin'
+    _name = 'mail.test.rotting.resource.mixin'
+    _track_duration_field = 'stage_id'
+    _stage_day_rot_field = 'day_rot'
+    _inherit = ['mail.tracking.duration.mixin']
+
+    name = fields.Char()
+
+    stage_id = fields.Many2one('mail.test.rotting.stage.mixin', 'Stage')
+
+
 class MailTestTrackGroups(models.Model):
     _description = "Test tracking with groups"
     _name = "mail.test.track.groups"

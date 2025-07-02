@@ -26,6 +26,18 @@ class TestMailTrackingDurationMixin(MailTrackingDurationMixinCase):
         self._test_queries_batch_duration_tracking()
 
 
+@tagged('mail_thread', 'mail_track')
+class TestMailRottingMixin(MailTrackingDurationMixinCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass('mail.test.rotting.resource.mixin')
+
+    def test_rotting_class_implemented(self):
+        # this tests that the class compiles at all; the rotting feature is further tested in the CRM module tests
+        self.assertTrue(True)
+
+
 @tagged('mail_thread', 'mail_blacklist')
 class TestMailThread(MailCommon, TestRecipients):
 
