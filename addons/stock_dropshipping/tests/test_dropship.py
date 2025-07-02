@@ -56,7 +56,7 @@ class TestDropship(common.TransactionCase):
             'picking_policy': 'direct',
         })
         so.action_confirm()
-        po = self.env['purchase.order'].search([('reference_ids', '=', so.reference_ids.id)])
+        po = self.env['purchase.order'].search([('reference_ids', '=', so.stock_reference_ids.id)])
         po_line = po.order_line
 
         # Check dropship count on SO and PO
@@ -109,7 +109,7 @@ class TestDropship(common.TransactionCase):
         sale_order_drp_shpng.action_confirm()
 
         # Check the sales order created a reference which has a procurement of 200 pieces
-        self.assertTrue(sale_order_drp_shpng.reference_ids, 'SO should have procurement group')
+        self.assertTrue(sale_order_drp_shpng.stock_reference_ids, 'SO should have procurement group')
 
         # Check a quotation was created to a certain vendor and confirm so it becomes a confirmed purchase order
         purchase = self.env['purchase.order'].search([('partner_id', '=', self.supplier.id)])
@@ -362,7 +362,7 @@ class TestDropship(common.TransactionCase):
             })],
         })
         sale_order.action_confirm()
-        purchase_order = sale_order.reference_ids.purchase_ids
+        purchase_order = sale_order.stock_reference_ids.purchase_ids
         purchase_order.button_confirm()
         dropship_picking = purchase_order.picking_ids
         dropship_picking.move_line_ids.lot_name = 'dropship lot'
