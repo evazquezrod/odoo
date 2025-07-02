@@ -411,7 +411,7 @@ class IrHttp(models.AbstractModel):
     @api.model
     def get_translations_for_webclient(self, modules, lang):
         if not modules:
-            modules = self.pool._init_modules
+            modules = self.env.registry._init_modules.union(odoo.tools.config['server_wide_modules'])
         if not lang:
             lang = self.env.context.get("lang")
         lang_data = self.env['res.lang']._get_data(code=lang)

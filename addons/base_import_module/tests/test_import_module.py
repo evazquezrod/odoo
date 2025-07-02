@@ -63,11 +63,17 @@ class TestImportModule(odoo.tests.TransactionCase):
                     </record>
                 </data>
             """),
-            ('bar/i18n/fr_FR.po', b"""
+            ('bar/i18n/fr.po', b"""
                 #. module: bar
                 #: model:res.country,name:bar.foo
                 msgid "foo"
                 msgstr "dumb"
+
+                #. module: bar
+                #. odoo-javascript
+                #: code:addons/foo/static/js/foo.js:0
+                msgid "baz"
+                msgstr "qux"
             """),
         ]
         self.env['res.lang']._activate_lang('fr_FR')
@@ -93,6 +99,11 @@ class TestImportModule(odoo.tests.TransactionCase):
                 static_attachment = self.env['ir.attachment'].search([('url', '=', '/%s' % path)])
                 self.assertEqual(static_attachment.name, os.path.basename(path))
                 self.assertEqual(static_attachment.datas, base64.b64encode(data))
+
+        self.assertEqual(
+            self.env['ir.http'].get_translations_for_webclient(['bar'], 'fr_FR')[0]['bar'],
+            {'messages': ({'id': 'baz', 'string': 'qux'},)},
+        )
 
     def test_import_zip_invalid_manifest(self):
         """Assert the expected behavior when import a ZIP module with an invalid manifest"""

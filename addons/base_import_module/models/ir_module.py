@@ -19,7 +19,7 @@ from odoo.modules.module import MANIFEST_NAMES, Manifest
 from odoo.release import major_version
 from odoo.tools import convert_file, exception_to_unicode
 from odoo.tools import file_open, file_open_temporary_directory, ormcache
-from odoo.tools.misc import topological_sort
+from odoo.tools.misc import OrderedSet, topological_sort
 
 _logger = logging.getLogger(__name__)
 
@@ -35,6 +35,11 @@ class IrModuleModule(models.Model):
         ('official', 'Official Apps'),
         ('industries', 'Industries'),
     ], default='official')
+
+    @api.model
+    @ormcache()
+    def _get_imported_module_names(self):
+        return OrderedSet(self.sudo().search_fetch([('imported', '=', True), ('state', '=', 'installed')], ['name']).mapped('name'))
 
     def _get_modules_to_load_domain(self):
         # imported modules are not expected to be loaded as regular modules
@@ -174,6 +179,35 @@ class IrModuleModule(models.Model):
                                 'module': "__cloc_exclude__",
                                 'res_id': attachment.id,
                             })
+
+        # store translation files as attachments to allow loading translations for webclient
+        path_lang = opj(path, 'i18n')
+        if os.path.isdir(path_lang):
+            for entry in os.scandir(path_lang):
+                if not entry.is_file() or not entry.name.endswith('.po'):
+                    # we don't support sub-directories in i18n
+                    continue
+                with file_open(entry.path, 'rb', env=self.env) as fp:
+                    raw = fp.read()
+                lang = entry.name.split('.')[0]
+                # store as binary ir.attachment
+                values = {
+                    'name': f'{module}_{lang}.po',
+                    'url': f'/{module}/i18n/{lang}.po',
+                    'type': 'binary',
+                    'raw': raw,
+                }
+                attachment = IrAttachment.sudo().search([('url', '=', values['url']), ('type', '=', 'binary'), ('name', '=', values['name'])])
+                if attachment:
+                    attachment.write(values)
+                else:
+                    attachment = IrAttachment.create(values)
+                    self.env['ir.model.data'].create({
+                        'name': f'attachment_{module}_{lang}'.replace('.', '_').replace(' ', '_'),
+                        'model': 'ir.attachment',
+                        'module': module,
+                        'res_id': attachment.id,
+                    })
 
         IrAsset = self.env['ir.asset']
         assets_vals = []

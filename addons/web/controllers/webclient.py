@@ -53,10 +53,7 @@ class WebClient(http.Controller):
         :param lang: the language of the user
         :return:
         """
-        if mods:
-            mods = mods.split(',')
-        elif mods is None:
-            mods = list(request.env.registry._init_modules) + odoo.tools.config['server_wide_modules']
+        mods = mods.split(',') if mods else []
 
         if lang and lang not in {code for code, _ in request.env['res.lang'].sudo().get_installed()}:
             lang = None
