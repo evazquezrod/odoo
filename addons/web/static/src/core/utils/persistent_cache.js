@@ -90,28 +90,24 @@ export class PersistentCache {
         this.crypto = new Crypto(secret);
         this.indexedDB = new IndexedDB(name, version + CRYPTO_ALGO);
         this.ramCache = new RamCache();
+        this.pendingRequests = {};
     }
 
-    read(table, key, fallback, { onUpdate } = {}) {
+    read(table, key, fallback, { onFinish } = {}) {
         const ramValue = this.ramCache.read(table, key);
-        if (ramValue && !onUpdate) {
+        const requestKey = `${table}/${key}`;
+        const hadPendingRequest = requestKey in this.pendingRequests;
+        if (onFinish) {
+            this.pendingRequests[requestKey] = this.pendingRequests[requestKey] || [];
+            this.pendingRequests[requestKey].push(onFinish);
+        }
+        if (ramValue && (!onFinish || hadPendingRequest)) {
             return ramValue;
         }
         const def = new Deferred();
         const fromCache = new Deferred();
         let fromCacheValue;
         const prom = fallback()
-            .then((result) => {
-                def.resolve(result);
-                this.ramCache.write(table, key, Promise.resolve(deepCopy(result)));
-                if (onUpdate && fromCacheValue && fromCacheValue !== JSON.stringify(result)) {
-                    onUpdate(result);
-                }
-                this.crypto.encrypt(result).then((encryptedResult) => {
-                    this.indexedDB.write(table, key, encryptedResult);
-                });
-                return result;
-            })
             .catch(async (error) => {
                 await fromCache;
                 if (fromCacheValue) {
@@ -120,6 +116,18 @@ export class PersistentCache {
                 }
                 this.ramCache.delete(table, key); // remove rejected prom from ram cache
                 def.reject(error);
+            })
+            .then((result) => {
+                def.resolve(result);
+                this.ramCache.write(table, key, Promise.resolve(deepCopy(result)));
+                const hasChanged =
+                    (fromCacheValue && fromCacheValue !== JSON.stringify(result)) || false;
+                this.pendingRequests[requestKey]?.forEach((cb) => cb(hasChanged, result));
+                delete this.pendingRequests[requestKey];
+                this.crypto.encrypt(result).then((encryptedResult) => {
+                    this.indexedDB.write(table, key, encryptedResult);
+                });
+                return result;
             });
         if (ramValue) {
             ramValue.then((value) => {
