@@ -3,6 +3,7 @@ import { Thread } from "@mail/core/common/thread_model";
 import { useSequential } from "@mail/utils/common/hooks";
 import { compareDatetime, nearestGreaterThanOrEqual } from "@mail/utils/common/misc";
 
+import { _t } from "@web/core/l10n/translation";
 import { formatList } from "@web/core/l10n/utils";
 import { rpc } from "@web/core/network/rpc";
 import { registry } from "@web/core/registry";
@@ -213,6 +214,36 @@ const threadPatch = {
             },
         });
         this.typingMembers = fields.Many("discuss.channel.member", { inverse: "threadAsTyping" });
+        this.displayToSelf = fields.Attr(false, {
+            compute() {
+                return (
+                    this.is_pinned ||
+                    (["channel", "group"].includes(this.channel_type) &&
+                        this.hasSelfAsMember &&
+                        !this.parent_channel_id)
+                );
+            },
+            onUpdate() {
+                this.onPinStateUpdated();
+            },
+        });
+
+        /**
+         * This field is used for channels only.
+         * false means using the custom_notifications from user settings.
+         *
+         * @type {false|"all"|"mentions"|"no_notif"}
+         */
+        this.custom_notifications = false;
+        this.mute_until_dt = fields.Datetime();
+        /** @type {Boolean} */
+        this.isLocallyPinned = fields.Attr(false, {
+            onUpdate() {
+                this.onPinStateUpdated();
+            },
+        });
+        /** @type {"not_fetched"|"pending"|"fetched"} */
+        this.fetchMembersState = "not_fetched";
     },
     /** @returns {import("models").ChannelMember[]} */
     _computeOfflineMembers() {
@@ -415,6 +446,145 @@ const threadPatch = {
     },
     get unknownMembersCount() {
         return (this.member_count ?? 0) - this.channel_member_ids.length;
+    },
+    get allowedToLeaveChannelTypes() {
+        return ["channel", "group"];
+    },
+    get canLeave() {
+        return (
+            this.allowedToLeaveChannelTypes.includes(this.channel_type) &&
+            this.group_ids.length === 0 &&
+            this.store.self?.type === "partner"
+        );
+    },
+    get allowedToUnpinChannelTypes() {
+        return ["chat"];
+    },
+    get canUnpin() {
+        return (
+            this.parent_channel_id || this.allowedToUnpinChannelTypes.includes(this.channel_type)
+        );
+    },
+    get isMuted() {
+        return this.mute_until_dt;
+    },
+    get typesAllowingCalls() {
+        return ["chat", "channel", "group"];
+    },
+    get allowCalls() {
+        return (
+            !this.isTransient &&
+            this.typesAllowingCalls.includes(this.channel_type) &&
+            !this.correspondent?.persona.eq(this.store.odoobot)
+        );
+    },
+    get hasAttachmentPanel() {
+        return this.model === "discuss.channel";
+    },
+    get isChatChannel() {
+        return ["chat", "group"].includes(this.channel_type);
+    },
+    get allowDescription() {
+        return ["channel", "group"].includes(this.channel_type);
+    },
+    get invitationLink() {
+        if (!this.uuid || this.channel_type === "chat") {
+            return undefined;
+        }
+        return `${window.location.origin}/chat/${this.id}/${this.uuid}`;
+    },
+    executeCommand(command, body = "") {
+        return this.store.env.services.orm.call(
+            "discuss.channel",
+            command.methodName,
+            [[this.id]],
+            { body }
+        );
+    },
+    async leave() {
+        await this.store.env.services.orm.silent.call("discuss.channel", "action_unfollow", [
+            this.id,
+        ]);
+    },
+    async markAsFetched() {
+        await this.store.env.services.orm.silent.call("discuss.channel", "channel_fetched", [
+            [this.id],
+        ]);
+    },
+    /** @param {string} data base64 representation of the binary */
+    async notifyAvatarToServer(data) {
+        await rpc("/discuss/channel/update_avatar", {
+            channel_id: this.id,
+            data,
+        });
+    },
+    async notifyDescriptionToServer(description) {
+        this.description = description;
+        return this.store.env.services.orm.call(
+            "discuss.channel",
+            "channel_change_description",
+            [[this.id]],
+            { description }
+        );
+    },
+    pin() {
+        if (this.model !== "discuss.channel" || this.store.self.type !== "partner") {
+            return;
+        }
+        this.is_pinned = true;
+        return this.store.env.services.orm.silent.call(
+            "discuss.channel",
+            "channel_pin",
+            [this.id],
+            { pinned: true }
+        );
+    },
+    /** @param {string} name */
+    async rename(name) {
+        const newName = name.trim();
+        if (
+            newName !== this.displayName &&
+            ((newName && this.channel_type === "channel") || this.isChatChannel)
+        ) {
+            if (this.channel_type === "channel" || this.channel_type === "group") {
+                this.name = newName;
+                await this.store.env.services.orm.call(
+                    "discuss.channel",
+                    "channel_rename",
+                    [[this.id]],
+                    { name: newName }
+                );
+            } else if (this.supportsCustomChannelName) {
+                if (this.selfMember) {
+                    this.selfMember.custom_channel_name = newName;
+                }
+                await this.store.env.services.orm.call(
+                    "discuss.channel",
+                    "channel_set_custom_name",
+                    [[this.id]],
+                    { name: newName }
+                );
+            }
+        }
+    },
+    async leaveChannel({ force = false } = {}) {
+        if (
+            this.channel_type !== "group" &&
+            this.create_uid?.eq(this.store.self.main_user_id) &&
+            !force
+        ) {
+            await this.askLeaveConfirmation(
+                _t("You are the administrator of this channel. Are you sure you want to leave?")
+            );
+        }
+        if (this.channel_type === "group" && !force) {
+            await this.askLeaveConfirmation(
+                _t(
+                    "You are about to leave this group conversation and will no longer have access to it unless you are invited again. Are you sure you want to continue?"
+                )
+            );
+        }
+        this.leave();
     },
 };
 patch(Thread.prototype, threadPatch);
