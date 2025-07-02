@@ -6,15 +6,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 18.4a1+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-20 15:53+0000\n"
-"PO-Revision-Date: 2025-05-20 20:42+0400\n"
+"POT-Creation-Date: 2025-07-04 07:39+0000\n"
+"PO-Revision-Date: 2025-07-04 11:45+0400\n"
 "Last-Translator: \n"
-"Language-Team: \n"
+"Language-Team: Arabic\n"
 "Language: ar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: \n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
 "X-Generator: Poedit 3.6\n"
 
 #. module: l10n_sa
@@ -60,12 +60,17 @@ msgstr "12. إجمالي المشتريات (ضريبة)"
 #. module: l10n_sa
 #: model:account.report.line,name:l10n_sa.tax_report_line_special_sales_to_locals_base
 msgid "2. Special Sales to Locals (Base)"
-msgstr "2. المبيعات للمواطنين (الخدمات الصحية  الخاصة/التعليم الأهلي الخاص) (أساسي)"
+msgstr "2. المبيعات للمواطنين (الخدمات الصحية  الخاصة/التعليم الأهلي الخاص) (أساسي)"
 
 #. module: l10n_sa
 #: model:account.report.line,name:l10n_sa.tax_report_line_special_sales_to_locals_tax
 msgid "2. Special Sales to Locals (Tax)"
-msgstr "2. المبيعات للمواطنين (الخدمات الصحية  الخاصة/التعليم الأهلي الخاص) (ضريبة)"
+msgstr "2. المبيعات للمواطنين (الخدمات الصحية  الخاصة/التعليم الأهلي الخاص) (ضريبة)"
+
+#. module: l10n_sa
+#: model_terms:ir.ui.view,arch_db:l10n_sa.l10n_sa_report_invoice_document
+msgid "27.00"
+msgstr "27.00"
 
 #. module: l10n_sa
 #: model:account.report.line,name:l10n_sa.tax_report_line_local_sales_subject_to_0_base
@@ -78,6 +83,11 @@ msgid "3. Local Sales Subject to 0% (Tax)"
 msgstr "3. المبيعات المحلية الخاضعة للنسبة الصفرية (ضريبة)"
 
 #. module: l10n_sa
+#: model_terms:ir.ui.view,arch_db:l10n_sa.l10n_sa_report_invoice_document
+msgid "31.05"
+msgstr "31.05"
+
+#. module: l10n_sa
 #: model:account.report.line,name:l10n_sa.tax_report_line_export_sales_base
 msgid "4. Export Sales (Base)"
 msgstr "4. الصادرات (أساسي)"
@@ -86,6 +96,11 @@ msgstr "4. الصادرات (أساسي)"
 #: model:account.report.line,name:l10n_sa.tax_report_line_export_sales_tax
 msgid "4. Export Sales (Tax)"
 msgstr "4. الصادرات (ضريبة)"
+
+#. module: l10n_sa
+#: model_terms:ir.ui.view,arch_db:l10n_sa.l10n_sa_report_invoice_document
+msgid "4.05"
+msgstr "4.05"
 
 #. module: l10n_sa
 #: model:account.report.line,name:l10n_sa.tax_report_line_exempt_sales_base
@@ -138,99 +153,61 @@ msgid "9. Imports subject to reverse charge mechanism (Tax)"
 msgstr "9. الاستيرادات الخاضعة لضريبة القيمة المضافة التي تُطبق عليها آلية الاحتساب العكس (ضريبة)"
 
 #. module: l10n_sa
-#: model_terms:ir.ui.view,arch_db:l10n_sa.arabic_english_invoice
-msgid ""
-"<span>\n"
-"                Subtotal<br/>(exclusive of VAT)\n"
-"            </span>"
+#: model_terms:ir.ui.view,arch_db:l10n_sa.l10n_sa_report_invoice_document
+msgid "<span name=\"th_vat_amount_span\">VAT Amount</span>"
+msgstr "<span name=\"th_vat_amount_span\">مبلغ ضريبة القيمة المضافة</span>"
+
+#. module: l10n_sa
+#: model_terms:ir.ui.view,arch_db:l10n_sa.l10n_sa_report_invoice_document
+msgid "<span name=\"th_vat_excl_span\">Subtotal (Exclusive of VAT)</span>"
+msgstr "<span name=\"th_vat_excl_span\">إجمالي المبلغ (غير شامل القيمة المضافة)</span>"
+
+#. module: l10n_sa
+#: model_terms:ir.ui.view,arch_db:l10n_sa.l10n_sa_report_invoice_document
+msgid "<span name=\"th_vat_incl_span\">Subtotal (Inclusive of VAT)</span>"
+msgstr "<span name=\"th_vat_incl_span\">إجمالي المبلغ (شامل القيمة المضافة)</span>"
+
+#. module: l10n_sa
+#: model_terms:ir.ui.view,arch_db:l10n_sa.l10n_sa_report_invoice_document
+msgid "<span>Description</span>"
 msgstr ""
 
 #. module: l10n_sa
-#: model_terms:ir.ui.view,arch_db:l10n_sa.arabic_english_invoice
-msgid ""
-"<span>\n"
-"                Subtotal<br/>(inclusive of VAT)\n"
-"            </span>"
-msgstr ""
+#: model_terms:ir.ui.view,arch_db:l10n_sa.l10n_sa_document_tax_totals
+#: model_terms:ir.ui.view,arch_db:l10n_sa.l10n_sa_document_tax_totals_company_currency_template
+msgid "<span>Invoice Taxable Amount / </span>"
+msgstr "<span>المبلغ الخاضع للضريبة / </span>"
 
 #. module: l10n_sa
-#: model_terms:ir.ui.view,arch_db:l10n_sa.arabic_english_invoice
-msgid ""
-"<span>\n"
-"                المجموع الفرعي بدون الضريبة\n"
-"            </span>"
-msgstr ""
+#: model_terms:ir.ui.view,arch_db:l10n_sa.l10n_sa_report_invoice_document
+msgid "<span>Reason:</span><br/>"
+msgstr "<span>السبب:</span><br/>"
 
 #. module: l10n_sa
-#: model_terms:ir.ui.view,arch_db:l10n_sa.arabic_english_invoice
-msgid ""
-"<span>\n"
-"                المجموع شامل ضريبة القيمة المضافة\n"
-"            </span>"
-msgstr ""
+#: model_terms:ir.ui.view,arch_db:l10n_sa.l10n_sa_report_invoice_document
+msgid "<strong>Supply Date</strong>"
+msgstr "<strong>تاريخ التوريد</strong>"
 
 #. module: l10n_sa
-#: model_terms:ir.ui.view,arch_db:l10n_sa.arabic_english_invoice
-msgid ""
-"<span>\n"
-"                نسبة الضريبة\n"
-"            </span>"
-msgstr ""
-
-#. module: l10n_sa
-#: model_terms:ir.ui.view,arch_db:l10n_sa.arabic_english_invoice
-msgid ""
-"<strong style=\"white-space:nowrap\">:\n"
-"                        تاريخ التوصيل\n"
-"                    </strong>"
-msgstr ""
-
-#. module: l10n_sa
-#: model_terms:ir.ui.view,arch_db:l10n_sa.arabic_english_invoice
-msgid ""
-"<strong style=\"white-space:nowrap\">Delivery Date:\n"
-"                    </strong>"
-msgstr ""
-
-#. module: l10n_sa
-#: model_terms:ir.ui.view,arch_db:l10n_sa.arabic_english_invoice
-msgid ""
-"<strong>\n"
-"                Invoice Taxable Amount\n"
-"                /<br/>\n"
-"                المبلغ الخاضع للضريبة غير شامل ضريبة القيمة المضافة\n"
-"            </strong>"
-msgstr ""
-
-#. module: l10n_sa
-#: model_terms:ir.ui.view,arch_db:l10n_sa.arabic_english_invoice
-msgid ""
-"<strong>\n"
-"                Invoice Total (inclusive of VAT)\n"
-"                /\n"
-"                إجمالي قيمة الفاتورة شامل ضريبة القيمة المضافة\n"
-"            </strong>"
-msgstr ""
-
-#. module: l10n_sa
-#: model_terms:ir.ui.view,arch_db:l10n_sa.arabic_english_invoice
-msgid "<strong>Shipping Address:</strong>"
-msgstr ""
+#: model_terms:ir.ui.view,arch_db:l10n_sa.l10n_sa_document_tax_totals
+#: model_terms:ir.ui.view,arch_db:l10n_sa.l10n_sa_document_tax_totals_company_currency_template
+msgid "<strong>Total / </strong>"
+msgstr "<strong>الإجمالي / </strong>"
 
 #. module: l10n_sa
 #: model:ir.model,name:l10n_sa.model_account_chart_template
 msgid "Account Chart Template"
-msgstr ""
+msgstr "قالب دليل الحسابات"
 
 #. module: l10n_sa
 #: model:ir.model,name:l10n_sa.model_account_move_reversal
 msgid "Account Move Reversal"
-msgstr ""
+msgstr "عكس قيد اليومية"
 
 #. module: l10n_sa
 #: model:ir.model,name:l10n_sa.model_account_debit_note
 msgid "Add Debit Note wizard"
-msgstr ""
+msgstr "معالج إضافة إشعار مدين"
 
 #. module: l10n_sa
 #: model:ir.model.fields.selection,name:l10n_sa.selection__account_debit_note__l10n_sa_reason__br-ksa-17-reason-3
@@ -243,7 +220,7 @@ msgstr "تم الاتفاق على تعديل قيمة التوريد مسبقا
 #: model:account.report.column,name:l10n_sa.tax_report_vat_filing_balance
 #: model:account.report.column,name:l10n_sa.tax_report_withholding_tax_balance
 msgid "Balance"
-msgstr ""
+msgstr "الرصيد"
 
 #. module: l10n_sa
 #: model:ir.model.fields.selection,name:l10n_sa.selection__account_debit_note__l10n_sa_reason__br-ksa-17-reason-1
@@ -256,7 +233,17 @@ msgstr "تم إلغاء أو وقف التوريد بعد حدوثه أو اعت
 #: model:ir.model.fields,field_description:l10n_sa.field_account_bank_statement_line__l10n_sa_confirmation_datetime
 #: model:ir.model.fields,field_description:l10n_sa.field_account_move__l10n_sa_confirmation_datetime
 msgid "Confirmation Date"
+msgstr "تاريخ التأكيد"
+
+#. module: l10n_sa
+#: model:ir.model.fields,help:l10n_sa.field_account_bank_statement_line__l10n_sa_confirmation_datetime
+#: model:ir.model.fields,help:l10n_sa.field_account_move__l10n_sa_confirmation_datetime
+msgid ""
+"Date when the invoice is confirmed and posted.\n"
+"                                                    In other words, it is the date on which the invoice is generated as final document (after securing all internal approvals)."
 msgstr ""
+"تاريخ تأكيد وتسجيل الفاتورة.\n"
+"بعبارة أخرى، هو التاريخ الذي يتم فيه إصدار الفاتورة كوثيقة نهائية (بعد الحصول على جميع الموافقات الداخلية)."
 
 #. module: l10n_sa
 #: model:ir.model.fields,field_description:l10n_sa.field_account_chart_template__display_name
@@ -264,7 +251,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_sa.field_account_move__display_name
 #: model:ir.model.fields,field_description:l10n_sa.field_account_move_reversal__display_name
 msgid "Display Name"
-msgstr ""
+msgstr "اسم العرض"
 
 #. module: l10n_sa
 #: model:ir.model.fields,field_description:l10n_sa.field_account_chart_template__id
@@ -272,7 +259,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_sa.field_account_move__id
 #: model:ir.model.fields,field_description:l10n_sa.field_account_move_reversal__id
 msgid "ID"
-msgstr ""
+msgstr "المعرف"
 
 #. module: l10n_sa
 #: model:ir.model.fields.selection,name:l10n_sa.selection__account_debit_note__l10n_sa_reason__br-ksa-17-reason-5
@@ -298,13 +285,13 @@ msgstr "عند ترجيع السلع أو الخدمات"
 #. module: l10n_sa
 #: model:ir.model,name:l10n_sa.model_account_move
 msgid "Journal Entry"
-msgstr ""
+msgstr "قيد اليومية"
 
 #. module: l10n_sa
 #: model:ir.model.fields,field_description:l10n_sa.field_account_bank_statement_line__l10n_sa_show_reason
 #: model:ir.model.fields,field_description:l10n_sa.field_account_move__l10n_sa_show_reason
 msgid "L10N Sa Show Reason"
-msgstr ""
+msgstr "إظهار السبب لتوطين السعودية"
 
 #. module: l10n_sa
 #: model:account.report.line,name:l10n_sa.tax_report_line_net_vat_due
@@ -317,6 +304,11 @@ msgid "Net VAT due (or reclaimed) for the period"
 msgstr "ضرريبة القيمة المضافة التي تم ترحيلها من الفترة / الفترات السابقة"
 
 #. module: l10n_sa
+#: model_terms:ir.ui.view,arch_db:l10n_sa.l10n_sa_report_invoice_document
+msgid "Tax Invoice"
+msgstr "فاتورة ضريبية"
+
+#. module: l10n_sa
 #: model:account.report.line,name:l10n_sa.tax_report_line_total_value_of_due_tax_for_the_period
 msgid "Total value of due tax for the period"
 msgstr "إجمالي ضريبة القيمة المستحقة للفترة الحالية"
@@ -324,7 +316,7 @@ msgstr "إجمالي ضريبة القيمة المستحقة للفترة ال�
 #. module: l10n_sa
 #: model:account.report.line,name:l10n_sa.tax_report_line_total_value_of_recoverable_tax_for_the_period
 msgid "Total value of recoverable tax for the period"
-msgstr ""
+msgstr "إجمالي قيمة الضريبة القابلة للاسترداد للفترة"
 
 #. module: l10n_sa
 #: model:account.report,name:l10n_sa.tax_report_vat_filing
@@ -520,27 +512,4 @@ msgstr "سبب ZATCA"
 #: model:ir.model.fields,field_description:l10n_sa.field_account_bank_statement_line__l10n_sa_qr_code_str
 #: model:ir.model.fields,field_description:l10n_sa.field_account_move__l10n_sa_qr_code_str
 msgid "Zatka QR Code"
-msgstr ""
-
-#. module: l10n_sa
-#: model:account.tax.group,name:l10n_sa.sa_tax_group_taxes_15
-msgid "VAT Taxes"
-msgstr "ضريبة القيمة المضافة"
-
-#. module: l10n_sa
-#: model:ir.model.fields,field_description:l10n_sa.field_account_bank_statement_line__l10n_sa_confirmation_datetime
-#: model:ir.model.fields,field_description:l10n_sa.field_account_move__l10n_sa_confirmation_datetime
-#: model:ir.model.fields,field_description:l10n_sa.field_account_payment__l10n_sa_confirmation_datetime
-msgid "Confirmation Date"
-msgstr "تاريخ التأكيد"
-
-#. module: l10n_sa
-#: model:ir.model.fields,help:l10n_sa.field_account_bank_statement_line__l10n_sa_confirmation_datetime
-#: model:ir.model.fields,help:l10n_sa.field_account_move__l10n_sa_confirmation_datetime
-#: model:ir.model.fields,help:l10n_sa.field_account_payment__l10n_sa_confirmation_datetime
-msgid ""
-"Date when the invoice is confirmed and posted.\n"
-"                                                    In other words, it is the date on which the invoice is generated as final document (after securing all internal approvals)."
-msgstr ""
-"تاريخ تأكيد وتسجيل الفاتورة.\n"
-"بعبارة أخرى، هو التاريخ الذي يتم فيه إصدار الفاتورة كوثيقة نهائية (بعد الحصول على جميع الموافقات الداخلية)."
+msgstr "رمز الاستجابة السريعة (ZATCA)"

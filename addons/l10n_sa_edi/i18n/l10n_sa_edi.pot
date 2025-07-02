@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 18.4a1+e\n"
+"Project-Id-Version: Odoo Server 18.5a1+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-20 12:24+0000\n"
-"PO-Revision-Date: 2025-06-20 12:24+0000\n"
+"POT-Creation-Date: 2025-07-04 07:53+0000\n"
+"PO-Revision-Date: 2025-07-04 07:53+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -124,46 +124,6 @@ msgid "<i class=\"fa fa-warning me-2\"/> Warning"
 msgstr ""
 
 #. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.arabic_english_invoice
-msgid "<span class=\"fw-bold\">Exchange Rate</span>"
-msgstr ""
-
-#. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.arabic_english_invoice
-msgid "<span class=\"fw-bold\">Subtotal</span>"
-msgstr ""
-
-#. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.arabic_english_invoice
-msgid "<span class=\"fw-bold\">Total</span>"
-msgstr ""
-
-#. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.arabic_english_invoice
-msgid "<span class=\"fw-bold\">VAT Amount</span>"
-msgstr ""
-
-#. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.arabic_english_invoice
-msgid "<strong>الإجمالي الفرعي بالريال السعودي</strong>"
-msgstr ""
-
-#. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.arabic_english_invoice
-msgid "<strong>الإجمالي بالريال السعودي</strong>"
-msgstr ""
-
-#. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.arabic_english_invoice
-msgid "<strong>سعر الصرف</strong>"
-msgstr ""
-
-#. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.arabic_english_invoice
-msgid "<strong>مبلغ ضريبة القيمة المضافة بالريال السعودي</strong>"
-msgstr ""
-
-#. module: l10n_sa_edi
 #: model_terms:ir.ui.view,arch_db:l10n_sa_edi.res_config_settings_view_form
 msgid "API Mode"
 msgstr ""
@@ -220,6 +180,11 @@ msgid "Attachment"
 msgstr ""
 
 #. module: l10n_sa_edi
+#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.view_account_form_inherit
+msgid "Blocking Invoice"
+msgstr ""
+
+#. module: l10n_sa_edi
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_res_partner__l10n_sa_edi_building_number
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_res_users__l10n_sa_edi_building_number
 #: model_terms:ir.ui.view,arch_db:l10n_sa_edi.sa_partner_address_form
@@ -273,6 +238,12 @@ msgid "Certificate"
 msgstr ""
 
 #. module: l10n_sa_edi
+#. odoo-python
+#: code:addons/l10n_sa_edi/models/account_move.py:0
+msgid "Chain Head"
+msgstr ""
+
+#. module: l10n_sa_edi
 #: model_terms:ir.ui.view,arch_db:l10n_sa_edi.sa_partner_address_form
 msgid "City"
 msgstr ""
@@ -291,6 +262,11 @@ msgstr ""
 #. module: l10n_sa_edi
 #: model:ir.model,name:l10n_sa_edi.model_res_company
 msgid "Companies"
+msgstr ""
+
+#. module: l10n_sa_edi
+#: model:ir.model,name:l10n_sa_edi.model_base_document_layout
+msgid "Company Document Layout"
 msgstr ""
 
 #. module: l10n_sa_edi
@@ -396,6 +372,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_account_move_line__display_name
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_account_move_send__display_name
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_account_tax__display_name
+#: model:ir.model.fields,field_description:l10n_sa_edi.field_base_document_layout__display_name
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_certificate_certificate__display_name
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_ir_attachment__display_name
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_l10n_sa_edi_otp_wizard__display_name
@@ -451,13 +428,6 @@ msgid ""
 msgstr ""
 
 #. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_CreditNoteType_zatca
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_DebitNoteType_zatca
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_InvoiceType_zatca
-msgid "ICV"
-msgstr ""
-
-#. module: l10n_sa_edi
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_account_edi_format__id
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_account_edi_xml_ubl_21_zatca__id
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_account_journal__id
@@ -465,6 +435,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_account_move_line__id
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_account_move_send__id
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_account_tax__id
+#: model:ir.model.fields,field_description:l10n_sa_edi.field_base_document_layout__id
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_certificate_certificate__id
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_ir_attachment__id
 #: model:ir.model.fields,field_description:l10n_sa_edi.field_l10n_sa_edi_otp_wizard__id
@@ -640,13 +611,6 @@ msgid "Momra License"
 msgstr ""
 
 #. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_CreditNoteType_zatca
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_DebitNoteType_zatca
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_InvoiceType_zatca
-msgid "N/A"
-msgstr ""
-
-#. module: l10n_sa_edi
 #: model:ir.model.fields.selection,name:l10n_sa_edi.selection__res_partner__l10n_sa_edi_additional_identification_scheme__nat
 msgid "National ID"
 msgstr ""
@@ -732,13 +696,6 @@ msgid "PCSID Renewal"
 msgstr ""
 
 #. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_CreditNoteType_zatca
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_DebitNoteType_zatca
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_InvoiceType_zatca
-msgid "PIH"
-msgstr ""
-
-#. module: l10n_sa_edi
 #: model:ir.model.fields.selection,name:l10n_sa_edi.selection__res_partner__l10n_sa_edi_additional_identification_scheme__pas
 msgid "Passport ID"
 msgstr ""
@@ -803,13 +760,6 @@ msgstr ""
 #: code:addons/l10n_sa_edi/models/account_journal.py:0
 msgid ""
 "Production certificate has expired, please renew the PCSID before proceeding"
-msgstr ""
-
-#. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_CreditNoteType_zatca
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_DebitNoteType_zatca
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_InvoiceType_zatca
-msgid "QR"
 msgstr ""
 
 #. module: l10n_sa_edi
@@ -891,7 +841,7 @@ msgid "Set whether the system should use the Production API"
 msgstr ""
 
 #. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.arabic_english_invoice
+#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.l10n_sa_edi_report_invoice_document
 msgid "Simplified Tax Invoice"
 msgstr ""
 
@@ -948,8 +898,10 @@ msgid "Tax Identification Number"
 msgstr ""
 
 #. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.arabic_english_invoice
-msgid "Tax Invoice"
+#: model:ir.model.fields,help:l10n_sa_edi.field_account_bank_statement_line__l10n_sa_edi_chain_head_id
+#: model:ir.model.fields,help:l10n_sa_edi.field_account_move__l10n_sa_edi_chain_head_id
+msgid ""
+"Technical field to know if the chain has been stopped by a previous invoice"
 msgstr ""
 
 #. module: l10n_sa_edi
@@ -1188,6 +1140,12 @@ msgid "ZATCA chain index"
 msgstr ""
 
 #. module: l10n_sa_edi
+#: model:ir.model.fields,field_description:l10n_sa_edi.field_account_bank_statement_line__l10n_sa_edi_chain_head_id
+#: model:ir.model.fields,field_description:l10n_sa_edi.field_account_move__l10n_sa_edi_chain_head_id
+msgid "ZATCA chain stopping move"
+msgstr ""
+
+#. module: l10n_sa_edi
 #: model_terms:ir.ui.view,arch_db:l10n_sa_edi.res_config_settings_view_form
 msgid "ZATCA specific settings for Saudi eInvoicing"
 msgstr ""
@@ -1226,9 +1184,6 @@ msgstr ""
 
 #. module: l10n_sa_edi
 #: model_terms:ir.ui.view,arch_db:l10n_sa_edi.export_sa_zatca_ubl_extensions
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_CreditNoteType_zatca
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_DebitNoteType_zatca
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_InvoiceType_zatca
 msgid "urn:oasis:names:specification:ubl:dsig:enveloped:xades"
 msgstr ""
 
@@ -1239,18 +1194,5 @@ msgstr ""
 
 #. module: l10n_sa_edi
 #: model_terms:ir.ui.view,arch_db:l10n_sa_edi.export_sa_zatca_ubl_extensions
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_CreditNoteType_zatca
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_DebitNoteType_zatca
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.ubl_21_InvoiceType_zatca
 msgid "urn:oasis:names:specification:ubl:signature:Invoice"
-msgstr ""
-
-#. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.arabic_english_invoice
-msgid "فاتورة ضريبية"
-msgstr ""
-
-#. module: l10n_sa_edi
-#: model_terms:ir.ui.view,arch_db:l10n_sa_edi.arabic_english_invoice
-msgid "فاتورة ضريبية مبسطة"
 msgstr ""

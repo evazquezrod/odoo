@@ -10,7 +10,9 @@ Arabic/English for GCC
     'author': 'Odoo S.A.',
     'license': 'LGPL-3',
     'depends': ['account'],
+    'post_init_hook': '_l10n_gcc_invoice_post_init',
     'data': [
         'views/report_invoice.xml',
+        'views/res_config_settings_views.xml',
     ],
 }
