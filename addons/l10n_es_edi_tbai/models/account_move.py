@@ -288,6 +288,11 @@ class AccountMove(models.Model):
         tax_amls = self.line_ids.filtered(lambda x: x.display_type == 'tax')
         tax_lines = [self._prepare_tax_line_for_taxes_computation(x) for x in tax_amls]
         self.env['l10n_es_edi_tbai.document']._add_base_lines_tax_amounts(base_lines, self.company_id, tax_lines=tax_lines)
+        for base_line in base_lines:
+            sign = base_line['is_refund'] and -1 or 1
+            base_line['gross_price_unit'] = sign * base_line['gross_price_unit']
+            base_line['discount_amount'] = sign * base_line['discount_amount']
+            base_line['price_total'] = sign * base_line['price_total']
         taxes = self.invoice_line_ids.tax_ids.flatten_taxes_hierarchy()
         is_oss = any(tax._l10n_es_get_regime_code() == '17' for tax in taxes)
 
@@ -357,15 +362,16 @@ class AccountMove(models.Model):
                 line.tax_repartition_line_id.factor_percent != -100.0):
                 results[tax]['tax_amount'] += line.balance
         iva_values = []
+        sign = -1 if self.is_inbound() else 1
         for tax in results:
             code = "C"  # Bienes Corrientes
             if tax.l10n_es_bien_inversion:
                 code = "I"  # Investment Goods
             if tax.tax_scope == 'service':
                 code = 'G'  # Gastos
-            iva_values.append({'base': results[tax]['base_amount'],
+            iva_values.append({'base': sign * results[tax]['base_amount'],
                                'code': code,
-                               'tax': results[tax]['tax_amount'],
+                               'tax': sign * results[tax]['tax_amount'],
                                'rec': tax})
         return {'iva_values': iva_values,
                 'amount_total': amount_total}
