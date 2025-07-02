@@ -440,6 +440,10 @@ class Domain:
             object.__setattr__(domain, '_opt_level', level)
         return domain
 
+    def _resolve_dynamic_values(self, model) -> Domain:
+        """TODO doc"""
+        return self.map_conditions(lambda cond: cond._resolve_dynamic_values(model))
+
     def _optimize(self, model: BaseModel, full: bool) -> Domain:
         """Implementation of domain optimizations."""
         return self
@@ -923,6 +927,11 @@ class DomainCondition(Domain):
         if not full:
             return self
 
+        # dynamic values
+        domain = self._resolve_dynamic_values(model)
+        if domain != self:
+            return domain
+
         # resolve inherited fields
         # inherits implies both Field.delegate=True and Field.auto_join=True
         # so no additional permissions will be added by the 'any' operator below
@@ -1000,12 +1009,35 @@ class DomainCondition(Domain):
             model_label=f"{model.env['ir.model']._get(model._name).name!r} ({model._name})",
         ))
 
+    def _resolve_dynamic_values(self, model):
+        value = self.value
+        field = self._field(model)
+        if isinstance(value, Domain):
+            comodel = model.env[field.comodel_name]
+            value = value._resolve_dynamic_values(comodel)
+        if (
+            field.type in ('date', 'datetime')
+            and self.operator in ('in', 'not in', '>', '<', '<=', '>=')
+            and "." not in self.field_expr
+        ):
+            if field.type == 'date':
+                value = _value_to_date(value, model.env)
+            else:
+                value, _ = _value_to_datetime(value, model.env)
+        return DomainCondition(self.field_expr, self.operator, value)
+
     def _as_predicate(self, records):
         if not records:
             return lambda _: False
 
         if self._opt_level < OptimizationLevel.BASIC:
             return self.optimize(records, full=False)._as_predicate(records)
+        elif self._opt_level == OptimizationLevel.BASIC:
+            domain = self._resolve_dynamic_values(records).optimize(records)
+            if domain == self:
+                self = domain  # noqa: PLW0642
+            else:
+                return domain._as_predicate(records)
 
         operator = self.operator
         if operator in ('child_of', 'parent_of'):
@@ -1046,12 +1078,6 @@ class DomainCondition(Domain):
         elif field_expr == 'id':
             # for new records, compare to their origin
             field_expr = 'id.origin'
-        elif field.type == 'date' and '.' not in field_expr and isinstance(value, str):
-            # dynamic value
-            value = _value_to_date(value, records.env)
-        elif field.type == 'datetime' and '.' not in field_expr and isinstance(value, str):
-            # dynamic value
-            value, _ = _value_to_datetime(value, records.env)
 
         func = field.filter_function(records, field_expr, positive_operator, value)
         return func if positive_operator == operator else lambda rec: not func(rec)
@@ -1459,19 +1485,6 @@ def _optimize_type_date(condition, model):
     return DomainCondition(condition.field_expr, operator, value)
 
 
-@field_type_optimization(['date'], level=OptimizationLevel.FULL)
-def _optimize_type_date_relative(condition, model):
-    operator = condition.operator
-    if (
-        operator not in ('in', 'not in', '>', '<', '<=', '>=')
-        or "." in condition.field_expr
-        or not isinstance(condition.value, (str, OrderedSet))
-    ):
-        return condition
-    value = _value_to_date(condition.value, model.env)
-    return DomainCondition(condition.field_expr, operator, value)
-
-
 def _value_to_datetime(value, env, iso_only=False):
     """Convert a value(s) to datetime.
 
@@ -1564,19 +1577,6 @@ def _optimize_type_datetime(condition, model):
         return domain
 
     return DomainCondition(field_expr, operator, value)
-
-
-@field_type_optimization(['datetime'], level=OptimizationLevel.FULL)
-def _optimize_type_datetime_relative(condition, model):
-    operator = condition.operator
-    if (
-        operator not in ('in', 'not in', '>', '<', '<=', '>=')
-        or "." in condition.field_expr
-        or not isinstance(condition.value, (str, OrderedSet))
-    ):
-        return condition
-    value, _ = _value_to_datetime(condition.value, model.env)
-    return DomainCondition(condition.field_expr, operator, value)
 
 
 @field_type_optimization(['binary'])
