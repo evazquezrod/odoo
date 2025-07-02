@@ -31,7 +31,6 @@ class ImageToolOptionPlugin extends Plugin {
         "media",
         "builderOptions",
     ];
-    static shared = ["canHaveHoverEffect"];
     resources = {
         builder_options: [
             withSequence(REPLACE_MEDIA, {
@@ -108,6 +107,7 @@ class ImageToolOptionPlugin extends Plugin {
                 }
             }
         },
+        can_have_hover_effect_predicates: this.canHaveHoverEffect.bind(this),
     };
 
     async canHaveHoverEffect(img) {

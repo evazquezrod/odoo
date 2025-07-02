@@ -11,14 +11,17 @@ import { ancestors, closestElement, findFurthest } from "@html_editor/utils/dom_
 import { childNodeIndex, DIRECTIONS, nodeSize } from "@html_editor/utils/position";
 import { BuilderAction } from "@html_builder/core/builder_action";
 
-class AnimateOptionPlugin extends Plugin {
+export class AnimateOptionPlugin extends Plugin {
     static id = "animateOption";
-    static dependencies = ["imageToolOption", "history", "selection", "split"];
+    static dependencies = ["history", "selection", "split"];
     static shared = ["forceAnimation", "getDirectionsItems", "getEffectsItems"];
     animateOptionProps = {
         getDirectionsItems: this.getDirectionsItems.bind(this),
         getEffectsItems: this.getEffectsItems.bind(this),
-        canHaveHoverEffect: this.dependencies.imageToolOption.canHaveHoverEffect,
+        canHaveHoverEffect: (el) =>
+            Promise.all(
+                this.getResource("can_have_hover_effect_predicates").map((p) => p(el))
+            ).then((allowed) => allowed.some(Boolean)),
     };
     resources = {
         builder_options: [

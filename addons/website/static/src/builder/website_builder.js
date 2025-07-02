@@ -17,9 +17,16 @@ import { SaveTranslationPlugin } from "./plugins/save_translation_plugin";
 import { TranslateLinkInlinePlugin } from "./plugins/translate_link_inline_plugin";
 import { TranslationPlugin } from "./plugins/translation_plugin";
 import { WebsiteVisibilityPlugin } from "./plugins/website_visibility_plugin";
+import { AnimateOptionPlugin } from "./plugins/options/animate_option_plugin";
+import { BuilderComponentPlugin } from "@html_builder/core/builder_component_plugin";
+import { BuilderActionsPlugin } from "@html_builder/core/builder_actions_plugin";
+import { CoreBuilderActionPlugin } from "@html_builder/core/core_builder_action_plugin";
 
 const TRANSLATION_PLUGINS = [
     BuilderOptionsPlugin,
+    BuilderActionsPlugin,
+    BuilderComponentPlugin,
+    CoreBuilderActionPlugin,
     DisableSnippetsPlugin,
     SavePlugin,
     SetupEditorPlugin,
@@ -29,6 +36,7 @@ const TRANSLATION_PLUGINS = [
     TranslateLinkInlinePlugin,
     TranslationPlugin,
     WebsiteVisibilityPlugin,
+    AnimateOptionPlugin,
     HighlightPlugin,
     OperationPlugin,
 ];
