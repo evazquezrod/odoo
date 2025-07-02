@@ -6,12 +6,12 @@ import { insertText, splitBlock } from "../_helpers/user_actions";
 const base64Img =
     "data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAAAUA\n        AAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO\n            9TXL0Y4OHwAAAABJRU5ErkJggg==";
 
-before(() => {
-    return document.fonts.add(new FontFace(
-        "Roboto",
-        "url(/web/static/fonts/google/Roboto/Roboto-Regular.ttf)",
-    )).ready;
-});
+before(
+    () =>
+        document.fonts.add(
+            new FontFace("Roboto", "url(/web/static/fonts/google/Roboto/Roboto-Regular.ttf)")
+        ).ready
+);
 
 describe("Selection collapsed", () => {
     describe("Ordered", () => {
@@ -46,6 +46,14 @@ describe("Selection collapsed", () => {
                     contentBefore: "<ol><li><h1>ab[]cd</h1></li></ol>",
                     stepFunction: splitBlock,
                     contentAfter: "<ol><li><h1>ab</h1></li><li><h1>[]cd</h1></li></ol>",
+                });
+            });
+
+            test("should not split a list item if not content editable", async () => {
+                await testEditor({
+                    contentBefore: `<ol contenteditable="false"><li><span contenteditable="true">ab[]c</span></li></ol>`,
+                    stepFunction: splitBlock,
+                    contentAfter: `<ol contenteditable="false"><li><span contenteditable="true">ab<br>[]c</span></li></ol>`,
                 });
             });
 
