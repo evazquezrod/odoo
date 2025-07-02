@@ -62,7 +62,9 @@ class AccountMove(models.Model):
             if move.country_code != 'IT' or move.l10n_it_document_type or move.state != 'posted':
                 continue
 
-            move.l10n_it_document_type = document_type.get(move._l10n_it_edi_get_document_type())
+            doc_types = document_type.get(move._l10n_it_edi_get_document_type())
+            if doc_types:
+                move.l10n_it_document_type = doc_types[0]
 
     def _l10n_it_edi_get_values(self, pdf_values=None):
         # EXTENDS 'l10n_it_edi'
