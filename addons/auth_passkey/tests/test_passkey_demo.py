@@ -5,11 +5,13 @@ from lxml import etree
 from unittest.mock import patch
 
 from odoo.http import request
+from odoo.tests import tagged
 from odoo.tools import SQL, mute_logger
 
 from odoo.addons.base.tests.common import HttpCaseWithUserDemo
 
 
+@tagged('post_install', '-at_install')
 class PasskeyTest(HttpCaseWithUserDemo):
     @classmethod
     def setUpClass(self):
@@ -436,3 +438,16 @@ class PasskeyTest(HttpCaseWithUserDemo):
 
             # Login successful, redirected to /odoo
             self.assertTrue(response.url.endswith('/odoo'))
+
+    def test_tours(self):
+        self.env['ir.config_parameter'].sudo().set_param('web.base.url', self.passkeys['test-keepassxc']['host'])
+        with self.patch_start_auth(self.passkeys['test-keepassxc']['auth']['challenge']):
+            self.start_tour("/", 'passkeys_tour_login')
+        self.env['ir.config_parameter'].sudo().set_param('web.base.url', self.passkeys['test-yubikey']['host'])
+        with self.env.cr.savepoint():
+            self.env.cr.execute(SQL("DELETE FROM auth_passkey_key WHERE create_uid = %s", self.admin_user.id))
+            with self.patch_start_registration(self.passkeys['test-yubikey']['registration']['challenge']):
+                self.start_tour("/odoo?debug=tests", 'passkeys_tour_registration', login="admin")
+            with self.patch_start_auth(self.passkeys['test-yubikey']['auth']['challenge']):
+                self.start_tour("/odoo?debug=tests", 'passkeys_tour_verify', login="admin")
+            self.start_tour("/odoo?debug=tests", 'passkeys_tour_delete', login="admin")

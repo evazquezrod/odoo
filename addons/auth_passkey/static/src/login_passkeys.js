@@ -10,7 +10,7 @@ publicWidget.registry.passkeyLogin = publicWidget.Widget.extend({
 
     async _onclick() {
         const serverOptions = await rpc("/auth/passkey/start-auth");
-        const auth = await startAuthentication(serverOptions).catch(e => console.error(e));
+        const auth = globalThis.PASSKEY_TEST_AUTH || await startAuthentication(serverOptions).catch(e => console.error(e));
         if(!auth) return false;
         const form = document.querySelector('form.oe_login_form');
         form.querySelector('input[name="webauthn_response"]').value = JSON.stringify(auth);
