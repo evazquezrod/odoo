@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 import datetime
@@ -9,7 +8,7 @@ from ast import literal_eval
 from markupsafe import Markup
 
 from odoo import api, exceptions, fields, models, modules, _
-from odoo.osv import expression
+from odoo.fields import Domain
 from odoo.tools import float_compare, float_round, SQL
 from odoo.tools.safe_eval import safe_eval
 
@@ -415,17 +414,14 @@ class CrmTeam(models.Model):
             if not team.assignment_max:
                 continue
 
-            lead_domain = expression.AND([
+            lead_domain = Domain.AND([
                 literal_eval(team.assignment_domain or '[]'),
                 [('create_date', '<=', max_create_dt)],
                 ['&', ('team_id', '=', False), ('user_id', '=', False)],
                 [('won_status', '!=', 'won')]
             ])
             if creation_delta_days > 0:
-                lead_domain = expression.AND([
-                    lead_domain,
-                    [('create_date', '>', self.env.cr.now() - datetime.timedelta(days=creation_delta_days))]
-                ])
+                lead_domain &= Domain('create_date', '>', self.env.cr.now() - datetime.timedelta(days=creation_delta_days))
 
             leads = self.env["crm.lead"].search(lead_domain)
             # Fill duplicate cache: search for duplicate lead before the assignment
@@ -639,7 +635,7 @@ class CrmTeam(models.Model):
             ]
             preferred_leads_per_member = {
                 member: to_assign.filtered_domain(
-                    expression.AND([
+                    Domain.AND([
                         literal_eval(member.assignment_domain or '[]'),
                         literal_eval(member.assignment_domain_preferred)
                     ])
