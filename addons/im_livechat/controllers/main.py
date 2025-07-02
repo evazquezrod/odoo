@@ -5,7 +5,7 @@ from werkzeug.exceptions import NotFound
 from urllib.parse import urlsplit
 
 from odoo import http, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, AccessError
 from odoo.http import request
 from odoo.tools import replace_exceptions
 from odoo.addons.base.models.ir_qweb_fields import nl2br
@@ -237,11 +237,27 @@ class LivechatController(http.Controller):
             if pid in channel.sudo().channel_member_ids.partner_id.ids:
                 request.env["res.partner"].browse(pid)._bus_send_history_message(channel, page_history)
 
-    @http.route("/im_livechat/email_livechat_transcript", type="jsonrpc", auth="public")
-    @add_guest_to_context
+    @http.route("/im_livechat/email_livechat_transcript", type="jsonrpc", auth="user")
     def email_livechat_transcript(self, channel_id, email):
         if channel := request.env["discuss.channel"].search([("id", "=", channel_id)]):
             channel._email_livechat_transcript(email)
+
+    @http.route("/im_livechat/download_transcript/<int:channel_id>", type="http", auth="public")
+    @add_guest_to_context
+    def download_livechat_transcript(self, channel_id):
+        if channel := request.env["discuss.channel"].search([("id", "=", channel_id)]):
+            pdf, _type = request.env['ir.actions.report'].sudo()._render_qweb_pdf(
+                "im_livechat.action_report_livechat_conversation",
+                data={
+                    "company": self.env.user.company_id,
+                    "channel": channel,
+                }
+            )
+            headers = [("Content-Type", "application/pdf"), ("Content-Length", len(pdf))]
+            return request.make_response(pdf, headers=headers)
+        raise AccessError(
+            self.env._("You cannot download trascripts of channels you don't have access to.")
+        )
 
     @http.route("/im_livechat/visitor_leave_session", type="jsonrpc", auth="public")
     @add_guest_to_context
