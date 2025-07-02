@@ -2169,7 +2169,7 @@ class MailThread(models.AbstractModel):
                      subtype_xmlid=None, subtype_id=False,
                      partner_ids=None, incoming_email_to=False, incoming_email_cc=False,
                      attachments=None, attachment_ids=None, body_is_html=False,
-                     **kwargs):
+                     pinned_at=None, **kwargs):
         """ Post a new message in an existing thread, returning the new mail.message.
 
         :param str|Markup body: body of the message, str content will be escaped, Markup
@@ -2200,6 +2200,9 @@ class MailThread(models.AbstractModel):
             composer will be attached to the related document.
         :param bool body_is_html: indicates body should be threated as HTML even if str
             to be used only for RPC calls
+        :param datetime pinned_at: optional datetime to pin the message at, if not set
+            the message will not be pinned. If set, the message will be pinned at the given
+            datetime.
 
         Extra keyword arguments will be used either
           * as default column values for the new mail.message record if they match
@@ -2307,6 +2310,8 @@ class MailThread(models.AbstractModel):
             'incoming_email_to': incoming_email_to,
             'incoming_email_cc': incoming_email_cc,
         })
+        if pinned_at:
+            msg_values['pinned_at'] = pinned_at
         # add default-like values afterwards, to avoid useless queries
         if 'record_alias_domain_id' not in msg_values:
             msg_values['record_alias_domain_id'] = self.sudo()._mail_get_alias_domains(default_company=self.env.company)[self.id].id
@@ -3038,7 +3043,7 @@ class MailThread(models.AbstractModel):
         mail.thread main API methods (in addition to some API specific check).
         Those fields are generally used through UI or dedicated methods. We
         therefore give an allowed field names list. """
-        return {
+        valid_field_names = {
             'attachment_ids',
             'author_guest_id',
             'author_id',
@@ -3068,6 +3073,9 @@ class MailThread(models.AbstractModel):
             'subtype_id',
             'tracking_value_ids',
         }
+        if self._name in {'account.move', 'account.account', 'account.tax'}:
+            valid_field_names.add('pinned_at')
+        return valid_field_names
 
     def _get_message_create_ignore_field_names(self):
         """Some fields should be silently ignored when creating a mail.message,
@@ -4864,7 +4872,7 @@ class MailThread(models.AbstractModel):
     # ------------------------------------------------------
 
     def _get_allowed_message_post_params(self):
-        return {
+        allowed_params = {
             "attachment_ids",
             "body",
             "email_add_signature",
@@ -4873,6 +4881,9 @@ class MailThread(models.AbstractModel):
             "role_ids",
             "subtype_xmlid",
         }
+        if self._name in {'account.move', 'account.account', 'account.tax'}:
+            allowed_params.add('pinned_at')
+        return allowed_params
 
     @api.model
     def _get_allowed_message_update_params(self):
