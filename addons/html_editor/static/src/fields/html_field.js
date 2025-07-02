@@ -90,6 +90,7 @@ export class HtmlField extends Component {
                 this.props.record.data[this.props.name]
             ),
         });
+        window.refreshEditor = () => this.state.key++;
 
         useRecordObserver((record) => {
             // Reset Wysiwyg when we discard or onchange value
