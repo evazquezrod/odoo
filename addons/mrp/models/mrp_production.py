@@ -87,7 +87,7 @@ class MrpProduction(models.Model):
     product_uom_id = fields.Many2one(
         'uom.uom', 'Unit', domain="[('id', 'in', allowed_uom_ids)]",
         readonly=False, required=True, compute='_compute_uom_id', store=True, copy=True, precompute=True)
-    lot_producing_id = fields.Many2one(
+    lot_producing_ids = fields.Many2many(
         'stock.lot', string='Lot/Serial Number', copy=False,
         domain="[('product_id', '=', product_id)]", check_company=True)
     qty_producing = fields.Float(string="Quantity Producing", digits='Product Unit', copy=False)
@@ -838,27 +838,37 @@ class MrpProduction(models.Model):
             for date in dates
         )
 
-    @api.onchange('qty_producing', 'lot_producing_id')
-    def _onchange_producing(self):
+    @api.onchange('qty_producing')
+    def _onchange_qty_producing(self):
         if self.state in ['draft', 'cancel'] or (self.state == 'done' and self.is_locked):
             return
-        productions_bypass_qty_producting = self.filtered(lambda p: p.lot_producing_id and p.product_tracking == 'lot' and p._origin and p._origin.qty_producing == p.qty_producing)
+        productions_bypass_qty_producting = self.filtered(lambda p: p.lot_producing_ids and p.product_tracking == 'lot' and p._origin and p._origin.qty_producing == p.qty_producing)
         # sudo needed for portal users
         (self - productions_bypass_qty_producting).sudo()._set_qty_producing(False)
 
-    @api.onchange('lot_producing_id')
+    @api.onchange('lot_producing_ids')
     def _onchange_lot_producing(self):
-        res = self._can_produce_serial_number()
+        if self.state in ['draft', 'cancel'] or (self.state == 'done' and self.is_locked):
+            return
+        if self.product_id.tracking == 'serial':
+            self.qty_producing = len(self.lot_producing_ids)
+        productions_bypass_qty_producting = self.filtered(lambda p: p.lot_producing_ids and p.product_tracking == 'lot' and p._origin and p._origin.qty_producing == p.qty_producing)
+        (self - productions_bypass_qty_producting).sudo()._set_qty_producing(False)
+        res = self._can_produce_serial_numbers()
         if res is not True:
             return res
 
-    def _can_produce_serial_number(self, sn=None):
+    def _can_produce_serial_numbers(self, sns=None):
         self.ensure_one()
-        sn = sn or self.lot_producing_id
-        if self.product_id.tracking == 'serial' and sn:
-            message, dummy = self.env['stock.quant'].sudo()._check_serial_number(self.product_id, sn, self.company_id)
-            if message:
-                return {'warning': {'title': _('Warning'), 'message': message}}
+        sns = sns or self.lot_producing_ids
+        if self.product_id.tracking == 'serial' and sns:
+            messages = []
+            for sn in sns:
+                message, _dummy = self.env['stock.quant'].sudo()._check_serial_number(self.product_id, sn, self.company_id)
+                if message:
+                    messages.append(message)
+            if messages:
+                return {'warning': {'title': _('Warning'), 'message': ','.join(messages)}}
         return True
 
     @api.onchange('product_id', 'move_raw_ids', 'never_product_template_attribute_value_ids')
@@ -937,12 +947,13 @@ class MrpProduction(models.Model):
                 production.with_context(no_procurement=True)._autoconfirm_production()
                 if production in production_to_replan:
                     production._plan_workorders()
-            if production.state == 'done' and ('lot_producing_id' in vals or 'qty_producing' in vals):
+            if production.state == 'done' and ('lot_producing_ids' in vals or 'qty_producing' in vals):
                 finished_move = production.move_finished_ids.filtered(
                     lambda move: move.product_id == production.product_id and move.state == 'done')
-                finished_move_lines = finished_move.move_line_ids
-                if 'lot_producing_id' in vals:
-                    finished_move_lines.write({'lot_id': vals.get('lot_producing_id')})
+                # finished_move_lines = finished_move.move_line_ids
+                if 'lot_producing_ids' in vals:
+                    raise Exception("ajf: check writing lot_producing_ids on production...")
+                    # finished_move_lines.write({'lot_id': vals.get('lot_producing_ids')}) comme ca runbot content !
                 if 'qty_producing' in vals:
                     finished_move.quantity = vals.get('qty_producing')
             if self._has_workorders() and not production.workorder_ids.operation_id and vals.get('date_start') and not vals.get('date_finished'):
@@ -1267,7 +1278,8 @@ class MrpProduction(models.Model):
             qty_producing_uom = self.product_uom_id._compute_quantity(self.qty_producing, self.product_id.uom_id, rounding_method='HALF-UP')
             # allow changing a non-zero value to a 0 to not block mass produce feature
             if qty_producing_uom != 1 and not (qty_producing_uom == 0 and self._origin.qty_producing != self.qty_producing):
-                self.qty_producing = self.product_id.uom_id._compute_quantity(1, self.product_uom_id, rounding_method='HALF-UP')
+                self.qty_producing = self.product_id.uom_id._compute_quantity(len(self.lot_producing_ids) or 1, self.product_uom_id, rounding_method='HALF-UP')
+                # or 1 : test_change_sn_tracked_qty_produced
 
         # waiting for a preproduction move before assignement
         is_waiting = self.warehouse_id.manufacture_steps != 'mrp_one_step' and self.picking_ids.filtered(lambda p: p.picking_type_id == self.warehouse_id.pbm_type_id and p.state not in ('done', 'cancel'))
@@ -1382,9 +1394,17 @@ class MrpProduction(models.Model):
         self.ensure_one()
         self._set_qty_producing(False)
 
-    def _set_lot_producing(self):
-        self.ensure_one()
-        self.lot_producing_id = self.env['stock.lot'].create(self._prepare_stock_lot_values())
+    # def _set_lot_producing(self):
+    #     self.ensure_one()
+    #     # ! que pour les lots, series = batch_produce dialog...
+    #     if self.product_tracking == 'lot':
+    #         if self.lot_producing_ids:
+    #             raise UserError(
+    #                 _(
+    #                     "You cannot set more than 1 lot per product"
+    #                 ),
+    #             )
+    #         self.lot_producing_ids = [Command.create(self._prepare_stock_lot_values())]
 
     def action_view_mrp_production_childs(self):
         self.ensure_one()
@@ -1458,11 +1478,25 @@ class MrpProduction(models.Model):
 
     def action_generate_serial(self):
         self.ensure_one()
-        self._set_lot_producing()
-        if self.product_id.tracking == 'serial':
+        if self.product_tracking == 'lot':
+            if self.lot_producing_ids:
+                raise UserError(_("You cannot set more than 1 lot per product"))
+            self.lot_producing_ids = [Command.create(self._prepare_stock_lot_values())]
+            if self.picking_type_id.auto_print_generated_mrp_lot:
+                return self._autoprint_generated_lot(self.lot_producing_ids[-1])
+        elif self.product_tracking == 'serial':
             self._set_qty_producing(False)
-        if self.picking_type_id.auto_print_generated_mrp_lot:
-            return self._autoprint_generated_lot(self.lot_producing_id)
+            if self.product_qty == 1:
+                # if not self.lot_producing_ids: -> test_mo_sn_warning
+                self.lot_producing_ids = [Command.clear(), Command.create(self._prepare_stock_lot_values())]
+                if self.picking_type_id.auto_print_generated_mrp_lot:
+                    return self._autoprint_generated_lot(self.lot_producing_ids[-1])
+                return
+            action = self.env["ir.actions.actions"]._for_xml_id("mrp.action_assign_serial_numbers")
+            action['context'] = {
+                'default_production_id': self.id,
+            }
+            return action
 
     def action_confirm(self):
         self._check_company()
@@ -1763,9 +1797,12 @@ class MrpProduction(models.Model):
             # the finish move can already be completed by the workorder.
             for move in finish_moves:
                 move.quantity = order.product_uom_id.round(order.qty_producing - order.qty_produced, rounding_method='HALF-UP')
-                extra_vals = order._prepare_finished_extra_vals()
-                if extra_vals:
-                    move.move_line_ids.write(extra_vals)
+                # https://github.com/odoo/odoo/pull/146693
+                # extra_vals = order._prepare_finished_extra_vals()
+                # if extra_vals:
+                #     move.move_line_ids.write(extra_vals)
+                if move.has_tracking != 'none' and not move.lot_ids:
+                    move.lot_ids = order.lot_producing_ids.ids
             # workorder duration need to be set to calculate the price of the product
             for workorder in order.workorder_ids:
                 if workorder.state not in ('done', 'cancel'):
@@ -1803,7 +1840,7 @@ class MrpProduction(models.Model):
             'procurement_group_id': self.procurement_group_id.id,
             'move_raw_ids': None,
             'move_finished_ids': None,
-            'lot_producing_id': False,
+            'lot_producing_ids': False,
             'origin': self.origin,
             'state': 'draft' if self.state == 'draft' else 'confirmed',
             'date_deadline': self.date_deadline,
@@ -2322,6 +2359,8 @@ class MrpProduction(models.Model):
 
     def button_unbuild(self):
         self.ensure_one()
+        if len(self.lot_producing_ids.ids) > 1:
+            raise Exception("ajf: faudra passer unbuild en multi...")
         return {
             'name': _('Unbuild: %s', self.product_id.display_name),
             'view_mode': 'form',
@@ -2329,7 +2368,7 @@ class MrpProduction(models.Model):
             'view_id': self.env.ref('mrp.mrp_unbuild_form_view_simplified').id,
             'type': 'ir.actions.act_window',
             'context': {'default_product_id': self.product_id.id,
-                        'default_lot_id': self.lot_producing_id.id,
+                        'default_lot_id': self.lot_producing_ids.id,
                         'default_mo_id': self.id,
                         'default_company_id': self.company_id.id,
                         'default_location_id': self.location_dest_id.id,
@@ -2612,8 +2651,8 @@ class MrpProduction(models.Model):
 
     def _check_sn_uniqueness(self):
         """ Alert the user if the serial number as already been consumed/produced """
-        if self.product_tracking == 'serial' and self.lot_producing_id:
-            if self._is_finished_sn_already_produced(self.lot_producing_id):
+        if self.product_tracking == 'serial' and self.lot_producing_ids:
+            if self._is_finished_sn_already_produced(self.lot_producing_ids):
                 raise UserError(_('This serial number for product %s has already been produced', self.product_id.name))
 
         for move in self.move_finished_ids:
@@ -2680,7 +2719,7 @@ class MrpProduction(models.Model):
             return False
         excluded_sml = excluded_sml or self.env['stock.move.line']
         domain = [
-            ('lot_id', '=', lot.id),
+            ('lot_id', 'in', lot.ids),
             ('quantity', '=', 1),
             ('state', '=', 'done')
         ]
@@ -2700,13 +2739,13 @@ class MrpProduction(models.Model):
                 ('move_id.unbuild_id', '!=', False)
             ])
             removed = self.env['stock.move.line'].search_count([
-                ('lot_id', '=', lot.id),
+                ('lot_id', 'in', lot.ids),
                 ('state', '=', 'done'),
                 ('location_id.scrap_location', '=', False),
                 ('location_dest_id.scrap_location', '=', True),
             ])
             unremoved = self.env['stock.move.line'].search_count([
-                ('lot_id', '=', lot.id),
+                ('lot_id', 'in', lot.ids),
                 ('state', '=', 'done'),
                 ('location_id.scrap_location', '=', True),
                 ('location_dest_id.scrap_location', '=', False),
@@ -2716,6 +2755,8 @@ class MrpProduction(models.Model):
                 return True
         # Check presence of same sn in current production
         duplicates = co_prod_move_lines.filtered(lambda ml: ml.quantity and ml.lot_id == lot)
+        if duplicates:
+            raise UserError("ajf: duplicates in _is_finished_sn_already_produced...")
         return bool(duplicates)
 
     def _pre_action_split_merge_hook(self, merge=False, split=False):
@@ -2760,7 +2801,7 @@ class MrpProduction(models.Model):
     def _set_quantities(self):
         self.ensure_one()
         missing_lot_id_products = ""
-        if self.product_tracking in ('lot', 'serial') and not self.lot_producing_id:
+        if self.product_tracking in ('lot', 'serial') and not self.lot_producing_ids:
             self.action_generate_serial()
         if self.product_tracking == 'serial' and self.product_uom_id.compare(self.qty_producing, 1) == 1:
             self.qty_producing = 1
@@ -2854,11 +2895,13 @@ class MrpProduction(models.Model):
             clean_action(action, self.env)
             return action
 
-    def _prepare_finished_extra_vals(self):
-        self.ensure_one()
-        if self.lot_producing_id:
-            return {'lot_id' : self.lot_producing_id.id}
-        return {}
+    # def _prepare_finished_extra_vals(self):
+    #     self.ensure_one()
+    #     if self.lot_producing_ids:
+    #         if len(self.lot_producing_ids.ids) > 1:
+    #             raise Exception("check _prepare_finished_extra_vals...")
+    #         return {'lot_id': self.lot_producing_ids.id}
+    #     return {}
 
     def action_open_label_layout(self):
         view = self.env.ref('stock.product_label_layout_form_picking')

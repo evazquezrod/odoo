@@ -116,7 +116,9 @@ class MrpUnbuild(models.Model):
     def _compute_lot_id(self):
         for order in self:
             if order.mo_id:
-                order.lot_id = order.mo_id.lot_producing_id
+                if len(order.mo_id.lot_producing_ids.ids) > 1:
+                    raise Exception("ajf: check unbuild _compute_lot_id...")
+                order.lot_id = order.mo_id.lot_producing_ids[:1]
 
     @api.depends('mo_id')
     def _compute_product_id(self):

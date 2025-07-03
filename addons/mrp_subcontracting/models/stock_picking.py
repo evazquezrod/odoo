@@ -85,7 +85,7 @@ class StockPicking(models.Model):
             productions.move_finished_ids.move_line_ids.write({'quantity': 0})
             for production, move_line in zip(productions, move.move_line_ids):
                 if move_line.lot_id:
-                    production.lot_producing_id = move_line.lot_id
+                    production.lot_producing_ids = move_line.lot_id.ids
                 production.qty_producing = production.product_qty
                 production._set_qty_producing()
             productions[:len_amounts].subcontracting_has_been_recorded = True

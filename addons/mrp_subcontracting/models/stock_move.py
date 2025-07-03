@@ -106,7 +106,7 @@ class StockMove(models.Model):
 
             for production in productions:
                 production.qty_producing = 1
-                if not production.lot_producing_id:
+                if not production.lot_producing_ids:
                     production.action_generate_serial()
                 production.with_context(cancel_backorder=False).subcontracting_record_component()
         else:
@@ -116,7 +116,7 @@ class StockMove(models.Model):
                     'mo_id': production.id,
                     'product_qty': qty
                 }).change_prod_qty()
-            if production.product_tracking == 'lot' and not production.lot_producing_id:
+            if production.product_tracking == 'lot' and not production.lot_producing_ids:
                 production.action_generate_serial()
             production._set_qty_producing()
             production.with_context(cancel_backorder=False).subcontracting_record_component()
