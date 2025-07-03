@@ -119,7 +119,7 @@
                                             <img src="/web_editor/font_to_img/61555/rgb(81,81,102)/34" style="padding:4px;max-width:inherit;" height="34" alt=""/>
                                         </td>
                                         <td style="padding: 0px 10px 0px 10px;width:50%;line-height:20px;vertical-align:top;">
-                                            <div t-if="object.is_one_day">
+                                            <div t-if="object.date and object.is_one_day">
                                                 <t t-out="object.date" t-options='{"widget": "datetime", "date_only": True, "tz_name": object.event_id.date_tz, "format": "long"}'>May 4, 2021</t>
                                                 <t t-out="object.date" t-options='{"widget": "datetime", "time_only": True, "tz_name": object.event_id.date_tz, "hide_seconds": True, "format": "short"}'>7:00 AM</t>
                                                  - <t t-out="object.date_end" t-options='{"widget": "datetime", "time_only": True, "tz_name": object.event_id.date_tz, "hide_seconds": True, "format": "short"}'>5:00 PM</t>
