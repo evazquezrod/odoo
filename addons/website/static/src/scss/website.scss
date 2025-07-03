@@ -3123,6 +3123,10 @@ input[value*="data-oe-translation-source-sha"] {
     border-right-width: 0;
 }
 
+.input-group-subtle-separator {
+    box-shadow: calc(#{map-get($spacers, 2)} + 1px) 0 0 #{map-get($spacers, 2) * -1} $border-color;
+}
+
 // The `nav-link` and `btn` classes do not induce the same padding and border
 // radius. However, in some cases, we need to apply these properties of `btn`
 // with the color of `nav-link` (e.g. for the "Sign In" button of the "sidebar"
