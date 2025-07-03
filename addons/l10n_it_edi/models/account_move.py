@@ -238,7 +238,7 @@ class AccountMove(models.Model):
         self.invalidate_recordset(fnames=['l10n_it_edi_attachment_id', 'l10n_it_edi_attachment_file'])
         self.message_post(attachment_ids=self.l10n_it_edi_attachment_id.ids)
         self._l10n_it_edi_send({self: attachment_vals})
-        self.is_move_sent = True
+        self.move_sent_state = 'sent'
 
     def action_check_l10n_it_edi(self):
         self.ensure_one()

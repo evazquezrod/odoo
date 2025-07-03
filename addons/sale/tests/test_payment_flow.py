@@ -256,7 +256,7 @@ class TestSalePayment(AccountPaymentCommon, SaleCommon, PaymentHttpCommon):
         self.assertTrue(self.sale_order.locked)
         self.assertTrue(tx.invoice_ids)
         self.assertTrue(self.sale_order.invoice_ids)
-        self.assertTrue(tx.invoice_ids.is_move_sent)
+        self.assertEqual(tx.invoice_ids.move_sent_state, 'sent')
 
     def test_so_partial_payment_no_invoice(self):
         # Set automatic invoice

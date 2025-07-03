@@ -148,9 +148,9 @@ class PaymentTransaction(models.Model):
                 company_id=tx.company_id.id,
             )
             invoice_to_send = tx.invoice_ids.filtered(
-                lambda i: not i.is_move_sent and i.state == 'posted' and i._is_ready_to_be_sent()
+                lambda i: i.move_sent_state == 'not_sent' and i.state == 'posted' and i._is_ready_to_be_sent()
             )
-            invoice_to_send.is_move_sent = True # Mark invoice as sent
+            invoice_to_send.move_sent_state = 'sent' # Mark invoice as sent
             self.env['account.move.send']._generate_and_send_invoices(
                 invoice_to_send,
                 allow_raising=False,
@@ -171,7 +171,7 @@ class PaymentTransaction(models.Model):
             ('state', '=', 'done'),
             ('is_post_processed', '=', True),
             ('invoice_ids', 'in', self.env['account.move']._search([
-                ('is_move_sent', '=', False),
+                ('move_sent_state', '=', 'not_sent'),
                 ('state', '=', 'posted'),
             ])),
             ('sale_order_ids.state', '=', 'sale'),

@@ -157,7 +157,7 @@ class TestAccountComposerPerformance(AccountTestInvoicingCommon, MailCommon):
         move_template = self.move_template.with_env(self.env)
 
         for test_move in test_moves:
-            self.assertFalse(test_move.is_move_sent)
+            self.assertEqual(test_move.move_sent_state, 'not_sent')
 
         with self.mock_mail_gateway(mail_unlink_sent=False):
             self.env['account.move.send']._generate_and_send_invoices(
@@ -214,7 +214,7 @@ class TestAccountComposerPerformance(AccountTestInvoicingCommon, MailCommon):
 
         # invoice update
         for test_move in test_moves:
-            self.assertTrue(test_move.is_move_sent)
+            self.assertEqual(test_move.move_sent_state, 'sent')
 
     @users('user_account')
     @warmup
@@ -256,10 +256,10 @@ class TestAccountComposerPerformance(AccountTestInvoicingCommon, MailCommon):
                          'Should take invoice_user_id email')
         self.assertEqual(print_msg.notified_partner_ids, test_customer + self.user_accountman.partner_id)
         self.assertEqual(print_msg.subject, f'{self.env.user.company_id.name} Invoice (Ref {test_move.name})')
-        # tracking: is_move_sent
+        # tracking: move_sent_state
         self.assertEqual(track_msg.author_id, self.env.user.partner_id)
         self.assertEqual(track_msg.email_from, self.env.user.email_formatted)
-        self.assertTrue('is_move_sent' in track_msg.tracking_value_ids.field_id.mapped('name'))
+        self.assertTrue('move_sent_state' in track_msg.tracking_value_ids.field_id.mapped('name'))
         # sent email
         self.assertMailMail(
             test_customer,
@@ -301,7 +301,7 @@ class TestAccountComposerPerformance(AccountTestInvoicingCommon, MailCommon):
         self.assertEqual(composer.mail_template_id, move_template)
 
         # invoice update
-        self.assertTrue(test_move.is_move_sent)
+        self.assertEqual(test_move.move_sent_state, 'sent')
 
     @users('user_account')
     @warmup
@@ -343,10 +343,10 @@ class TestAccountComposerPerformance(AccountTestInvoicingCommon, MailCommon):
                          'Should take invoice_user_id email')
         self.assertEqual(print_msg.notified_partner_ids, test_customer + self.user_accountman.partner_id)
         self.assertEqual(print_msg.subject, f'SpanishSubject for {test_move.name}')
-        # tracking: is_move_sent
+        # tracking: move_sent_state
         self.assertEqual(track_msg.author_id, self.env.user.partner_id)
         self.assertEqual(track_msg.email_from, self.env.user.email_formatted)
-        self.assertTrue('is_move_sent' in track_msg.tracking_value_ids.field_id.mapped('name'))
+        self.assertTrue('move_sent_state' in track_msg.tracking_value_ids.field_id.mapped('name'))
         # sent email
         self.assertMailMail(
             test_customer,
@@ -390,7 +390,7 @@ class TestAccountComposerPerformance(AccountTestInvoicingCommon, MailCommon):
         self.assertEqual(composer.mail_template_id, move_template)
 
         # invoice update
-        self.assertTrue(test_move.is_move_sent)
+        self.assertEqual(test_move.move_sent_state, 'sent')
 
     @users('user_account')
     @warmup
@@ -1061,22 +1061,22 @@ class TestAccountMoveSend(TestAccountMoveSendCommon):
         self.assertEqual(payload_2['type'], 'warning')
         self.assertEqual(sorted(payload_2['action_button']['res_ids']), invoices_error.ids)
 
-    def test_is_move_sent_state(self):
+    def test_move_sent_state(self):
         # Post a move, nothing sent yet
         invoice = self.init_invoice("out_invoice", amounts=[1000], post=True)
-        self.assertFalse(invoice.is_move_sent)
+        self.assertEqual(invoice.move_sent_state, 'not_sent')
         # Send via send & print
         wizard = self.create_send_and_print(invoice)
         wizard.action_send_and_print()
-        self.assertTrue(invoice.is_move_sent)
+        self.assertEqual(invoice.move_sent_state, 'sent')
         # Revert move to draft
         invoice.button_draft()
-        self.assertTrue(invoice.is_move_sent)
+        self.assertEqual(invoice.move_sent_state, 'sent')
         # Unlink PDF
         pdf_report = invoice.invoice_pdf_report_id
         self.assertTrue(pdf_report)
         invoice.invoice_pdf_report_id.unlink()
-        self.assertTrue(invoice.is_move_sent)
+        self.assertEqual(invoice.move_sent_state, 'sent')
 
     def test_no_sending_method_selected(self):
         invoice = self.init_invoice("out_invoice", amounts=[1000], post=True)
@@ -1084,7 +1084,7 @@ class TestAccountMoveSend(TestAccountMoveSendCommon):
         wizard = self.create_send_and_print(invoice, sending_methods=[])
         self.assertFalse(wizard.sending_methods)
         wizard.action_send_and_print()
-        self.assertTrue(invoice.is_move_sent)
+        self.assertEqual(invoice.move_sent_state, 'sent')
         self.assertTrue(invoice.invoice_pdf_report_id)
 
     def test_get_sending_settings(self):

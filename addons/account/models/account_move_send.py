@@ -412,7 +412,7 @@ class AccountMoveSend(models.AbstractModel):
             if attachment := res_id_to_attachment.get(invoice.id):
                 invoice.message_main_attachment_id = attachment
                 invoice.invalidate_recordset(fnames=['invoice_pdf_report_id', 'invoice_pdf_report_file'])
-                invoice.is_move_sent = True
+                invoice.move_sent_state = 'sent'
 
     @api.model
     def _hook_if_errors(self, moves_data, allow_raising=True):

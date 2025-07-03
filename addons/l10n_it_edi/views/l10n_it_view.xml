@@ -113,7 +113,7 @@
                     <button name="action_l10n_it_edi_send"
                             type="object"
                             string="Send Tax Integration"
-                            invisible="state != 'posted' or not l10n_it_edi_is_self_invoice or is_move_sent or country_code != 'IT'"
+                            invisible="state != 'posted' or not l10n_it_edi_is_self_invoice or move_sent_state == 'sent' or country_code != 'IT'"
                             data-hotkey="y"/>
                 </xpath>
                 <xpath expr="//sheet" position="before">

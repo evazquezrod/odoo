@@ -83,7 +83,7 @@ class AccountMove(models.Model):
             )
 
             if response.status_code == 200:
-                self.is_move_sent = True
+                self.move_sent_state = 'sent'
                 self.l10n_tr_nilvera_send_status = 'sent'
             elif response.status_code in {401, 403}:
                 raise UserError(_("Oops, seems like you're unauthorised to do this. Try another API key with more rights or contact Nilvera."))

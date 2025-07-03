@@ -603,6 +603,16 @@ class AccountMove(models.Model):
         tracking=True,
         help="It indicates that the invoice/payment has been sent or the PDF has been generated.",
     )
+
+    move_sent_state = fields.Selection(
+        selection=[('not_sent', "Not Sent"), ('sent', "Sent")],
+        default='not_sent',
+        tracking=True,
+        copy=False,
+        readonly=True,
+        help="It indicates that the invoice/payment has been sent or the PDF has been generated.",
+    )
+
     is_being_sent = fields.Boolean(
         help="Is the move being sent asynchronously",
         compute='_compute_is_being_sent'

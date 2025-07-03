@@ -44,7 +44,7 @@ class AccountMoveSend(models.AbstractModel):
         # The move needs to be put as sent only if sent by Nilvera
         for invoice, invoice_data in invoices_data.items():
             if invoice.company_id.country_code == 'TR':
-                invoice.is_move_sent = invoice.l10n_tr_nilvera_send_status == 'sent'
+                invoice.move_sent_state = 'sent' if invoice.l10n_tr_nilvera_send_status == 'sent' else 'not_sent'
 
 
     @api.model
