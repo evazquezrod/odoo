@@ -190,6 +190,9 @@ class AccountMove(models.Model):
 
         msgs = []
         tax_details = self._prepare_invoice_aggregated_taxes()
+        from rich.pretty import pprint;
+        import ipdb;
+        ipdb.set_trace()
         for line in self.invoice_line_ids.filtered(lambda l: l.display_type == 'product' and l.quantity and l.price_total > 0 and not discount_dict.get(l.id) >= 100):
             # Here we use the original discount of the line, since it the distributed discount has not been applied in the price_total
             price_total = 0

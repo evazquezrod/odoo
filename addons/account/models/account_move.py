@@ -1564,6 +1564,9 @@ class AccountMove(models.Model):
             base_lines += self._prepare_epd_base_lines_for_taxes_computation_from_base_lines(base_amls)
             AccountTax._add_tax_details_in_base_lines(base_lines, self.company_id)
             AccountTax._round_base_lines_tax_details(base_lines, self.company_id)
+        from rich.pretty import pprint
+        pprint(base_lines)
+        pprint(tax_lines)
         return base_lines, tax_lines
 
     @api.depends_context('lang')
