@@ -71,12 +71,6 @@ class AccountMoveLine(models.Model):
             return [self.env.ref(ref).id for ref in refs]
 
         return {
-            'gst_rc': get_tag_ids(
-                'l10n_in.tax_tag_base_sgst_rc', 'l10n_in.tax_tag_sgst_rc',
-                'l10n_in.tax_tag_base_cgst_rc', 'l10n_in.tax_tag_cgst_rc',
-                'l10n_in.tax_tag_base_igst_rc', 'l10n_in.tax_tag_igst_rc',
-                'l10n_in.tax_tag_base_cess_rc', 'l10n_in.tax_tag_cess_rc',
-            ),
             'gst': get_tag_ids(
                 'l10n_in.tax_tag_base_sgst', 'l10n_in.tax_tag_sgst',
                 'l10n_in.tax_tag_base_cgst', 'l10n_in.tax_tag_cgst',
@@ -137,11 +131,10 @@ class AccountMoveLine(models.Model):
             # If it's a standard invoice (not a debit/credit note)
             if is_inv:
                 # B2B with Reverse Charge and Regular
-                if gst_treatment in ('regular', 'composition', 'uin_holders'):
-                    if tags_have_categ(line_tags, 'gst_rc'):
+                if gst_treatment in ('regular', 'composition', 'uin_holders') and tags_have_categ(line_tags, 'gst'):
+                    if any(tax.l10n_in_reverse_charge for tax in line.tax_ids | line.tax_line_id):
                         return 'sale_b2b_rcm'
-                    elif tags_have_categ(line_tags, 'gst'):
-                        return 'sale_b2b_regular'
+                    return 'sale_b2b_regular'
                 # B2CL: Unregistered interstate sales above threshold
                 if (
                     gst_treatment in ('unregistered', 'consumer')
@@ -169,11 +162,10 @@ class AccountMoveLine(models.Model):
             # If it's not a standard invoice (i.e., it's a debit/credit note)
             if not is_inv:
                 # CDN for B2B reverse charge and B2B regular
-                if gst_treatment in ('regular', 'composition', 'uin_holders'):
-                    if tags_have_categ(line_tags, 'gst_rc'):
+                if gst_treatment in ('regular', 'composition', 'uin_holders') and tags_have_categ(line_tags, 'gst'):
+                    if any(tax.l10n_in_reverse_charge for tax in line.tax_ids | line.tax_line_id):
                         return 'sale_cdnr_rcm'
-                    elif tags_have_categ(line_tags, 'gst'):
-                        return 'sale_cdnr_regular'
+                    return 'sale_cdnr_regular'
                 # CDN for SEZ exports with payment and without payment
                 if gst_treatment == 'special_economic_zone':
                     if tags_have_categ(line_tags, 'export'):
