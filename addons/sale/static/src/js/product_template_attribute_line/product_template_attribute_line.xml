@@ -7,12 +7,11 @@
              value template or the attribute line title unless the single attribute value is custom,
              whereas in this case, only the title of the attribute line and the custom value
              template are rendered. -->
-            <div class="d-flex align-items-start justify-content-start mb-2 small">
+            <div class="d-flex gap-2 flex-column align-items-start justify-content-start mb-2 small">
                 <label
                     t-if="showValuesChoice || isSelectedPTAVCustom()"
                     t-out="this.props.attribute.name"
-                    t-attf-class="fw-bold text-uppercase mb-0 me-2 #{this.props.attribute_values.length === 1
-                        &amp;&amp; hasPTAVCustom() ? '' : 'col-lg-3'}"/>
+                    class="fw-bold me-3"/>
                 <t t-if="showValuesChoice" t-call="{{getPTAVTemplate()}}"/>
             </div>
             <input
@@ -41,7 +40,7 @@
         </select>
     </t>
     <t t-name="sale.ptav_radio">
-        <ul class="d-flex flex-wrap gap-3 align-items-center list-unstyled mb-0 small">
+        <ul class="d-flex flex-column flex-lg-row flex-wrap gap-3 row-gap-0 row-gap-lg-3 align-items-lg-center list-unstyled mb-0">
             <li t-foreach="this.props.attribute_values" t-as="ptav" t-key="ptav.id"
                 class="mb-0">
                 <div class="form-check">

@@ -10,22 +10,14 @@
         <xpath expr="//button[@name='sale_product_configurator_cancel_button']" position="after">
             <div class="d-flex justify-content-end gap-2 w-100 flex-wrap"
                 t-if="showShopButtons()">
-                <div class="flex-grow-1">
-                    <button type="button"
-                            t-on-click="props.close"
-                            class="btn bg-light text-secondary py-2 px-4 border"
-                            aria-label="Close"
-                            tabindex="-1">
-                        Discard
-                    </button>
-                </div>
                 <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
-                    <span class="h5 mb-0 me-2" name="sale_product_configurator_list_total">
+                    <span class="flex-basis-100 flex-basis-lg-auto me-lg-3 mb-2 mb-lg-0 h6 text-end" name="sale_product_configurator_list_total">
                         <t t-out="formattedTotal" />
                     </span>
+                    <div class="o_wsale_product_configurator_vr vr d-none d-lg-block my-2" />
                     <button
                         name="website_sale_product_configurator_continue_button"
-                        class="btn btn-secondary"
+                        class="btn btn-link"
                         t-if="!this.props.options.isBuyNow"
                         t-on-click="() => this.onConfirm({goToCart: false})"
                         t-att-disabled="!isPossibleConfiguration() || !canBeSold()">
@@ -33,8 +25,7 @@
                     </button>
                     <button
                         name="website_sale_product_configurator_checkout_button"
-                        class="btn"
-                        style="background-color: #6d4c5b; color: white;"
+                        class="btn btn-primary"
                         t-on-click="() => this.onConfirm({goToCart: true})"
                         t-att-disabled="!isPossibleConfiguration() || !canBeSold()">
                         Proceed to Checkout
