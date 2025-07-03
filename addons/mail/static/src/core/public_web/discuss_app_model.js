@@ -39,7 +39,7 @@ export class DiscussApp extends Record {
             }
         },
     });
-    thread = fields.One("Thread");
+    thread = fields.One("discuss.channel");
     hasRestoredThread = false;
 
     static new() {

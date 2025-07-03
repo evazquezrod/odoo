@@ -90,7 +90,7 @@ export class DiscussAppCategory extends Record {
 
     /** @type {string} */
     serverStateKey;
-    threads = fields.Many("Thread", {
+    threads = fields.Many("discuss.channel", {
         sort(t1, t2) {
             return this.sortThreads(t1, t2);
         },

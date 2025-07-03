@@ -24,7 +24,7 @@ let prevLastMessageId = null;
 let temporaryIdOffset = 0.01;
 
 export const pyToJsModels = {
-    "discuss.channel": "Thread",
+    // "discuss.channel": "Thread",
     "mail.guest": "Persona",
     "mail.thread": "Thread",
     "res.partner": "Persona",
@@ -76,7 +76,7 @@ export class Store extends BaseStore {
     get self() {
         return this.self_partner || this.self_guest;
     }
-    allChannels = fields.Many("Thread", {
+    allChannels = fields.Many("discuss.channel", {
         inverse: "storeAsAllChannels",
         onUpdate() {
             const busService = this.store.env.services.bus_service;
@@ -115,7 +115,7 @@ export class Store extends BaseStore {
         sort: (f1, f2) => f2.lastMessage?.id - f1.lastMessage?.id,
     });
     settings = fields.One("Settings");
-    openInviteThread = fields.One("Thread");
+    openInviteThread = fields.One("discuss.channel");
     emojiLoader = loader;
 
     /** @type {[[string, any, import("models").DataResponse]]} */
