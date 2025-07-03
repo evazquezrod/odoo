@@ -67,9 +67,6 @@ var VariantMixin = {
             'context': this.context,
             ...this._getOptionalCombinationInfoParam($parent),
         }).then((combinationData) => {
-            if (this._shouldIgnoreRpcResult()) {
-                return;
-            }
             this._onChangeCombination(ev, $parent, combinationData);
             this._checkExclusions($parent, combination);
         });
@@ -522,26 +519,6 @@ var VariantMixin = {
             .filter(':has(input:checked)')
             .addClass("active border-primary text-primary-emphasis bg-primary-subtle");
     },
-
-    /**
-     * Return true if the current object has been destroyed. Useful to know if
-     * the result of a rpc should be handled.
-     *
-     * @private
-     */
-    _shouldIgnoreRpcResult() {
-        return (typeof this.isDestroyed === "function" && this.isDestroyed());
-    },
-
-    /**
-     * Extension point for website_sale
-     *
-     * @private
-     * @param {string} uri The uri to adapt
-     */
-    _getUri: function (uri) {
-        return uri;
-    }
 };
 
 export default VariantMixin;
