@@ -441,19 +441,26 @@ class DiscussChannel(models.Model):
     # ------------------------------------------------------------
 
     def _subscribe_users_automatically(self):
-        new_members = self._subscribe_users_automatically_get_members()
-        if new_members:
+        new_members_to_create = self._subscribe_users_automatically_get_members()
+        new_members = self.env["discuss.channel.member"]
+        if new_members_to_create:
             to_create = [
                 {'channel_id': channel_id, 'partner_id': partner_id}
-                for channel_id in new_members
-                for partner_id in new_members[channel_id]
+                for channel_id in new_members_to_create
+                for partner_id in new_members_to_create[channel_id]
             ]
             # sudo: discuss.channel.member - adding member of other users based on channel auto-subscribe
-            self.env['discuss.channel.member'].sudo().create(to_create)
+            new_members = self.env["discuss.channel.member"].sudo().create(to_create)
+        members_by_channel = new_members.grouped("channel_id")
         for channel in self:
             channel.group_ids._bus_send_store(
                 Store(channel, channel._to_store_defaults(for_current_user=False)).add(
-                    channel, {"is_pinned": True}
+                    members_by_channel.get(channel),
+                    [
+                        Store.One("channel_id", [], as_thread=True),
+                        *self.env["discuss.channel.member"]._to_store_persona(),
+                        "is_pinned",
+                    ],
                 )
             )
 
@@ -471,9 +478,7 @@ class DiscussChannel(models.Model):
     def _action_unfollow(self, partner=None, guest=None, post_leave_message=True):
         self.ensure_one()
         self.message_unsubscribe(partner.ids)
-        custom_store = Store(
-            self, {"close_chat_window": True, "is_pinned": False, "isLocallyPinned": False}
-        )
+        custom_store = Store(self, {"close_chat_window": True, "isLocallyPinned": False})
         member = self.env["discuss.channel.member"].search(
             [
                 ("channel_id", "=", self.id),
@@ -492,6 +497,7 @@ class DiscussChannel(models.Model):
                 body=notification, subtype_xmlid="mail.mt_comment", author_id=partner.id
             )
         # send custom store after message_post to avoid is_pinned reset to True
+        custom_store.add(member, {"is_pinned": False})
         member._bus_send_store(custom_store)
         member.unlink()
         self._bus_send_store(
@@ -556,7 +562,7 @@ class DiscussChannel(models.Model):
                         member.channel_id,
                         member.channel_id._to_store_defaults(for_current_user=False),
                     )
-                    .add(member.channel_id, {"is_pinned": True})
+                    .add(member, "is_pinned")
                     .get_result(),
                 }
                 if not member.is_self and not self.env.user._is_public():
@@ -767,7 +773,7 @@ class DiscussChannel(models.Model):
             payload["temporary_id"] = temporary_id
         if kwargs.get("silent"):
             payload["silent"] = True
-        self._bus_send_store(self, {"is_pinned": True}, subchannel="members")
+        self._bus_send_store(self.channel_member_ids, "is_pinned", subchannel="members")
         self._bus_send("discuss.channel/new_message", payload)
         return rdata
 
@@ -1074,7 +1080,6 @@ class DiscussChannel(models.Model):
                 forward_member_field("custom_notifications"),
                 {"fetchChannelInfoState": "fetched"},
                 "is_editable",
-                forward_member_field("is_pinned"),
                 forward_member_field("mute_until_dt"),
                 "message_needaction_counter",
                 {"message_needaction_counter_bus_id": bus_last_id},
@@ -1088,6 +1093,7 @@ class DiscussChannel(models.Model):
                     "self_member_id",
                     extra_fields=[
                         "custom_channel_name",
+                        "is_pinned",
                         "last_interest_dt",
                         "message_unread_counter",
                         {"message_unread_counter_bus_id": bus_last_id},
@@ -1188,7 +1194,9 @@ class DiscussChannel(models.Model):
         if member:
             member.write({'unpin_dt': False if pinned else fields.Datetime.now()})
         if not pinned:
-            self.env.user._bus_send_store(self, {"close_chat_window": True, "is_pinned": False})
+            self.env.user._bus_send_store(self, {"close_chat_window": True})
+            if member:
+                self.env.user._bus_send_store(member, "is_pinned")
         else:
             self.env.user._bus_send_store(self)
 

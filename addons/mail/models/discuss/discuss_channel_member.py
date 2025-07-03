@@ -80,7 +80,7 @@ class DiscussChannelMember(models.Model):
         members.unpin_dt = fields.Datetime.now()
         for member in members:
             member._bus_send_store(
-                member.channel_id, {"close_chat_window": True, "is_pinned": False}
+                Store(member, "is_pinned").add(member.channel_id, {"close_chat_window": True})
             )
 
     @api.constrains('partner_id')

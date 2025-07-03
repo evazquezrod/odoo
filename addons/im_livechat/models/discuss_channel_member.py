@@ -139,12 +139,10 @@ class DiscussChannelMember(models.Model):
         sessions_to_be_unpinned.channel_id.livechat_end_dt = fields.Datetime.now()
         for member in sessions_to_be_unpinned:
             member._bus_send_store(
-                member.channel_id,
-                {
-                    "close_chat_window": True,
-                    "is_pinned": False,
-                    "livechat_end_dt": fields.Datetime.now(),
-                },
+                Store(member, "is_pinned").add(
+                    member.channel_id,
+                    {"close_chat_window": True, "livechat_end_dt": fields.Datetime.now()},
+                )
             )
 
     def _to_store_defaults(self):
