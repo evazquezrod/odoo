@@ -9,7 +9,7 @@
         <field name="target">new</field>
         <field name="context">{
             'default_lead_id': active_id,
-            'default_billable': True,
+            'default_allow_billable': True,
         }</field>
         <field name="binding_model_id" ref="crm.model_crm_lead" />
         <field name="binding_view_types">form</field>
@@ -25,6 +25,7 @@
             <button name="action_schedule_meeting" position="after">
                 <button name="open_linked_projects" type="object"
                     class="oe_stat_button" icon="fa-puzzle-piece"
+                    groups="project.group_project_user"
                     invisible="linked_project_count == 0">
                     <field name="linked_project_count" widget="statinfo" string="Projects"/>
                 </button>
