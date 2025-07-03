@@ -122,8 +122,8 @@ class PurchaseOrder(models.Model):
         ('invoiced', 'Fully Billed'),
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
     date_planned = fields.Datetime(
-        string='Expected Arrival', index=True, copy=False, compute='_compute_date_planned', store=True, readonly=False,
-        help="Delivery date promised by vendor. This date is used to determine expected arrival of products.")
+        string='Expected Arrival', index=True, copy=False, compute='_compute_date_planned', readonly=False,
+        help="Delivery date promised by vendor. This date is used to determine expected arrival of products.", inverse='_inverse_date_planned')
     date_calendar_start = fields.Datetime(compute='_compute_date_calendar_start', readonly=True, store=True)
 
     amount_untaxed = fields.Monetary(string='Untaxed Amount', store=True, readonly=True, compute='_amount_all', tracking=True)
@@ -215,7 +215,6 @@ class PurchaseOrder(models.Model):
         for order in self:
             order.amount_total_cc = order.amount_total / order.currency_rate
 
-    @api.depends('order_line.date_planned')
     def _compute_date_planned(self):
         """ date_planned = the earliest date_planned across all order lines. """
         for order in self:
@@ -224,6 +223,10 @@ class PurchaseOrder(models.Model):
                 order.date_planned = min(dates_list)
             else:
                 order.date_planned = False
+
+    def _inverse_date_planned(self):
+        if self.date_planned:
+            self.order_line.filtered(lambda line: not line.display_type).date_planned = self.date_planned
 
     @api.depends('name', 'partner_ref', 'amount_total', 'currency_id')
     @api.depends_context('show_total_amount')
@@ -345,10 +348,6 @@ class PurchaseOrder(models.Model):
             'views': [(False, 'form')],
         }
 
-    @api.onchange('date_planned')
-    def onchange_date_planned(self):
-        if self.date_planned:
-            self.order_line.filtered(lambda line: not line.display_type).date_planned = self.date_planned
 
     def _search_is_late(self, operator, value):
         if operator != 'in':
