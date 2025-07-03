@@ -18248,10 +18248,10 @@ window.print = function () {
     activeService.renderPages().then(function () {
       return activeServiceOnEntry.performPrint();
     }).catch(function () {}).then(function () {
-      if (activeServiceOnEntry.active) {
-        // ODOO Patch: https://github.com/mozilla/pdf.js/issues/10630#issuecomment-855754913
-        setTimeout(abort, 1000);
-      }
+      // ODOO PATCH PRINT PREVIEW MOBILE
+      // if (activeServiceOnEntry.active) {
+      //   abort();
+      // }
     });
   }
 };
@@ -18297,6 +18297,12 @@ window.addEventListener("keydown", function (event) {
 
 if ("onbeforeprint" in window) {
   const stopPropagationIfNeeded = function (event) {
+    // ODOO PATCH PRINT PREVIEW MOBILE
+    if (activeService && event.type === "afterprint") {
+      // ODOO Patch: https://github.com/mozilla/pdf.js/issues/10630#issuecomment-855754913
+      setTimeout(abort, 1000);
+      return;
+    }
     if (event.detail !== "custom" && event.stopImmediatePropagation) {
       event.stopImmediatePropagation();
     }
