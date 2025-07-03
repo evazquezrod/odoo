@@ -23,13 +23,13 @@ export function handleRPCError(error, dialog) {
     }
 }
 
-function rpcErrorHandler(env, error, originalError) {
-    if (originalError instanceof RPCError) {
-        handleRPCError(originalError, env.services.dialog);
-        return true;
-    }
-}
-registry.category("error_handlers").add("rpcErrorHandler", rpcErrorHandler);
+// function rpcErrorHandler(env, error, originalError) {
+//     if (originalError instanceof RPCError) {
+//         handleRPCError(originalError, env.services.dialog);
+//         return true;
+//     }
+// }
+// registry.category("error_handlers").add("rpcErrorHandler", rpcErrorHandler);
 
 export function offlineErrorHandler(env, error, originalError) {
     if (originalError instanceof ConnectionLostError) {

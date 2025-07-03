@@ -8,6 +8,8 @@ import {
 } from "./utils";
 import { Base } from "./base";
 
+const DYNAMIC_FIELDS_SYMBOL = Symbol("dynamicFields");
+
 /**
  * Processes model definitions to dynamically define getter and setter properties
  * on model fields, providing controlled access to the raw data.
@@ -17,8 +19,11 @@ export function processModelClasses(modelDefs, modelClasses = {}) {
     for (const modelName of modelNames) {
         const fields = modelDefs[modelName];
         const ModelRecordClass = modelClasses[modelName] || class ModelRecord extends Base {};
-        modelClasses[modelName] = ModelRecordClass;
+        const dynamicFields = ModelRecordClass.prototype[DYNAMIC_FIELDS_SYMBOL];
         const excludedLazyGetters = [];
+
+        modelClasses[modelName] = ModelRecordClass;
+        ModelRecordClass.prototype[DYNAMIC_FIELDS_SYMBOL] ||= new Set();
 
         for (const fieldName in fields) {
             const field = fields[fieldName];
@@ -26,6 +31,10 @@ export function processModelClasses(modelDefs, modelClasses = {}) {
                 continue;
             }
             if (fieldName in ModelRecordClass.prototype) {
+                if (dynamicFields && dynamicFields.has(fieldName)) {
+                    continue;
+                }
+
                 throw new Error(
                     `The property "${fieldName}" defined in the class "${ModelRecordClass.name}" matches an existing model "${modelName}" property. Please use a different property name.`
                 );
@@ -54,6 +63,7 @@ export function processModelClasses(modelDefs, modelClasses = {}) {
                     },
                     enumerable: true,
                 });
+                ModelRecordClass.prototype[DYNAMIC_FIELDS_SYMBOL].add(fieldName);
             } else {
                 const relationModel = field.relation;
                 const updateErrorMessage = `The '${fieldName}' array cannot be modified. Use the update method instead.`;
@@ -72,6 +82,7 @@ export function processModelClasses(modelDefs, modelClasses = {}) {
                         },
                         enumerable: true,
                     });
+                    ModelRecordClass.prototype[DYNAMIC_FIELDS_SYMBOL].add(fieldName);
                 } else if (field.type === "many2one") {
                     Object.defineProperty(ModelRecordClass.prototype, fieldName, {
                         get: function () {
@@ -86,6 +97,7 @@ export function processModelClasses(modelDefs, modelClasses = {}) {
                         },
                         enumerable: true,
                     });
+                    ModelRecordClass.prototype[DYNAMIC_FIELDS_SYMBOL].add(fieldName);
                 }
             }
         }

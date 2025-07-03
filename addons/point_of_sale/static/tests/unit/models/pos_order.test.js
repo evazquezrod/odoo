@@ -1,67 +1,68 @@
 import { test, describe, expect } from "@odoo/hoot";
-import { getRelatedModelsInstance } from "../data/get_model_definitions";
-import { makeMockServer } from "@web/../tests/web_test_helpers";
-import { baseData } from "../data/base_data";
+import { getService, makeMockEnv } from "@web/../tests/web_test_helpers";
 
-describe("class pos.order", () => {
-    test("Example test", async () => {
-        await makeMockServer();
-        const models = getRelatedModelsInstance();
-        const data = models.loadConnectedData({
-            ...baseData,
-            "account.tax": [
-                {
-                    id: 1,
-                    name: "10% - Percentage",
-                    price_include: true,
-                    include_base_amount: true,
-                    is_base_affected: true,
-                    has_negative_factor: false,
-                    amount_type: "percent",
-                    amount: 10.0,
-                    formula_decoded_info: false,
-                },
-            ],
-            "product.template": [
-                {
-                    id: 1,
-                    name: "Test Product Template",
-                    type: "consu",
-                    list_price: 100.0,
-                    tax_ids: [1],
-                },
-            ],
-            "product.product": [
-                {
-                    id: 1,
-                    product_tmpl_id: 1,
-                    name: "Test Product Variant",
-                    lst_price: 100.0,
-                },
-            ],
-            "pos.order": [
-                {
-                    id: 1,
-                    name: "Test Order",
-                },
-            ],
-            "pos.order.line": [
-                {
-                    id: 1,
-                    order_id: 1,
-                    product_id: 1,
-                    price_unit: 100.0,
-                    qty: 2,
-                    tax_ids: [1],
-                },
-            ],
+describe("pos.order", () => {
+    odoo.pos_session_id = 1;
+
+    test("uiState", async () => {
+        await makeMockEnv();
+
+        const store = getService("pos");
+        const order = store.addNewOrder();
+
+        expect(order.uiState).toEqual({
+            unmerge: {},
+            lastPrint: false,
+            lineToRefund: {},
+            displayed: true,
+            booked: false,
+            screen_data: {},
+            selected_orderline_uuid: undefined,
+            selected_paymentline_uuid: undefined,
+            locked: false,
+            TipScreen: {
+                inputTipAmount: "",
+            },
         });
+    });
 
-        const lineTax = data["pos.order.line"][0].getAllPrices();
-        expect(lineTax.priceWithTax).toBe(200.0);
-        expect(lineTax.priceWithoutTax).toBe(182.0);
-        expect(lineTax.taxesData[0].tax).toBe(models["account.tax"].getFirst());
-        expect(lineTax.taxDetails[1].base).toBe(182.0);
-        expect(lineTax.taxDetails[1].amount).toBe(18.0);
+    test("totalQuantity", async () => {
+        await makeMockEnv();
+
+        const store = getService("pos");
+        const order = store.addNewOrder();
+        const product = store.models["product.template"].get(5);
+        await store.addLineToOrder(
+            {
+                product_tmpl_id: product,
+                qty: 3,
+            },
+            order
+        );
+        await store.addLineToOrder(
+            {
+                product_tmpl_id: product,
+                qty: 2,
+            },
+            order
+        );
+        await store.addLineToOrder(
+            {
+                product_tmpl_id: product,
+                qty: 1,
+            },
+            order
+        );
+
+        expect(order.totalQuantity).toBe(6);
+    });
+
+    test("setPreset", async () => {
+        await makeMockEnv();
+
+        const store = getService("pos");
+        const order = store.addNewOrder();
+
+        expect(order.totalQuantity).toBe(6);
     });
 });
