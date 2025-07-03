@@ -271,7 +271,6 @@ export class Thread extends Record {
      * @type {false|"all"|"mentions"|"no_notif"}
      */
     custom_notifications = false;
-    mute_until_dt = fields.Datetime();
     /** @type {Boolean} */
     isLocallyPinned = fields.Attr(false, {
         onUpdate() {
@@ -329,7 +328,7 @@ export class Thread extends Record {
     }
 
     get isMuted() {
-        return this.mute_until_dt;
+        return this.selfMember?.mute_until_dt;
     }
 
     get typesAllowingCalls() {
