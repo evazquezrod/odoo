@@ -26,8 +26,8 @@ class ResUsers(models.Model):
     )
     can_edit_role = fields.Boolean(compute="_compute_can_edit_role")
     notification_type = fields.Selection([
-        ('email', 'Handle by Emails'),
-        ('inbox', 'Handle in Odoo')],
+        ('email', 'By Emails'),
+        ('inbox', 'In Odoo')],
         'Notification', required=True, default='email',
         compute='_compute_notification_type', inverse='_inverse_notification_type', store=True,
         help="Policy on how to handle Chatter notifications:\n"
