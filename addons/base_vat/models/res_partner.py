@@ -796,9 +796,33 @@ class ResPartner(models.Model):
         check_func = stdnum.util.get_cc_module('il', 'idnr').is_valid
         return check_func(vat)
 
+<<<<<<< 2d7969978d8a22c043e3a72eda87cf6bfc401df3
     def check_vat_ma(self, vat):
         return vat.isdigit() and len(vat) == 8
 
+||||||| fb83bd99877201e4b681672af87f514ca85955ae
+=======
+    __check_vat_vn_re = re.compile(r'^\d{10}(?:-?\d{3})?$|^\d{12}$')
+
+    def check_vat_vn(self, vat):
+        """
+        VAT format validator for Vietnam.
+        Supported formats:
+        - 10-digit format (Enterprise tax ID): e.g., 0101243150
+        - 13-digit format with branch suffix: e.g., 0101243150-001
+        - 12-digit format (Personal ID / Citizen ID - CCCD): e.g., 079123456789
+          (used as tax ID for individuals from July 1st, 2025)
+
+        Note:
+        - stdnum.vn.mst.validate() currently only supports 10- and 13-digit VAT numbers
+        - and does not accept the 12-digit personal tax ID (CCCD) format introduced from 01/07/2025.
+        - This helper provides a lightweight format-level validator for use in the meantime.
+        - Can be removed once stdnum.vn.mst adds CCCD support.
+        """
+        vat = vat.strip()
+        return bool(self.__check_vat_vn_re.match(vat))
+
+>>>>>>> 71d6859755d970c0a164bdfdf41b6b015a422ebd
     def format_vat_sm(self, vat):
         stdnum_vat_format = stdnum.util.get_cc_module('sm', 'vat').compact
         return stdnum_vat_format('SM' + vat)[2:]
