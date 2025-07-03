@@ -634,10 +634,11 @@ class AccountMove(models.Model):
                 else:
                     for gst in ["cgst", "sgst", "igst"]:
                         if xmlid_to_res_id(f"l10n_in.tax_tag_{gst}") in tag_ids:
-                            line_code = gst
-                        # need to separate rc tax value so it's not pass to other values
-                        elif xmlid_to_res_id(f"l10n_in.tax_tag_{gst}_rc") in tag_ids:
-                            line_code = gst + '_rc'
+                            # need to separate rc tax value so it's not pass to other values
+                            if tax.l10n_in_reverse_charge:
+                                line_code = gst + '_rc'
+                            else:
+                                line_code = gst
             return {
                 "tax": tax,
                 "base_product_id": invl.product_id,
