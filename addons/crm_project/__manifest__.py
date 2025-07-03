@@ -9,6 +9,7 @@
         "crm",
     ],
     "data": [
+        "views/crm_lead_templates.xml",
         "views/crm_lead_views.xml",
     ],
     "installable": True,

@@ -8,7 +8,7 @@ from odoo.tools.translate import _
 class CrmLead(models.Model):
     _inherit = "crm.lead"
 
-    linked_project_ids = fields.One2many("project.project", inverse_name="lead_id", help="Projects linked to this lead.")
+    linked_project_ids = fields.One2many("project.project", inverse_name="lead_id", index=True, help="Projects linked to this lead.")
     linked_project_count = fields.Integer(compute="_compute_linked_project_count", help="Number of projects linked to this lead.")
 
     @api.depends("linked_project_ids")
@@ -24,7 +24,7 @@ class CrmLead(models.Model):
             "name": _("Lead Projects"),
             "res_model": "project.project",
             "view_mode": "kanban,form",
-            "context": dict(self.env.context, default_company_id=self.company_id.id),
+            "context": dict(self.env.context, default_company_id=self.company_id.id, default_lead_id=self.id),
             "domain": [("id", "in", self.linked_project_ids.ids)],
             "help": """
                 <p class="o_view_nocontent_smiling_face">
