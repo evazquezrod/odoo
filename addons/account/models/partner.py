@@ -206,54 +206,13 @@ class AccountFiscalPosition(models.Model):
         return super(AccountFiscalPosition, self).write(vals)
 
     def _get_best_matching_fpos(self, partner):
-        def triviality_compare(a, b):
-            # triviality can be "True" instead of a dict, dict is favored over "True"
-            if a is True and b is True:
-                return 0
-            if b is True:
-                return 1
-            if a is True:
-                return -1
-            # compare dicts, keys are major weights, values are minor weights.
-            keys = sorted(set(a) | set(b))
-            for key in keys:
-                if a.get(key, float('inf')) < b.get(key, float('inf')):
-                    return 1
-                if b.get(key, float('inf')) < a.get(key, float('inf')):
-                    return -1
-            return 0
-
-        returned_fpos = self.env['account.fiscal.position']
-        returned_fpos_triviality = {}
-        functions = self._get_fpos_validation_functions(partner)
-        for fpos in self:
-            trivialities = [fn(fpos) for fn in functions]
-            lowest = {}
-            for triviality in trivialities:
-                if not triviality:
-                    # if any function returns False, fiscal position is filtered out
-                    lowest = False
-                    break
-                if isinstance(triviality, tuple):
-                    weight, value = triviality
-                    lowest[weight] = min(lowest.get(weight, float('inf')), value)
-            if lowest and triviality_compare(lowest, returned_fpos_triviality) == 1:
-                returned_fpos = fpos
-                returned_fpos_triviality = lowest
-
-        return returned_fpos
+        for fpos in self.sorted(key=lambda f: f.sequence):
+            if all(fn(fpos) for fn in self._get_fpos_validation_functions(partner)):
+                return fpos
+        return self.env['account.fiscal.position']
 
     def _get_fpos_validation_functions(self, partner):
         """ Returns a list of functions to validate fiscal positions against a partner.
-        Each function takes a fiscal position as an argument and returns a tuple
-        with the weight and the triviality of the fiscal position for the given partner.
-        The weight is the first priority criteria to priritize fiscal positions from the
-        company, then location, and lastly the sequence.
-        The second value is the triviality inside a same primary criteria (company inheritance level
-        for companies, zip > state > ... for location).
-        A function can also return True if a condition is match that must not influence the
-        priority, or False if the fiscal position must be filtered out.
-        The lower the triviality, the higher the priority of the fiscal position.
         """
         return [
             # vat required
@@ -267,26 +226,24 @@ class AccountFiscalPosition(models.Model):
             # zip code
             lambda fpos:(
                 not (fpos.zip_from and fpos.zip_to)
-                or (partner.zip and (fpos.zip_from <= partner.zip <= fpos.zip_to) and (1, 1))
+                or (partner.zip and (fpos.zip_from <= partner.zip <= fpos.zip_to))
             ),
             # state
             lambda fpos: (
                 not fpos.state_ids
-                or (partner.state_id in fpos.state_ids and (1, 2))
+                or (partner.state_id in fpos.state_ids)
             ),
             # country
             lambda fpos: (
                 not fpos.country_id
-                or (partner.country_id == fpos.country_id and (1, 3))
+                or (partner.country_id == fpos.country_id)
             ),
             # country group
             lambda fpos: (
                 not fpos.country_group_id
                 or (partner.country_id in fpos.country_group_id.country_ids and
-                    (not partner.state_id or partner.state_id not in fpos.country_group_id.exclude_state_ids) and (1, 4))
+                    (not partner.state_id or partner.state_id not in fpos.country_group_id.exclude_state_ids))
             ),
-            # sequence
-            lambda fpos: (2, fpos.sequence),
         ]
 
     @api.model
