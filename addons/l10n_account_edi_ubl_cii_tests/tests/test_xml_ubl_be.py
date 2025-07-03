@@ -251,37 +251,31 @@ class TestUBLBE(TestUBLCommon, TestAccountMoveSendCommon):
         test_data = [
             {
                 'invoice_cash_rounding_id': False,
-                'expected_xml_values': {
-                    '{*}TaxTotal/{*}TaxAmount': '14.70',
-                    '{*}LegalMonetaryTotal/{*}TaxExclusiveAmount': '70.00',
-                    '{*}LegalMonetaryTotal/{*}TaxInclusiveAmount': '84.70',
-                    '{*}LegalMonetaryTotal/{*}PrepaidAmount': '0.00',
-                    '{*}LegalMonetaryTotal/{*}PayableRoundingAmount': None,
-                    '{*}LegalMonetaryTotal/{*}PayableAmount': '84.70',
+                'expected': {
+                    'xml_file': 'from_odoo/bis3_out_invoice_cash_rounding_line.xml',
+                    # There is no rounding amount
+                    'xpaths': '''
+                        <xpath expr="./*[local-name()='LegalMonetaryTotal']/*[local-name()='PayableRoundingAmount']" position="replace"/>
+                        <xpath expr="./*[local-name()='LegalMonetaryTotal']/*[local-name()='PayableAmount']" position="replace">
+                            <PayableAmount currencyID="USD">84.70</PayableAmount>
+                        </xpath>
+                    ''',
                 },
                 'expected_rounding_invoice_line_values': None,
             },
             {
                 'invoice_cash_rounding_id': cash_rounding_tax,
-                'expected_xml_values': {
-                    '{*}TaxTotal/{*}TaxAmount': '15.00',
-                    '{*}LegalMonetaryTotal/{*}TaxExclusiveAmount': '70.00',
-                    '{*}LegalMonetaryTotal/{*}TaxInclusiveAmount': '85.00',
-                    '{*}LegalMonetaryTotal/{*}PrepaidAmount': '0.00',
-                    '{*}LegalMonetaryTotal/{*}PayableRoundingAmount': None,
-                    '{*}LegalMonetaryTotal/{*}PayableAmount': '85.00',
+                'expected': {
+                    'xml_file': 'from_odoo/bis3_out_invoice_cash_rounding_tax.xml',
+                    'xpaths': None,
                 },
                 'expected_rounding_invoice_line_values': None,
             },
             {
                 'invoice_cash_rounding_id': cash_rounding_line,
-                'expected_xml_values': {
-                    '{*}TaxTotal/{*}TaxAmount': '14.70',
-                    '{*}LegalMonetaryTotal/{*}TaxExclusiveAmount': '70.00',
-                    '{*}LegalMonetaryTotal/{*}TaxInclusiveAmount': '84.70',
-                    '{*}LegalMonetaryTotal/{*}PrepaidAmount': '0.00',
-                    '{*}LegalMonetaryTotal/{*}PayableRoundingAmount': '0.30',
-                    '{*}LegalMonetaryTotal/{*}PayableAmount': '85.00',
+                'expected': {
+                    'xml_file': 'from_odoo/bis3_out_invoice_cash_rounding_line.xml',
+                    'xpaths': None,
                 },
                 # We create an invoice line for the rounding amount.
                 # (This adjusts the base amount of the invoice.)
@@ -318,17 +312,7 @@ class TestUBLBE(TestUBLCommon, TestAccountMoveSendCommon):
 
                 attachment = invoice.ubl_cii_xml_id
                 self.assertTrue(attachment)
-
-                xml_content = base64.b64decode(attachment.with_context(bin_size=False).datas)
-                xml_etree = self.get_xml_tree_from_string(xml_content)
-
-                for path, text in test['expected_xml_values'].items():
-                    with self.subTest(sub_test_name=f"cash rounding method: {cash_rounding_method.name if cash_rounding_method else 'None'}", path=path):
-                        node = xml_etree.find(path)
-                        if text is None:
-                            self.assertTrue(node is None)
-                        else:
-                            self.assertEqual(node.text, text)
+                self._assert_invoice_attachment(invoice.ubl_cii_xml_id, test['expected']['xpaths'], test['expected']['xml_file'])
 
                 # Check that importing yields the expected results.
 
@@ -352,6 +336,10 @@ class TestUBLBE(TestUBLCommon, TestAccountMoveSendCommon):
                 bill = self.company_data['default_journal_purchase']._create_document_from_attachment(attachment.ids)
                 self.assertTrue(bill)
                 self.assert_same_invoice(invoice, bill, partner_id=self.partner_1.id)
+
+    def test_export_cash_rounding_new(self):
+        self.env['ir.config_parameter'].sudo().set_param('account_edi_ubl_cii.use_new_dict_to_xml_helpers', True)
+        self.test_export_import_cash_rounding()
 
     def test_encoding_in_attachment_ubl(self):
         invoice = self._generate_move(

@@ -1068,7 +1068,8 @@ class AccountEdiXmlUBL20(models.AbstractModel):
     def _add_invoice_base_lines_vals(self, vals):
         invoice = vals['invoice']
         base_lines, _tax_lines = invoice._get_rounded_base_and_tax_lines()
-        vals['base_lines'] = base_lines
+        vals['base_lines'] = [base_line for base_line in base_lines if base_line['special_type'] != 'cash_rounding']
+        vals['cash_rounding_base_lines'] = [base_line for base_line in base_lines if base_line['special_type'] == 'cash_rounding']
 
     def _add_invoice_currency_vals(self, vals):
         self._add_document_currency_vals(vals)
@@ -1175,6 +1176,10 @@ class AccountEdiXmlUBL20(models.AbstractModel):
                 '_text': self.format_float(invoice.amount_total - invoice.amount_residual, vals['currency_dp']),
                 'currencyID': vals['currency_name'],
             },
+            'cbc:PayableRoundingAmount': {
+                '_text': self.format_float(vals['cash_rounding_base_amount_currency'], vals['currency_dp']),
+                'currencyID': vals['currency_name'],
+            } if vals['cash_rounding_base_amount_currency'] else None,
             'cbc:PayableAmount': {
                 '_text': self.format_float(invoice.amount_residual, vals['currency_dp']),
                 'currencyID': vals['currency_name'],
@@ -1344,6 +1349,14 @@ class AccountEdiXmlUBL20(models.AbstractModel):
                     for grouping_key, tax_details in aggregated_tax_details.items()
                     if grouping_key
                 )
+
+        # Cash rounding for 'add_invoice_line' cash rounding strategy
+        # (For the 'biggest_tax' strategy the amounts are directly included in the tax amounts.)
+        for currency_suffix in ['', '_currency']:
+            vals[f'cash_rounding_base_amount{currency_suffix}'] = 0.0
+            for base_line in vals['cash_rounding_base_lines']:
+                tax_details = base_line['tax_details']
+                vals[f'cash_rounding_base_amount{currency_suffix}'] += tax_details[f'total_excluded{currency_suffix}']
 
     # -------------------------------------------------------------------------
     # EXPORT: Generic templates - partner-related nodes
@@ -1547,6 +1560,10 @@ class AccountEdiXmlUBL20(models.AbstractModel):
                 '_text': self.format_float(0.0, vals['currency_dp']),
                 'currencyID': vals['currency_name'],
             },
+            'cbc:PayableRoundingAmount': {
+                '_text': self.format_float(vals[f'cash_rounding_base_amount{currency_suffix}'], vals['currency_dp']),
+                'currencyID': vals['currency_name'],
+            } if vals[f'cash_rounding_base_amount{currency_suffix}'] else None,
             'cbc:PayableAmount': {
                 '_text': self.format_float(vals[f'tax_inclusive_amount{currency_suffix}'], vals['currency_dp']),
                 'currencyID': vals['currency_name'],
