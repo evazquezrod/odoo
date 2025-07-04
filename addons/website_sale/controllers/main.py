@@ -23,6 +23,7 @@ from odoo.addons.portal.controllers.portal import _build_url_w_params
 from odoo.addons.sale.controllers import portal as sale_portal
 from odoo.addons.website.controllers.main import QueryURL
 from odoo.addons.website.models.ir_http import sitemap_qs2dom
+from odoo.addons.website_sale import utils
 
 
 class TableCompute:
@@ -2049,12 +2050,16 @@ class WebsiteSale(payment_portal.PaymentPortal):
         :return: None if the cart's addresses are complete and valid; otherwise, a redirection to
                  the appropriate page.
         """
+        delivery_partner_sudo = order_sudo.partner_shipping_id
+        # If record was created by canceled express checkout, unlink & make cart anonymous again
+        if delivery_partner_sudo.name == utils.get_anonymous_express_partner_name(order_sudo):
+            order_sudo.partner_id = request.website.user_id.sudo().partner_id
+            delivery_partner_sudo.unlink()
         # Check that an address has been added.
         if order_sudo._is_anonymous_cart():
             return request.redirect('/shop/address')
 
         # Check that the delivery address is complete.
-        delivery_partner_sudo = order_sudo.partner_shipping_id
         if (
             not order_sudo.only_services
             and not self._check_delivery_address(delivery_partner_sudo)

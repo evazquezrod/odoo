@@ -137,6 +137,7 @@ class TestWebsiteSaleDeliveryExpressCheckoutFlows(BaseUsersCommon, WebsiteSaleCo
     def test_express_checkout_public_user_shipping_address_change(self):
         """ Test that when using express checkout as a public user and selecting a shipping address,
             a new partner is created if the partner of the SO is the public partner.
+            Then test that the new partner gets unlinked if regular checkout is initiated.
         """
         session = self.authenticate(None, None)
         session['sale_order_id'] = self.sale_order.id
@@ -158,6 +159,18 @@ class TestWebsiteSaleDeliveryExpressCheckoutFlows(BaseUsersCommon, WebsiteSaleCo
             self.assertPartnerShippingValues(
                 new_partner,
                 self.express_checkout_anonymized_shipping_values,
+            )
+
+        website = self.website.with_user(self.website.user_id)
+        with MockRequest(website.env, sale_order_id=self.sale_order.id, website=website):
+            WebsiteSale().shop_checkout()
+            self.assertEqual(
+                self.sale_order.partner_id, website.user_id.partner_id,
+                "Order partner should reset to Public User",
+            )
+            self.assertFalse(
+                new_partner.exists(),
+                "Express checkout partner should get deleted when regular checkout gets used",
             )
 
     def test_express_checkout_public_user_shipping_address_change_twice(self):

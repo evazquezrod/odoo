@@ -5,6 +5,7 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.http import request, route
 
 from odoo.addons.payment import utils as payment_utils
+from odoo.addons.website_sale import utils
 from odoo.addons.website_sale.controllers.main import WebsiteSale
 
 
@@ -160,14 +161,12 @@ class Delivery(WebsiteSale):
 
         self._include_country_and_state_in_address(partial_delivery_address)
         partial_delivery_address, _side_values = self._parse_form_data(partial_delivery_address)
+        anonymous_express_partner_name = utils.get_anonymous_express_partner_name(order_sudo)
         if order_sudo._is_anonymous_cart():
             # The partner_shipping_id and partner_invoice_id will be automatically computed when
             # changing the partner_id of the SO. This allows website_sale to avoid creating
             # duplicates.
-            partial_delivery_address['name'] = _(
-                'Anonymous express checkout partner for order %s',
-                order_sudo.name,
-            )
+            partial_delivery_address['name'] = anonymous_express_partner_name
             new_partner_sudo = self._create_new_address(
                 address_values=partial_delivery_address,
                 address_type='delivery',
@@ -179,7 +178,7 @@ class Delivery(WebsiteSale):
             # already accepted the amount and validated the payment.
             with request.env.protecting([order_sudo._fields['pricelist_id']], order_sudo):
                 order_sudo.partner_id = new_partner_sudo
-        elif order_sudo.partner_shipping_id.name.endswith(order_sudo.name):
+        elif order_sudo.partner_shipping_id.name == anonymous_express_partner_name:
             order_sudo.partner_shipping_id.write(partial_delivery_address)
             # TODO VFE TODO VCR do we want to trigger cart recomputation here ?
             # order_sudo._update_address(
@@ -194,10 +193,7 @@ class Delivery(WebsiteSale):
             child_partner_id = self._find_child_partner(
                 order_sudo.partner_id.commercial_partner_id.id, partial_delivery_address
             )
-            partial_delivery_address['name'] = _(
-                'Anonymous express checkout partner for order %s',
-                order_sudo.name,
-            )
+            partial_delivery_address['name'] = anonymous_express_partner_name
             order_sudo.partner_shipping_id = child_partner_id or self._create_new_address(
                 address_values=partial_delivery_address,
                 address_type='delivery',
