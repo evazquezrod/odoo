@@ -1,6 +1,8 @@
 import { CalendarModel } from "@web/views/calendar/calendar_model";
 import { serializeDate } from "@web/core/l10n/dates";
 
+const { DateTime } = luxon;
+
 export class EventSlotCalendarModel extends CalendarModel {
 
     /**
@@ -22,8 +24,9 @@ export class EventSlotCalendarModel extends CalendarModel {
     normalizeRecord(rawRecord) {
         const normalizedRecord = super.normalizeRecord(rawRecord);
         const tz = rawRecord.date_tz || 'utc';
-        normalizedRecord.start = normalizedRecord.start.setZone(tz);
-        normalizedRecord.end = normalizedRecord.end.setZone(tz);
+        // Object conversion to make the datetimes naive.
+        normalizedRecord.start = DateTime.fromObject(normalizedRecord.start.setZone(tz).toObject());
+        normalizedRecord.end = DateTime.fromObject(normalizedRecord.end.setZone(tz).toObject());
         return normalizedRecord;
     }
 
