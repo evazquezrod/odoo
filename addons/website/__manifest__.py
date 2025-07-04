@@ -350,6 +350,7 @@
             'website/static/tests/interactions/**/*',
             'website/static/tests/builder/**/*',
             'website/static/tests/mock_server/**/*',
+            'website/static/tests/new_content_modal.test.js',
         ],
         'web.assets_unit_tests_setup': [
             'web/static/src/legacy/js/core/class.js',
