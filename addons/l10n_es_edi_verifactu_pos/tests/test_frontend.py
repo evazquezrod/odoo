@@ -16,7 +16,6 @@ class TestL10nEsEdiVerifactuPosFrontend(TestL10nEsEdiVerifactuPosCommon, TestPoi
             self.start_tour(
                 f'/pos/ui?config_id={self.config.id}',
                 'l10n_es_edi_verifactu_pos.tour_with_refund_reason',
-                step_delay=200,  # TODO:
                 login='pos_user',
             )
         orders = self.env['pos.order'].search([], order='id DESC', limit=2)
@@ -25,7 +24,7 @@ class TestL10nEsEdiVerifactuPosFrontend(TestL10nEsEdiVerifactuPosCommon, TestPoi
 
         self.assertTrue(order.l10n_es_edi_verifactu_document_ids.json_attachment_base64)
 
-        self.assertEqual(refund.l10n_es_edi_verifactu_refund_reason, 'R1')
+        self.assertEqual(refund.l10n_es_edi_verifactu_refund_reason, 'R5')
         self.assertTrue(refund.l10n_es_edi_verifactu_document_ids.json_attachment_base64)
 
     def test_tour_invoice_with_refund_reason(self):
@@ -37,7 +36,6 @@ class TestL10nEsEdiVerifactuPosFrontend(TestL10nEsEdiVerifactuPosCommon, TestPoi
             self.start_tour(
                 f'/pos/ui?config_id={self.config.id}',
                 'l10n_es_edi_verifactu_pos.tour_with_refund_reason',
-                step_delay=200,  # TODO:
                 login='pos_user',
             )
         orders = self.env['pos.order'].search([], order='id DESC', limit=2)
@@ -48,5 +46,5 @@ class TestL10nEsEdiVerifactuPosFrontend(TestL10nEsEdiVerifactuPosCommon, TestPoi
 
         self.assertTrue(order_move.l10n_es_edi_verifactu_document_ids.json_attachment_base64)
 
-        self.assertEqual(refund_move.l10n_es_edi_verifactu_refund_reason, 'R1')
+        self.assertEqual(refund_move.l10n_es_edi_verifactu_refund_reason, 'R5')
         self.assertTrue(refund_move.l10n_es_edi_verifactu_document_ids.json_attachment_base64)

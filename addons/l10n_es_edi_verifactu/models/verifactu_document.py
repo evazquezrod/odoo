@@ -241,6 +241,10 @@ class L10nEsEdiVerifactuDocument(models.Model):
             errors.append(_("The name of the record is not between 1 and 60 characters long: %(name)s.",
                             name=vals['name']))
 
+        if not vals['name'] or len(vals['name']) > 60:
+            errors.append(_("The name of the record is not between 1 and 60 characters long: %(name)s.",
+                            name=vals['name']))
+
         if vals['documents'] and vals['documents']._filter_waiting():
             errors.append(_("We are waiting to send a Veri*Factu record to the AEAT already."))
 
@@ -277,6 +281,13 @@ class L10nEsEdiVerifactuDocument(models.Model):
         need_refund_reason = vals['verifactu_move_type'] in ('correction_incremental', 'correction_substitution')
         if need_refund_reason and not vals['refund_reason']:
             errors.append(_("The refund reason is not specified."))
+
+        simplified_partner = self.env.ref('l10n_es.partner_simplified', raise_if_not_found=False)
+        partner_is_simplified_partner = simplified_partner and vals['partner'] == simplified_partner
+        partner_specified = vals['partner'] and not partner_is_simplified_partner
+        if need_refund_reason and vals['refund_reason'] != 'R5' and not partner_specified:
+            errors.append(_("A refund with Refund Reason %(refund_reason)s needs a partner.",
+                            refund_reason=vals['refund_reason']))
 
         if not vals['verifactu_tax_type']:
             errors.append(_("Missing Veri*Factu Taxs Type (Impuesto)."))
@@ -564,6 +575,9 @@ class L10nEsEdiVerifactuDocument(models.Model):
             tipo_factura = vals['refund_reason']
             rectified = rectified_document._get_record_identifier()
             fecha_operacion = rectified['FechaOperacion'] or rectified['FechaExpedicionFactura']
+
+        # Note: Error [1189]
+        # Si TipoFactura es F1 o F3 o R1 o R2 o R3 o R4 el bloque Destinatarios tiene que estar cumplimentado.
 
         render_vals.update({
             'TipoFactura': tipo_factura,
@@ -920,7 +934,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 cron._trigger(at=next_trigger_time)
 
     @api.model
-    def _get_zeep_operations(self, operation):
+    def _get_zeep_operation(self, operation):
         """The creation of the zeep client may raise (in case of networking issues)."""
         if operation not in ('registration', 'registration_xml'):
             raise NotImplementedError(_("Unsupported `operation` '%s'", operation))
@@ -950,20 +964,20 @@ class L10nEsEdiVerifactuDocument(models.Model):
         service = client.bind(wsdl['service'], wsdl['port'])
 
         if operation == 'registration':
-            operation = service[wsdl[operation]]
+            function = service[wsdl[operation]]
         else:
             # operation == 'registration_xml'
-            __client = client._Client__obj  # get the "real" zeep client from the odoo specific wrapper
-            service = __client.bind(wsdl['service'], wsdl['port'])
+            zeep_client = client._Client__obj  # get the "real" zeep client from the odoo specific wrapper
+            service = zeep_client.bind(wsdl['service'], wsdl['port'])
 
-            def operation(*args, **kwargs):
-                return __client.create_message(service, wsdl['registration'], *args, **kwargs)
+            def function(*args, **kwargs):
+                return zeep_client.create_message(service, wsdl['registration'], *args, **kwargs)
 
-        return operation, info
+        return function, info
 
     @api.model
-    def _get_zeep_registration_operations(self):
-        return self._get_zeep_operations('registration')
+    def _get_zeep_registration_operation(self):
+        return self._get_zeep_operation('registration')
 
     @api.model
     def _get_zeep_registration_xml_operation(self):
@@ -979,7 +993,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
         record_info = info['record_info']
 
         try:
-            register, zeep_info = self._get_zeep_registration_operations()
+            register, zeep_info = self._get_zeep_registration_operation()
         except (zeep.exceptions.Error, requests.exceptions.RequestException) as error:
             errors.append(_("Networking error:\n%s", error))
             return info

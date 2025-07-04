@@ -7,7 +7,7 @@ class PosOrder(models.Model):
 
     l10n_es_edi_verifactu_required = fields.Boolean(
         string="Veri*Factu Required",
-        compute='_compute_l10n_es_edi_verifactu_required',
+        related='company_id.l10n_es_edi_verifactu_required',
     )
     l10n_es_edi_verifactu_document_ids = fields.One2many(
         comodel_name='l10n_es_edi_verifactu.document',
@@ -28,17 +28,13 @@ class PosOrder(models.Model):
                 - Accepted: Registered by the AEAT without errors
                 - Cancelled: Registered by the AEAT as cancelled""",
     )
-    l10n_es_edi_verifactu_error_level = fields.Selection(
-        string="Veri*Factu Error Level",
-        selection=[
-            ('rejected', "Rejected"),
-            ('registered_with_errors', "Registered with Errors"),
-        ],
-        compute="_compute_l10n_es_edi_verifactu_errors_and_error_level",
+    l10n_es_edi_verifactu_warning_level = fields.Char(
+        string="Veri*Factu Warning Level",
+        compute="_compute_l10n_es_edi_verifactu_warning",
     )
-    l10n_es_edi_verifactu_errors = fields.Html(
-        string="Veri*Factu Errors",
-        compute="_compute_l10n_es_edi_verifactu_errors_and_error_level",
+    l10n_es_edi_verifactu_warning = fields.Html(
+        string="Veri*Factu Warning",
+        compute="_compute_l10n_es_edi_verifactu_warning",
     )
     l10n_es_edi_verifactu_qr_code = fields.Char(
         string="Veri*Factu QR Code",
@@ -60,18 +56,35 @@ class PosOrder(models.Model):
         copy=False,
     )
 
-    @api.depends('country_code')
-    def _compute_l10n_es_edi_verifactu_required(self):
-        for order in self:
-            order.l10n_es_edi_verifactu_required = order.country_code == 'ES' and order.company_id.l10n_es_edi_verifactu_required
-
-    @api.depends('l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.state', 'l10n_es_edi_verifactu_document_ids.errors')
-    def _compute_l10n_es_edi_verifactu_errors_and_error_level(self):
+    @api.depends('state', 'l10n_es_edi_verifactu_state', 'l10n_es_edi_verifactu_document_ids',
+                 'l10n_es_edi_verifactu_document_ids.state', 'l10n_es_edi_verifactu_document_ids.errors')
+    def _compute_l10n_es_edi_verifactu_warning(self):
         for order in self:
             last_document = order.l10n_es_edi_verifactu_document_ids.sorted()[:1]
-            error_level = False if last_document.state == 'accepted' else last_document.state
-            order.l10n_es_edi_verifactu_error_level = error_level
-            order.l10n_es_edi_verifactu_errors = last_document.errors
+
+            warning = False
+            warning_level = False
+            if last_document.state == 'registered_with_errors':
+                warning = last_document.errors
+                warning_level = 'warning'
+            elif last_document.errors:
+                warning = last_document.errors
+                warning_level = 'danger'
+            elif order.state == 'draft':
+                if order.l10n_es_edi_verifactu_state:
+                    warning = _("You are modifying an order for which a Veri*Factu document has been sent to the AEAT already.")
+                    warning_level = 'warning'
+                elif last_document._filter_waiting():
+                    warning = _("You are modifying an order for which a Veri*Factu document is waiting to be sent.")
+                    warning_level = 'warning'
+
+            if last_document._filter_waiting():
+                warning = _("%(existing_warning)sA Veri*Factu document is waiting to be sent as soon as possible.",
+                            existing_warning=(warning + '\n' if warning else ''))
+                warning_level = warning_level or 'info'
+
+            order.l10n_es_edi_verifactu_warning = warning
+            order.l10n_es_edi_verifactu_warning_level = warning_level
 
     @api.depends('l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.state')
     def _compute_l10n_es_edi_verifactu_state(self):
@@ -106,7 +119,7 @@ class PosOrder(models.Model):
             return False
 
         taxes = self.lines.tax_ids.flatten_taxes_hierarchy()
-        return taxes._l10n_es_edi_verifactu_get_verifactu_tax_type()
+        return taxes._l10n_es_edi_verifactu_get_tax_type()
 
     def _l10n_es_edi_verifactu_get_clave_regimen(self):
         """
