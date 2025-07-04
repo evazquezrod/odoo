@@ -23,8 +23,6 @@ class Partner(models.Model):
             lead = self.env[active_model].browse(self.env.context.get('active_id')).exists()
             if lead:
                 rec.update(
-                    phone=lead.phone,
-                    mobile=lead.mobile,
                     function=lead.function,
                     title=lead.title.id,
                     website=lead.website,
