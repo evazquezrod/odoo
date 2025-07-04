@@ -48,7 +48,7 @@ export class SyntaxHighlightingPlugin extends Plugin {
         this.prepareCodeBlocks();
         const pres = this.editable.querySelectorAll("pre");
         if (pres.length) {
-            loadBundle("html_editor.assets_prism");
+            this.loadPrism();
         }
     }
 
@@ -56,6 +56,10 @@ export class SyntaxHighlightingPlugin extends Plugin {
         for (const codeBlock of this.editable.querySelectorAll("div.o_syntax_highlighting")) {
             this.removeListeners(codeBlock);
         }
+    }
+
+    loadPrism() {
+        return loadBundle("html_editor.assets_prism");
     }
 
     prepareCodeBlocks(root = this.editable, activate = false) {
@@ -105,6 +109,7 @@ export class SyntaxHighlightingPlugin extends Plugin {
         if (activeTextarea) {
             if (activate) {
                 this.setActiveCodeBlock(activeTextarea.parentElement);
+                activeTextarea.focus();
             }
             setTimeout(
                 () =>
@@ -229,9 +234,9 @@ export class SyntaxHighlightingPlugin extends Plugin {
         }
     }
 
-    async highlight(codeBlock) {
-        if (!Prism) {
-            await loadBundle("html_editor.assets_prism");
+    async highlight(codeBlock, focus = true) {
+        if (!window.Prism) {
+            await this.loadPrism();
         }
         const pre = codeBlock.querySelector("pre");
         const textarea = codeBlock.querySelector("textarea.o_prism_source");
@@ -264,7 +269,9 @@ export class SyntaxHighlightingPlugin extends Plugin {
         this.dependencies.history.addStep();
         // Will be done in normalize handler triggered by addStep:
         // this.dependencies.protectedNode.setProtectingNode(codeBlock, true);
-        textarea.focus({ preventScroll: true });
+        if (focus) {
+            textarea.focus({ preventScroll: true });
+        }
     }
 
     setActiveCodeBlock(codeBlock) {
