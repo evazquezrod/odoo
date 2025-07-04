@@ -1,4 +1,4 @@
-from odoo import _, api, fields, models, tools
+from odoo import _, api, fields, models
 from odoo.exceptions import RedirectWarning
 
 
@@ -7,7 +7,7 @@ class AccountMove(models.Model):
 
     l10n_es_edi_verifactu_required = fields.Boolean(
         string="Veri*Factu Required",
-        compute='_compute_l10n_es_edi_verifactu_required',
+        related='company_id.l10n_es_edi_verifactu_required',
     )
     l10n_es_edi_verifactu_document_ids = fields.One2many(
         comodel_name='l10n_es_edi_verifactu.document',
@@ -37,22 +37,9 @@ class AccountMove(models.Model):
         string="Veri*Factu Warning",
         compute="_compute_l10n_es_edi_verifactu_warning",
     )
-    l10n_es_edi_verifactu_error_level = fields.Selection(
-        string="Veri*Factu Error Level",
-        selection=[
-            ('rejected', "Rejected"),
-            ('registered_with_errors', "Registered with Errors"),
-        ],
-        compute="_compute_l10n_es_edi_verifactu_errors_and_error_level",
-    )
-    l10n_es_edi_verifactu_errors = fields.Html(
-        string="Veri*Factu Errors",
-        compute="_compute_l10n_es_edi_verifactu_errors_and_error_level",
-    )
     l10n_es_edi_verifactu_qr_code = fields.Char(
         string="Veri*Factu QR Code",
         compute='_compute_l10n_es_edi_verifactu_qr_code',
-        help="This QR code is mandatory for Veri*Factu invoices.",
     )
     l10n_es_edi_verifactu_show_cancel_button = fields.Boolean(
         string="Show Veri*Factu Cancel Button",
@@ -125,10 +112,9 @@ class AccountMove(models.Model):
             return False
 
         taxes = self.invoice_line_ids.tax_ids.flatten_taxes_hierarchy()
-        return taxes._l10n_es_edi_verifactu_get_verifactu_tax_type()
+        return taxes._l10n_es_edi_verifactu_get_tax_type()
 
     @api.model
-    @tools.ormcache()
     def _l10n_es_edi_verifactu_get_available_clave_regimens_map(self):
         """
         Return dictionary (Veri*Factu Tax Type -> set(operation types))
@@ -176,19 +162,6 @@ class AccountMove(models.Model):
                 clave_regimen = move._l10n_es_edi_verifactu_get_suggested_clave_regimen()
             move.l10n_es_edi_verifactu_clave_regimen = clave_regimen
 
-    @api.depends('country_code')
-    def _compute_l10n_es_edi_verifactu_required(self):
-        for move in self:
-            move.l10n_es_edi_verifactu_required = move.country_code == 'ES' and move.company_id.l10n_es_edi_verifactu_required
-
-    @api.depends('l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.state', 'l10n_es_edi_verifactu_document_ids.errors')
-    def _compute_l10n_es_edi_verifactu_errors_and_error_level(self):
-        for move in self:
-            last_document = move.l10n_es_edi_verifactu_document_ids.sorted()[:1]
-            error_level = False if last_document.state == 'accepted' else last_document.state
-            move.l10n_es_edi_verifactu_error_level = error_level
-            move.l10n_es_edi_verifactu_errors = last_document.errors
-
     @api.depends('l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.state')
     def _compute_l10n_es_edi_verifactu_state(self):
         for move in self:
@@ -202,22 +175,32 @@ class AccountMove(models.Model):
             url = last_submission._get_qr_code_img_url() if last_submission else False
             move.l10n_es_edi_verifactu_qr_code = url
 
-    @api.depends('l10n_es_edi_verifactu_state', 'l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.state')
+    @api.depends('state', 'l10n_es_edi_verifactu_state', 'l10n_es_edi_verifactu_document_ids',
+                 'l10n_es_edi_verifactu_document_ids.state', 'l10n_es_edi_verifactu_document_ids.errors')
     def _compute_l10n_es_edi_verifactu_warning(self):
         for move in self:
+            last_document = move.l10n_es_edi_verifactu_document_ids.sorted()[:1]
+
             warning = False
             warning_level = False
-            waiting_documents = move.l10n_es_edi_verifactu_document_ids._filter_waiting()
-            if move.state == 'draft':
+            if last_document.state == 'registered_with_errors':
+                warning = last_document.errors
+                warning_level = 'warning'
+            elif last_document.errors:
+                warning = last_document.errors
+                warning_level = 'danger'
+            elif move.state == 'draft':
                 if move.l10n_es_edi_verifactu_state:
                     warning = _("You are modifying a journal entry for which a Veri*Factu document has been sent to the AEAT already.")
                     warning_level = 'warning'
-                elif waiting_documents:
+                elif last_document._filter_waiting():
                     warning = _("You are modifying a journal entry for which a Veri*Factu document is waiting to be sent.")
                     warning_level = 'warning'
-            elif move.state == 'posted' and waiting_documents:
-                warning = _("A Veri*Factu document is waiting to be sent as soon as possible.")
-                warning_level = 'info'
+
+            if last_document._filter_waiting():
+                warning = (warning + '\n' if warning else '') + _("A Veri*Factu document is waiting to be sent as soon as possible.")
+                warning_level = warning_level or 'info'
+
             move.l10n_es_edi_verifactu_warning = warning
             move.l10n_es_edi_verifactu_warning_level = warning_level
 

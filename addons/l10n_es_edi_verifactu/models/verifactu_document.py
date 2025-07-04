@@ -920,7 +920,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 cron._trigger(at=next_trigger_time)
 
     @api.model
-    def _get_zeep_operations(self, operation):
+    def _get_zeep_operation(self, operation):
         """The creation of the zeep client may raise (in case of networking issues)."""
         if operation not in ('registration', 'registration_xml'):
             raise NotImplementedError(_("Unsupported `operation` '%s'", operation))
@@ -962,8 +962,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
         return operation, info
 
     @api.model
-    def _get_zeep_registration_operations(self):
-        return self._get_zeep_operations('registration')
+    def _get_zeep_registration_operation(self):
+        return self._get_zeep_operation('registration')
 
     @api.model
     def _get_zeep_registration_xml_operation(self):
@@ -979,7 +979,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
         record_info = info['record_info']
 
         try:
-            register, zeep_info = self._get_zeep_registration_operations()
+            register, zeep_info = self._get_zeep_registration_operation()
         except (zeep.exceptions.Error, requests.exceptions.RequestException) as error:
             errors.append(_("Networking error:\n%s", error))
             return info
