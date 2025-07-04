@@ -31,6 +31,7 @@ export class SyntaxHighlightingPlugin extends Plugin {
     resources = {
         normalize_handlers: (root) => this.prepareCodeBlocks(root, true),
         post_undo_handlers: () => this.prepareCodeBlocks(this.editable, true),
+        post_redo_handlers: () => this.prepareCodeBlocks(this.editable, true),
     };
 
     setup() {
@@ -70,6 +71,9 @@ export class SyntaxHighlightingPlugin extends Plugin {
             end: activeTextarea?.selectionEnd || 0,
             direction: activeTextarea?.selectionDirection || "forward",
         };
+        if (activeTextarea) {
+            console.log(activeTextarea.selectionStart);
+        }
         for (const pre of root.querySelectorAll("pre")) {
             if (!pre.closest("div.o_syntax_highlighting")) {
                 const font = getComputedStyle(pre).font.replaceAll('"', "'");
@@ -84,6 +88,7 @@ export class SyntaxHighlightingPlugin extends Plugin {
         for (const codeBlock of this.editable.querySelectorAll("div.o_syntax_highlighting")) {
             this.dependencies.protectedNode.setProtectingNode(codeBlock, true);
             const pre = codeBlock.querySelector("pre");
+            this.dependencies.protectedNode.setProtectingNode(pre, false);
             const preStyle = getComputedStyle(pre);
             let textarea = codeBlock.querySelector("textarea.o_prism_source");
             if (!textarea) {
@@ -266,9 +271,9 @@ export class SyntaxHighlightingPlugin extends Plugin {
             pre.append(trailingBr); // <span>ab<br></span> -> <span>ab</span><br>
             trailingBr.after(this.document.createElement("BR")); // <br></pre> -> <br><br></pre>
         }
-        this.dependencies.history.addStep();
         // Will be done in normalize handler triggered by addStep:
         // this.dependencies.protectedNode.setProtectingNode(codeBlock, true);
+        this.dependencies.history.addStep();
         if (focus) {
             textarea.focus({ preventScroll: true });
         }

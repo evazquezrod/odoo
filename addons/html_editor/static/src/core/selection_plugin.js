@@ -450,6 +450,7 @@ export class SelectionPlugin extends Plugin {
         const documentSelection =
             selection?.anchorNode && selection?.focusNode
                 ? Object.freeze({
+                      isCollapsed: selection.isCollapsed,
                       anchorNode: selection.anchorNode,
                       anchorOffset: selection.anchorOffset,
                       focusNode: selection.focusNode,

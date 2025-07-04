@@ -2,14 +2,7 @@ import { beforeEach, expect, test } from "@odoo/hoot";
 import { setupEditor } from "./_helpers/editor";
 import { getContent, setSelection } from "./_helpers/selection";
 import { unformat } from "./_helpers/format";
-import {
-    animationFrame,
-    click,
-    manuallyDispatchProgrammaticEvent,
-    press,
-    queryOne,
-    waitFor,
-} from "@odoo/hoot-dom";
+import { animationFrame, click, press, queryOne, waitFor } from "@odoo/hoot-dom";
 import { insertText } from "./_helpers/user_actions";
 import { patchWithCleanup } from "@web/../tests/web_test_helpers";
 import { SyntaxHighlightingPlugin } from "@html_editor/main/syntax_highlighting_plugin";
@@ -27,7 +20,9 @@ const SYNTAX_HIGHLIGHTING_WRAPPER = (
     unformat(`
         <div class="o_syntax_highlighting" data-language-id="${language}"
             style='font: ${preStyle.font};' data-oe-protected="true" contenteditable="false">
-            <pre>${highlit ? WITH_LANGUAGE_ID(content, language) : content}</pre>
+            <pre data-oe-protected="false" contenteditable="true">${
+                highlit ? WITH_LANGUAGE_ID(content, language) : content
+            }</pre>
             <textarea class="o_prism_source" contenteditable="true"
             style="padding: ${preStyle.padding}; margin: ${preStyle.margin};"></textarea>
             </div>
@@ -115,30 +110,50 @@ test("changing languages in a code block changes its highlighting", async () => 
         }
     );
 });
-test("multiple ctrl+z in a highlighted code block undo changes in the block and any other changes before", async () => {
+test("multiple ctrl+z in a highlighted code block undo changes in the block and any other changes before (all redone with ctrl+y or ctrl+shift+z)", async () => {
     const { editor, el } = await setupEditor(`<pre>some code</pre><p>hell[]</p>`);
     const preStyle = getPreStyle(editor);
+
+    // Perform a series of actions to undo later.
+    // ------------------------------------------
+
+    const actions = [];
+    const listActions = (...actionNumbers) =>
+        actionNumbers
+            .map((actionNumber) => `${actionNumber}. ${actions[actionNumber - 1]}`)
+            .join("\n");
+
     // Write in the P.
+    actions.push("type: insert 'o' into the paragraph", "type: insert '!' into the paragraph");
     await insertText(editor, "o!"); // <wrapper><pre>some code</pre></wrapper><p>hello![]</p>
     expect(getContent(el)).toBe(
         SYNTAX_HIGHLIGHTING_WRAPPER(`some code`, preStyle, { highlit: false }) + "<p>hello![]</p>",
-        { message: "should have inserted 'o!' into the paragraph" }
+        { message: listActions(1, 2) }
     );
     // Change the language -> code gets highlighted.
+    actions.push("language: change the language to javascript and highlight the code");
     await changeLanguage("Plain Text", "Javascript"); // <wrapper><highlight><pre>some code</pre></highlight></wrapper><p>hello!</p>
     expect(getContent(el).replace("[]", "")).toBe(
         SYNTAX_HIGHLIGHTING_WRAPPER(`some code`, preStyle, { language: "javascript" }) +
             "<p>hello!</p>",
-        { message: "should have changed the language to javascript and highlighted the code" }
+        { message: listActions(3) }
     );
     // Write in the TEXTAREA.
+    actions.push("type: insert 'n' into the pre", "type: insert 'o' into the pre");
     await click("textarea");
     await press("n"); // <wrapper><highlight><pre>some coden</pre></highlight></wrapper><p>hello!</p>
     await press("o"); // <wrapper><highlight><pre>some codeno</pre></highlight></wrapper><p>hello!</p>
     expect(getContent(el).replace("[]", "")).toBe(
         SYNTAX_HIGHLIGHTING_WRAPPER(`some codeno`, preStyle, { language: "javascript" }) +
             "<p>hello!</p>",
-        { message: "should have inserted 'no' into the pre" }
+        { message: listActions(4, 5) }
+    );
+    actions.push(
+        "type: remove 'o' from the pre",
+        "type: remove 'n' from the pre",
+        "type: insert 'y' into the pre",
+        "type: insert 'e' into the pre",
+        "type: insert 's' into the pre"
     );
     await press("Backspace"); // <wrapper><highlight><pre>some coden</pre></highlight></wrapper><p>hello!</p>
     await press("Backspace"); // <wrapper><highlight><pre>some code</pre></highlight></wrapper><p>hello!</p>
@@ -148,89 +163,177 @@ test("multiple ctrl+z in a highlighted code block undo changes in the block and 
     expect(getContent(el).replace("[]", "")).toBe(
         SYNTAX_HIGHLIGHTING_WRAPPER(`some codeyes`, preStyle, { language: "javascript" }) +
             "<p>hello!</p>",
-        { message: "should have replaced 'no' with 'yes' in the pre" }
+        {
+            message: listActions(6, 7, 8, 9, 10),
+        }
     );
     // Write in the P again.
+    actions.push("type: insert 'o' into the paragraph", "type: insert 'k' into the paragraph");
     await click("p");
     setSelection({ anchorNode: queryOne("p").firstChild, anchorOffset: 6 });
     await insertText(editor, "ok"); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!ok[]</p>
     expect(getContent(el)).toBe(
         SYNTAX_HIGHLIGHTING_WRAPPER(`some codeyes`, preStyle, { language: "javascript" }) +
             "<p>hello!ok[]</p>",
-        { message: "should have inserted 'ok!' into the paragraph" }
+        {
+            message: listActions(11, 12),
+        }
     );
+    // Write in the TEXTAREA again.
+    actions.push("type: insert 'h' into the pre");
+    await click("textarea");
+    await press("h"); // <wrapper><highlight><pre>some codeyesh</pre></highlight></wrapper><p>hello!ok[]</p>
+    expect(getContent(el).replace("[]", "")).toBe(
+        SYNTAX_HIGHLIGHTING_WRAPPER(`some codeyesh`, preStyle, { language: "javascript" }) +
+            "<p>hello!ok</p>",
+        { message: listActions(13) }
+    );
+
     // Undo everything.
-    // We simulate undo with Ctrl+Z because we want to see how it
-    // interacts with native browser behavior.
-    const ctrlZ = async () => {
-        const target = editor.document.activeElement;
-        const keydown = await manuallyDispatchProgrammaticEvent(target, "keydown", {
-            key: "z",
-            ctrlKey: true,
-        });
-        if (keydown.defaultPrevented) {
-            return;
+    // ----------------
+
+    await press(["ctrl", "z"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!ok</p>
+    expect(getContent(el).replace("[]", "")).toBe(
+        SYNTAX_HIGHLIGHTING_WRAPPER(`some codeyes`, preStyle, { language: "javascript" }) +
+            "<p>hello!ok</p>",
+        {
+            message: `undo:\n${listActions(13)}`,
         }
-        editor.document.execCommand("undo", false, null);
-        // The input events don't get triggered if the input has
-        // nothing to undo.
-        const beforeInput = await manuallyDispatchProgrammaticEvent(target, "beforeinput", {
-            inputType: "historyUndo",
-        });
-        // --> Here the editor should do its own UNDO.
-        if (beforeInput.defaultPrevented) {
-            return;
-        }
-        const inputEvent = await manuallyDispatchProgrammaticEvent(target, "input", {
-            inputType: "historyUndo",
-        });
-        if (inputEvent.defaultPrevented) {
-            return;
-        }
-        await manuallyDispatchProgrammaticEvent(target, "keyup", {
-            key: "z",
-            ctrlKey: true,
-        });
-    };
-    await ctrlZ(); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello![]</p>
+    );
+    await press(["ctrl", "z"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!o[]</p>
+    await press(["ctrl", "z"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello![]</p>
     expect(getContent(el)).toBe(
         SYNTAX_HIGHLIGHTING_WRAPPER(`some codeyes`, preStyle, { language: "javascript" }) +
             "<p>hello![]</p>",
-        { message: "should have removed 'ok!' from the paragraph" }
+        {
+            message: `undo:\n${listActions(12, 11)}`,
+        }
     );
-    await ctrlZ(); // <wrapper><highlight><pre>some codeye</pre></highlight></wrapper><p>hello!</p>
-    await ctrlZ(); // <wrapper><highlight><pre>some codey</pre></highlight></wrapper><p>hello!</p>
-    await ctrlZ(); // <wrapper><highlight><pre>some code</pre></highlight></wrapper><p>hello!</p>
+    await press(["ctrl", "z"]); // <wrapper><highlight><pre>some codeye</pre></highlight></wrapper><p>hello!</p>
+    await press(["ctrl", "z"]); // <wrapper><highlight><pre>some codey</pre></highlight></wrapper><p>hello!</p>
+    await press(["ctrl", "z"]); // <wrapper><highlight><pre>some code</pre></highlight></wrapper><p>hello!</p>
     expect(getContent(el).replace("[]", "")).toBe(
         SYNTAX_HIGHLIGHTING_WRAPPER(`some code`, preStyle, { language: "javascript" }) +
             "<p>hello!</p>",
-        { message: "should have removed 's', then 'e', then 'y' from the pre" }
+        {
+            message: `undo:\n${listActions(10, 9, 8)}`,
+        }
     );
-    await ctrlZ(); // <wrapper><highlight><pre>some coden</pre></highlight></wrapper><p>hello!</p>
-    await ctrlZ(); // <wrapper><highlight><pre>some codeno</pre></highlight></wrapper><p>hello!</p>
+    await press(["ctrl", "z"]); // <wrapper><highlight><pre>some coden</pre></highlight></wrapper><p>hello!</p>
+    await press(["ctrl", "z"]); // <wrapper><highlight><pre>some codeno</pre></highlight></wrapper><p>hello!</p>
     expect(getContent(el).replace("[]", "")).toBe(
         SYNTAX_HIGHLIGHTING_WRAPPER(`some codeno`, preStyle, { language: "javascript" }) +
             "<p>hello!</p>",
-        { message: "should have re-inserted 'n', then 'o' into the pre" }
+        {
+            message: `undo:\n${listActions(7, 6)}`,
+        }
     );
-    await ctrlZ(); // <wrapper><highlight><pre>some coden</pre></highlight></wrapper><p>hello!</p>
-    await ctrlZ(); // <wrapper><highlight><pre>some code</pre></highlight></wrapper><p>hello!</p>
+    await press(["ctrl", "z"]); // <wrapper><highlight><pre>some coden</pre></highlight></wrapper><p>hello!</p>
+    await press(["ctrl", "z"]); // <wrapper><highlight><pre>some code</pre></highlight></wrapper><p>hello!</p>
     expect(getContent(el).replace("[]", "")).toBe(
         SYNTAX_HIGHLIGHTING_WRAPPER(`some code`, preStyle, { language: "javascript" }) +
             "<p>hello!</p>",
-        { message: "should have remove 'o', then 'n' from the pre" }
+        {
+            message: `undo:\n${listActions(5, 4)}`,
+        }
     );
-    await ctrlZ(); // <wrapper><pre>some code</pre></wrapper><p>hello!</p>
+    await press(["ctrl", "z"]); // <wrapper><pre>some code</pre></wrapper><p>hello!</p>
     expect(getContent(el).replace("[]", "")).toBe(
-        SYNTAX_HIGHLIGHTING_WRAPPER(`some code`, preStyle, { language: "plaintext" }) +
-            "<p>hello!</p>",
-        { message: "should have removed the language" }
+        SYNTAX_HIGHLIGHTING_WRAPPER(`some code`, preStyle, {
+            language: "plaintext",
+            highlit: false,
+        }) + "<p>hello!</p>",
+        {
+            message: `undo:\n${listActions(3)}`,
+        }
     );
-    await ctrlZ(); // <wrapper><pre>some code</pre></wrapper><p>hello!</p>
+    await press(["ctrl", "z"]); // <wrapper><pre>some code</pre></wrapper><p>hello</p>
+    await press(["ctrl", "z"]); // <wrapper><pre>some code</pre></wrapper><p>hell</p>
     expect(getContent(el)).toBe(
-        SYNTAX_HIGHLIGHTING_WRAPPER(`some code`, preStyle, { language: "plaintext" }) +
-            "<p>hell[]</p>",
-        { message: "should have removed the text inserted in the paragraph" }
+        SYNTAX_HIGHLIGHTING_WRAPPER(`some code`, preStyle, {
+            language: "plaintext",
+            highlit: false,
+        }) + "<p>hell[]</p>",
+        {
+            message: `undo:\n${listActions(2, 1)}`,
+        }
+    );
+    await press(["ctrl", "z"]); // <wrapper><pre>some code</pre></wrapper><p>hell</p>
+    expect(getContent(el)).toBe(
+        SYNTAX_HIGHLIGHTING_WRAPPER(`some code`, preStyle, {
+            language: "plaintext",
+            highlit: false,
+        }) + "<p>hell[]</p>",
+        {
+            message: `undo: should have done nothing`,
+        }
+    );
+
+    // Redo everything.
+    // ----------------
+
+    await press(["ctrl", "y"]); // <wrapper><pre>some code</pre></wrapper><p>hello</p>
+    await press(["ctrl", "y"]); // <wrapper><pre>some code</pre></wrapper><p>hello!</p>
+    expect(getContent(el)).toBe(
+        SYNTAX_HIGHLIGHTING_WRAPPER(`some code`, preStyle, {
+            language: "plaintext",
+            highlit: false,
+        }) + "<p>hello![]</p>",
+        {
+            message: `redo:\n${listActions(1, 2)}`,
+        }
+    );
+    await press(["ctrl", "shift", "z"]); // <wrapper><highlight><pre>some code</pre></highlight></wrapper><p>hello!</p>
+    expect(getContent(el).replace("[]", "")).toBe(
+        SYNTAX_HIGHLIGHTING_WRAPPER(`some code`, preStyle, { language: "javascript" }) +
+            "<p>hello!</p>",
+        { message: `redo:\n${listActions(3)}` }
+    );
+    await press(["ctrl", "y"]); // <wrapper><highlight><pre>some coden</pre></highlight></wrapper><p>hello!</p>
+    await press(["ctrl", "y"]); // <wrapper><highlight><pre>some codeno</pre></highlight></wrapper><p>hello!</p>
+    expect(getContent(el).replace("[]", "")).toBe(
+        SYNTAX_HIGHLIGHTING_WRAPPER(`some codeno`, preStyle, { language: "javascript" }) +
+            "<p>hello!</p>",
+        { message: `redo:\n${listActions(4, 5)}` }
+    );
+    await press(["ctrl", "shift", "z"]); // <wrapper><highlight><pre>some coden</pre></highlight></wrapper><p>hello!</p>
+    await press(["ctrl", "shift", "z"]); // <wrapper><highlight><pre>some code</pre></highlight></wrapper><p>hello!</p>
+    expect(getContent(el).replace("[]", "")).toBe(
+        SYNTAX_HIGHLIGHTING_WRAPPER(`some code`, preStyle, { language: "javascript" }) +
+            "<p>hello!</p>",
+        { message: `redo:\n${listActions(6, 7)}` }
+    );
+    await press(["ctrl", "y"]); // <wrapper><highlight><pre>some codey</pre></highlight></wrapper><p>hello!</p>
+    await press(["ctrl", "y"]); // <wrapper><highlight><pre>some codeye</pre></highlight></wrapper><p>hello!</p>
+    await press(["ctrl", "y"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!</p>
+    expect(getContent(el).replace("[]", "")).toBe(
+        SYNTAX_HIGHLIGHTING_WRAPPER(`some codeyes`, preStyle, { language: "javascript" }) +
+            "<p>hello!</p>",
+        { message: `redo:\n${listActions(8, 9, 10)}` }
+    );
+    await press(["ctrl", "shift", "z"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!o</p>
+    await press(["ctrl", "shift", "z"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!ok</p>
+    expect(getContent(el).replace("[]", "")).toBe(
+        SYNTAX_HIGHLIGHTING_WRAPPER(`some codeyes`, preStyle, { language: "javascript" }) +
+            "<p>hello!ok</p>",
+        { message: `redo:\n${listActions(11, 12)}` }
+    );
+    await press(["ctrl", "y"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!ok[]</p>
+    expect(getContent(el).replace("[]", "")).toBe(
+        SYNTAX_HIGHLIGHTING_WRAPPER(`some codeyesh`, preStyle, { language: "javascript" }) +
+            "<p>hello!ok</p>",
+        {
+            message: `redo:\n${listActions(13)}`,
+        }
+    );
+    await press(["ctrl", "shift", "z"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!ok</p>
+    await press(["ctrl", "y"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!ok</p>
+    expect(getContent(el).replace("[]", "")).toBe(
+        SYNTAX_HIGHLIGHTING_WRAPPER(`some codeyesh`, preStyle, { language: "javascript" }) +
+            "<p>hello!ok</p>",
+        {
+            message: `redo: should have done nothing`,
+        }
     );
 });
 test("tab in code block inserts 4 spaces", async () => {});
