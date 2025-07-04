@@ -1,14 +1,11 @@
 import {
-    applyTransformations,
-    areEqualTrees,
-    cloneTree,
-    condition,
-    connector,
-    expression,
+    Condition,
+    ConditionTree,
+    Connector,
+    Expression,
     isTree,
     normalizeValue,
     operate,
-    rewriteNConsecutiveChildren,
 } from "./condition_tree";
 
 function splitPath(path) {
@@ -22,25 +19,54 @@ function isSimplePath(path) {
     return typeof path === "string" && !splitPath(path).initialPath;
 }
 
+/**
+ * @param {Connector} tree
+ * @param {string} initialPath
+ * @param {boolean} negate
+ * @returns {Connector|Condition}
+ */
 function wrapInAny(tree, initialPath, negate) {
-    let con = cloneTree(tree);
     if (initialPath) {
-        con = condition(initialPath, "any", con);
+        tree = Condition.of(initialPath, "any", tree.clone());
     }
-    con.negate = negate;
-    return con;
+    tree.negate = negate;
+    return tree;
 }
 
+function rewriteNConsecutiveChildren(transformation, N = 2) {
+    return (c, options) => {
+        const children = [];
+        const currentChildren = c.children;
+        for (let i = 0; i < currentChildren.length; i++) {
+            const NconsecutiveChildren = currentChildren.slice(i, i + N);
+            let replacement = null;
+            if (NconsecutiveChildren.length === N) {
+                replacement = transformation(Connector.of(c.value, NconsecutiveChildren), options);
+            }
+            if (replacement) {
+                children.push(replacement);
+                i += N - 1;
+            } else {
+                children.push(NconsecutiveChildren[0]);
+            }
+        }
+        return { ...c, children };
+    };
+}
+
+/**
+ * @param {Condition} c
+ * @param {*} options
+ * @returns
+ */
 function _introduceSetOperator(c, options = {}) {
     const { negate, path, operator, value } = c;
     const fieldType = options.getFieldDef?.(path)?.type;
-    if (["=", "!="].includes(operator)) {
-        if (fieldType) {
-            if (fieldType === "boolean" && value === true) {
-                return condition(path, operator === "=" ? "set" : "not set", value, negate);
-            } else if (!["many2one", "date", "datetime"].includes(fieldType) && value === false) {
-                return condition(path, operator === "=" ? "not set" : "set", value, negate);
-            }
+    if (fieldType && typeof operator === "string" && ["=", "!="].includes(operator)) {
+        if (fieldType === "boolean" && value === true) {
+            return Condition.of(path, operator === "=" ? "set" : "not set", value, negate);
+        } else if (!["many2one", "date", "datetime"].includes(fieldType) && value === false) {
+            return Condition.of(path, operator === "=" ? "not set" : "set", value, negate);
         }
     }
 }
@@ -53,9 +79,9 @@ function _removeSetOperator(c) {
     const { negate, path, operator, value } = c;
     if (["set", "not set"].includes(operator)) {
         if (value === true) {
-            return condition(path, operator === "set" ? "=" : "!=", value, negate);
+            return Condition.of(path, operator === "set" ? "=" : "!=", value, negate);
         }
-        return condition(path, operator === "set" ? "!=" : "=", value, negate);
+        return Condition.of(path, operator === "set" ? "!=" : "=", value, negate);
     }
 }
 
@@ -72,7 +98,7 @@ function _introduceStartsWithOperator(c, options) {
         typeof value === "string"
     ) {
         if (value.endsWith("%")) {
-            return condition(path, "starts with", value.slice(0, -1), negate);
+            return Condition.of(path, "starts with", value.slice(0, -1), negate);
         }
     }
 }
@@ -84,7 +110,7 @@ function introduceStartsWithOperators(tree, options) {
 function _eliminateStartsWithOperator(c) {
     const { negate, path, operator, value } = c;
     if (operator === "starts with") {
-        return condition(path, "=ilike", `${value}%`, negate);
+        return Condition.of(path, "=ilike", `${value}%`, negate);
     }
 }
 
@@ -98,7 +124,7 @@ function isSimpleAnd(c) {
         c.value === "&" &&
         !c.negate &&
         c.children.length === 2 &&
-        c.children.every((child) => child.type === "condition" && !child.negate)
+        c.children.every((child) => child instanceof Condition && !child.negate)
     ) {
         return true;
     }
@@ -119,7 +145,7 @@ function isBetween(c) {
 }
 
 function makeBetween(path, value1, value2) {
-    return connector("&", [condition(path, ">=", value1), condition(path, "<=", value2)]);
+    return Connector.of("&", [Condition.of(path, ">=", value1), Condition.of(path, "<=", value2)]);
 }
 
 function isStrictBetween(c) {
@@ -136,23 +162,23 @@ function isStrictBetween(c) {
 }
 
 function makeStrictBetween(path, value1, value2) {
-    return connector("&", [condition(path, ">=", value1), condition(path, "<", value2)]);
+    return Connector.of("&", [Condition.of(path, ">=", value1), Condition.of(path, "<", value2)]);
 }
 
 function boundDate(delta) {
     if (!delta) {
-        return expression(`context_today().strftime("%Y-%m-%d")`);
+        return Expression.of(`context_today().strftime("%Y-%m-%d")`);
     }
-    return expression(`(context_today() + relativedelta(${delta})).strftime('%Y-%m-%d')`);
+    return Expression.of(`(context_today() + relativedelta(${delta})).strftime('%Y-%m-%d')`);
 }
 
 function boundDatetime(delta) {
     if (!delta) {
-        return expression(
+        return Expression.of(
             `datetime.datetime.combine(context_today(), datetime.time(0, 0, 0)).to_utc().strftime("%Y-%m-%d %H:%M:%S")`
         );
     }
-    return expression(
+    return Expression.of(
         `datetime.datetime.combine(context_today() + relativedelta(${delta}), datetime.time(0, 0, 0)).to_utc().strftime("%Y-%m-%d %H:%M:%S")`
     );
 }
@@ -178,7 +204,7 @@ function _introduceInRangeOperator(c, options) {
             for (const valueType in DELTAS) {
                 const [leftBound, rightBound] = DELTAS[valueType].map(toBound);
                 if (value1._expr === leftBound._expr && value2._expr === rightBound._expr) {
-                    return condition(path, "in range", [fieldType, valueType, false, false]);
+                    return Condition.of(path, "in range", [fieldType, valueType, false, false]);
                 }
             }
         }
@@ -189,7 +215,7 @@ function _introduceInRangeOperator(c, options) {
         const { path, value1, value2 } = res2;
         const fieldType = options.getFieldDef?.(path)?.type;
         if (["date", "datetime"].includes(fieldType) && isSimplePath(path)) {
-            return condition(path, "in range", [
+            return Condition.of(path, "in range", [
                 fieldType,
                 "custom range",
                 // @ts-ignore
@@ -240,7 +266,7 @@ function _introduceBetweenOperator(c, options) {
     const { path, value1, value2 } = res;
     const fieldType = options.getFieldDef?.(path)?.type;
     if (["integer", "float", "monetary"].includes(fieldType) && isSimplePath(path)) {
-        return condition(path, "between", normalizeValue([value1, value2]));
+        return Condition.of(path, "between", normalizeValue([value1, value2]));
     }
 }
 
@@ -272,19 +298,27 @@ function _eliminateAnyOperator(c) {
     if (
         operator === "any" &&
         isTree(value) &&
-        value.type === "condition" &&
+        value instanceof Condition &&
         typeof path === "string" &&
         typeof value.path === "string" &&
         !negate &&
         !value.negate &&
         ["between", "in range"].includes(value.operator)
     ) {
-        return condition(`${path}.${value.path}`, value.operator, value.value);
+        return Condition.of(`${path}.${value.path}`, value.operator, value.value);
     }
 }
 
 function eliminateAnyOperators(tree) {
     return operate(_eliminateAnyOperator, tree);
+}
+
+function applyTransformations(transformations, transformed, ...fixedParams) {
+    for (let i = transformations.length - 1; i >= 0; i--) {
+        const fn = transformations[i];
+        transformed = fn(transformed, ...fixedParams);
+    }
+    return transformed;
 }
 
 export function introduceVirtualOperators(tree, options) {
@@ -316,5 +350,5 @@ export function eliminateVirtualOperators(tree) {
 export function areEquivalentTrees(tree, otherTree) {
     const simplifiedTree = eliminateVirtualOperators(tree);
     const otherSimplifiedTree = eliminateVirtualOperators(otherTree);
-    return areEqualTrees(simplifiedTree, otherSimplifiedTree);
+    return simplifiedTree.equals(otherSimplifiedTree);
 }
