@@ -709,6 +709,7 @@ export class PosData extends Reactive {
                         [[domain, "in", Array.from(ids)]],
                         0,
                         0,
+                        true,
                     ]);
                     continue;
                 }
