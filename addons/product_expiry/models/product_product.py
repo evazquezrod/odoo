@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 import datetime
+from collections import defaultdict
 
 from odoo import fields, models
 
@@ -25,15 +26,32 @@ class ProductProduct(models.Model):
         expiration_products = self.filtered(lambda p: p.use_expiration_date)
         if not expiration_products:
             return res
-        domain_quant = [('product_id', 'in', expiration_products.ids)] + expiration_products._get_domain_locations()[0]
+        domain_quant, domain_in, domain_out = ([('product_id', 'in', expiration_products.ids)] + domain for domain in expiration_products._get_domain_locations())
         if lot_id is not None:
             domain_quant += [('lot_id', '=', lot_id)]
         if owner_id is not None:
             domain_quant += [('owner_id', '=', owner_id)]
+            domain_in += [('restrict_partner_id', '=', owner_id)]
+            domain_out += [('restrict_partner_id', '=', owner_id)]
         if package_id is not None:
             domain_quant += [('package_id', '=', package_id)]
-        domain_quant += [('removal_date', '<=', to_date.date())]
+        domain_quant += [('removal_date', '<=', datetime.date.today())]
         Quant = self.env['stock.quant'].with_context(active_test=False)
+
+        moves_in_res_past, moves_out_res_past = defaultdict(float), defaultdict(float)
+        to_date = fields.Datetime.to_datetime(to_date)
+        if to_date and to_date < fields.Datetime.now():
+            # Calculate the moves that were done before now to calculate back in time (as most questions will be recent ones)
+            domain_in = [('state', '=', 'done'), ('date', '>', to_date), ('removal_date', '<=', datetime.date.today())] + domain_in
+            domain_out = [('state', '=', 'done'), ('date', '>', to_date), ('removal_date', '<=', datetime.date.today())] + domain_out
+            Move = self.env['stock.move.line'].with_context(active_test=False)
+            groupby = ['product_id', 'product_uom_id']
+
+            for product, uom, quantity in Move._read_group(domain_in, groupby, ['quantity:sum']):
+                moves_in_res_past[product.id] += uom._compute_quantity(quantity, product.uom_id)
+
+            for product, uom, quantity in Move._read_group(domain_out, groupby, ['quantity:sum']):
+                moves_out_res_past[product.id] += uom._compute_quantity(quantity, product.uom_id)
 
         # A & B
         expired_unreserved_quants_res = {product.id: quantity - reserved_quantity for product, quantity, reserved_quantity in Quant._read_group(domain_quant, ['product_id'], ['quantity:sum', 'reserved_quantity:sum'])}
@@ -45,7 +63,7 @@ class ProductProduct(models.Model):
 
         for product in expiration_products:
             # A&B
-            to_subtract = expired_unreserved_quants_res.get(product.id, 0.0)
+            to_subtract = expired_unreserved_quants_res.get(product.id, 0.0) - moves_in_res_past.get(product.id, 0.0) + moves_out_res_past.get(product, 0.0)
             res[product.id]['free_qty'] = product.uom_id.round(res[product.id]['free_qty'])
 
             # A&B | A&C
