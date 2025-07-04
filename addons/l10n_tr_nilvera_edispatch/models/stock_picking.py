@@ -4,6 +4,8 @@ from lxml import etree
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools import cleanup_xml_node
+from odoo.tools.xml_utils import find_xml_value
+from odoo.addons.account_edi_ubl_cii.models.account_edi_xml_ubl_20 import UBL_NAMESPACES
 
 
 class StockPicking(models.Model):
@@ -241,3 +243,79 @@ class StockPicking(models.Model):
         self.filtered(
             lambda p: p.country_code == 'TR' and p.picking_type_code == 'outgoing'
         ).l10n_tr_nilvera_dispatch_state = 'sent'
+
+    def _get_tag_text(self, xpath, tree, default=''):
+        return find_xml_value(xpath, tree, UBL_NAMESPACES) or default
+
+    def _import_partner_vals(self, tree, role):
+        party = f'.//cac:{role}/cac:Party'
+        return {
+            'name': self._get_tag_text(f'{party}/cac:PartyName/cbc:Name', tree) or
+                    f"{self._get_tag_text(f'{party}/cac:Person/cbc:FirstName', tree)} {self._get_tag_text(f'{party}/cac:Person/cbc:FamilyName', tree)}",
+            'vat': self._get_tag_text(f'{party}/cac:PartyIdentification/cbc:ID', tree),
+            'street': self._get_tag_text(f'{party}/cac:PostalAddress/cbc:StreetName', tree),
+            'street2': self._get_tag_text(f'{party}/cac:PostalAddress/cbc:CitySubdivisionName', tree),
+            'city': self._get_tag_text(f'{party}/cac:PostalAddress/cbc:CityName', tree),
+            'zip': self._get_tag_text(f'{party}/cac:PostalAddress/cbc:PostalZone', tree),
+            'country_code': self._get_tag_text(f'{party}/cac:PostalAddress/cac:Country/cbc:IdentificationCode', tree),
+            'phone': self._get_tag_text(f'{party}/cac:Contact/cbc:Telephone', tree),
+            'email': self._get_tag_text(f'{party}/cac:Contact/cbc:ElectronicMail', tree),
+        }
+
+    def _import_and_update_partner(self, partner_vals):
+        partner = self.env['res.partner']._retrieve_partner(name=partner_vals['name'], vat=partner_vals['vat'])
+        if not partner:
+            vals_to_create = {k: v for k, v in partner_vals.items() if k not in ['vat', 'country_code']}
+            partner = self.env['res.partner'].create(vals_to_create)
+            country_code = partner_vals['country_code']
+            country = self.env.ref(f'base.{country_code.lower()}', raise_if_not_found=False) if country_code else False
+            if country:
+                partner.country_id = country.id
+        self.partner_id = partner.id
+
+    def _import_receipt_lines(self, tree):
+        receipt_lines = tree.findall('./{*}ReceiptLine') or tree.findall('./{*}DespatchLine')
+        ProductProduct = self.env['product.product']
+        values = []
+        source_location = self.env.ref('stock.stock_location_suppliers', raise_if_not_found=False)
+        for receipt in receipt_lines:
+            product = ProductProduct._retrieve_product(
+                default_code=self._get_tag_text('./cac:Item/cac:SellersItemIdentification/cbc:ID', receipt),
+                name=self._get_tag_text('./cac:Item/cbc:Name', receipt),
+            )
+            received_quantity = receipt.find('./{*}ReceivedQuantity')
+            if not product:
+                product = ProductProduct.create({
+                    'name': self._get_tag_text('./cac:Item/cbc:Name', receipt),
+                    'detailed_type': 'product',
+                    'default_code': self._get_tag_text('./cac:Item/cac:SellersItemIdentification/cbc:ID', receipt),
+                })
+                unece_code = received_quantity.get('unitCode')
+                product.product_tmpl_id.uom_id = product.product_tmpl_id.uom_id._get_uom_from_unece_code(unece_code)
+
+            values.append({
+                'name': self.origin,
+                'product_id': product.id,
+                'product_uom_qty': float(received_quantity.text or 0),
+                'picking_id': self.id,
+                'location_dest_id': self.location_dest_id.id,
+                'location_id': source_location.id,
+            })
+        return values
+
+    def _update_data_from_xml(self, file_data):
+        tree = file_data['xml_tree']
+        # Scheduled Date
+        date = self._get_tag_text('cbc:IssueDate', tree) + " " + self._get_tag_text('cbc:IssueTime', tree)
+        self.scheduled_date = date
+
+        # Store the sequence of the e-receipt obtained from XML.
+        self.origin = self._get_tag_text('./cbc:ID', tree)
+
+        # Partner
+        partner_vals = self._import_partner_vals(tree, 'DeliveryCustomerParty')
+        self._import_and_update_partner(partner_vals)
+
+        # Stock move lines
+        move_line_ids = self._import_receipt_lines(tree)
+        self.move_ids_without_package = [(0, 0, value) for value in move_line_ids]
