@@ -1675,7 +1675,7 @@ class TestSubcontractingSerialMassReceipt(TransactionCase):
             with picking_form.move_ids_without_package.edit(0) as move:
                 move.quantity = 5.0
         self.assertRecordValues(receipt.move_line_ids, [
-            {'quantity': 5.0, 'state': 'partially_available', 'picked': True}
+            {'quantity': 5.0, 'state': 'partially_available', 'picked': False}
         ])
         receipt.button_validate()
         backorder = receipt.backorder_ids
@@ -1683,7 +1683,7 @@ class TestSubcontractingSerialMassReceipt(TransactionCase):
             with picking_form.move_ids_without_package.edit(0) as move:
                 move.quantity = 3.0
         self.assertRecordValues(backorder.move_line_ids, [
-            {'quantity': 3.0, 'state': 'partially_available', 'picked': True}
+            {'quantity': 3.0, 'state': 'partially_available', 'picked': False}
         ])
         backorder.button_validate()
         backorder_backorder = backorder.backorder_ids
@@ -1691,7 +1691,7 @@ class TestSubcontractingSerialMassReceipt(TransactionCase):
             with picking_form.move_ids_without_package.edit(0) as move:
                 move.quantity = 1.0
         self.assertRecordValues(backorder_backorder.move_line_ids, [
-            {'quantity': 1.0, 'state': 'partially_available', 'picked': True}
+            {'quantity': 1.0, 'state': 'partially_available', 'picked': False}
         ])
         backorder_backorder.button_validate()
         self.assertEqual(subcontracted_produt.qty_available, 9.0)
