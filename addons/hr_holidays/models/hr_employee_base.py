@@ -330,7 +330,7 @@ class HrEmployeeBase(models.AbstractModel):
                         employee_remaining_leaves += virtual_remaining_leaves\
                             if leave_type.request_unit in ['day', 'half_day']\
                             else virtual_remaining_leaves / (employee.resource_calendar_id.hours_per_day or HOURS_PER_DAY)
-                        employee_max_leaves += allocation.number_of_days
+                        employee_max_leaves += allocation.number_of_days if allocation.holiday_status_id.active else 0
             employee.allocation_remaining_display = "%g" % float_round(employee_remaining_leaves, precision_digits=2)
             employee.allocation_display = "%g" % float_round(employee_max_leaves, precision_digits=2)
 
