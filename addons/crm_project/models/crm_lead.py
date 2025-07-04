@@ -8,7 +8,7 @@ from odoo.tools.translate import _
 class CrmLead(models.Model):
     _inherit = "crm.lead"
 
-    linked_project_ids = fields.One2many("project.project", inverse_name="lead_id", index=True, help="Projects linked to this lead.")
+    linked_project_ids = fields.One2many("project.project", inverse_name="lead_id", help="Projects linked to this lead.")
     linked_project_count = fields.Integer(compute="_compute_linked_project_count", help="Number of projects linked to this lead.")
 
     @api.depends("linked_project_ids")

@@ -8,7 +8,7 @@ from odoo.tools.translate import _
 class ProjectProject(models.Model):
     _inherit = "project.project"
 
-    lead_id = fields.Many2one("crm.lead", help="The lead associated with this project.")
+    lead_id = fields.Many2one("crm.lead", index=True, help="The lead associated with this project.")
 
     @api.model
     def default_get(self, fields_list):
@@ -40,5 +40,6 @@ class ProjectProject(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         projects = super().create(vals_list)
-        self._log_success_create(projects)
+        for project in projects.filtered("lead_id"):
+            self._log_success_create(project)
         return projects
