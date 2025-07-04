@@ -41,6 +41,7 @@ const FOCUS_CLASSNAME = "text-primary";
 const formatters = {
     date: formatDate,
     datetime: formatDateTime,
+    datetimeWithoutSeconds: () => formatDateTime({showSeconds: false}),
 };
 
 const listenedElements = new WeakSet();
@@ -281,6 +282,8 @@ export const datetimePickerService = {
                         options.condensed = hookParams.condensed || false;
                     }
                     try {
+                        console.log('ouyi')
+                        console.log(options);
                         return [convertFn(value, options), null];
                     } catch (error) {
                         if (error?.name === "ConversionError") {

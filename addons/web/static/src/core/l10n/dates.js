@@ -358,6 +358,7 @@ export function formatDate(value, options = {}) {
  * @param {ConversionOptions} [options={}]
  */
 export function formatDateTime(value, options = {}) {
+    console.log(options.showSeconds)
     if (!value) {
         return "";
     }

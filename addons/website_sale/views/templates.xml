@@ -206,6 +206,7 @@
             <t t-set="display_extra_link" t-valuef="true"/>
             <t t-set="display_detail" t-valuef="true"/>
         </t>
+        <!-- ici -->
     </template>
 
     <template id="product_variant_preview">
@@ -513,6 +514,10 @@
 
             <div id="wrap" class="js_sale o_wsale_products_page">
                 <div class="oe_structure oe_empty oe_structure_not_nearest" id="oe_structure_website_sale_products_1"/>
+                                    <!-- ICI -->
+                    <t t-set="hasLeftColumn" t-value="False"/>
+                    <t t-set="opt_wsale_fullwidth" t-value="False"/>
+
                 <div
                     id="o_wsale_container"
                     t-attf-class="oe_website_sale
@@ -528,6 +533,7 @@
                     t-att-data-default-sort="website.shop_default_sort"
                 >
                     <div class="row o_wsale_products_main_row flex-nowrap">
+                    <!-- <t t-out=" opt_wsale_fullwidth"/> -->
                         <aside
                             t-if="hasLeftColumn"
                             id="products_grid_before"
@@ -661,7 +667,7 @@
                                             <t t-set="_has_all_sibligns" t-value="hasPricelistDropdown and is_view_active('website_sale.sort') and wsale_has_filters_btn"></t>
                                             <!-- Desktop Search button -->
                                             <div
-                                                t-attf-class="o_wsale_products_header_search_form_container flex-grow-1 {{ _has_all_sibligns and 'd-none d-sm-inline-block'}}"
+                                                t-attf-class="o_wsale_products_header_search_form_container flex-grow-1 mw-xl-25 me-auto {{ _has_all_sibligns and 'd-none d-sm-inline-block'}}"
                                                 t-call="website_sale.search"
                                             >
                                                 <t t-if="category" t-set="placeholder">Search in <t t-out="category.name"/></t>
