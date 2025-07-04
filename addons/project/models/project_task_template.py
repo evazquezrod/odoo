@@ -1,23 +1,89 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import api, Command, fields, models
+import re
+from pytz import UTC
+from collections import defaultdict
+from datetime import timedelta, datetime, time
 
+from odoo import api, Command, fields, models, tools, SUPERUSER_ID, _
+from odoo.addons.rating.models import rating_data
+from odoo.addons.web_editor.tools import handle_history_divergence
+from odoo.exceptions import UserError, ValidationError
+from odoo.osv import expression
+from odoo.tools import format_list, SQL, LazyTranslate
+from odoo.addons.resource.models.utils import filter_domain_leaf
+from odoo.addons.project.controllers.project_sharing_chatter import ProjectSharingChatter
+from odoo.addons.mail.tools.discuss import Store
+
+_lt = LazyTranslate(__name__)
+
+CLOSED_STATES = {
+    '1_done': 'Done',
+    '1_canceled': 'Cancelled',
+}
 
 class ProjectTaskTemplate(models.Model):
     _name = 'project.task.template'
     _description = "Task Template"
-    _inherit = 'project.task'
+    _inherit = [
+        'portal.mixin',
+        'mail.thread.cc',
+        'mail.activity.mixin',
+        'rating.mixin',
+        'mail.tracking.duration.mixin',
+        'html.field.history.mixin',
+    ]
+    _mail_post_access = 'read'
+    _order = "priority desc, sequence, date_deadline asc, id desc"
+    _primary_email = 'email_from'
+    _systray_view = 'list'
+    _track_duration_field = 'stage_id'
 
+    def _get_versioned_fields(self):
+        return [ProjectTaskTemplate.description.name]
+
+    @api.model
+    def _get_default_partner_id(self, project=None, parent=None):
+        if parent and parent.partner_id:
+            return parent.partner_id.id
+        if project and project.partner_id:
+            return project.partner_id.id
+        return False
+
+    def _get_default_stage_id(self):
+        """ Gives default stage_id """
+        project_id = self.env.context.get('default_project_id')
+        if not project_id:
+            return False
+        return self.stage_find(project_id, order="fold, sequence, id")
+
+    @api.model
+    def _default_user_ids(self):
+        return self.env.user.ids if any(key in self.env.context for key in ('default_personal_stage_type_ids', 'default_personal_stage_type_id')) else ()
+
+    @api.model
+    def _default_company_id(self):
+        if self.env.context.get('default_project_id'):
+            return self.env['project.project'].browse(self.env.context['default_project_id']).company_id
+        return False
+
+    @api.model
+    def _read_group_stage_ids(self, stages, domain):
+        search_domain = [('id', 'in', stages.ids)]
+        if 'default_project_id' in self.env.context and not self.env.context.get('subtask_action') and 'project_kanban' in self.env.context:
+            search_domain = ['|', ('project_ids', '=', self.env.context['default_project_id'])] + search_domain
+
+        stage_ids = stages._search(search_domain, order=stages._order)
+        return stages.browse(stage_ids)
+
+    @api.model
+    def _read_group_personal_stage_type_ids(self, stages, domain):
+        return stages.search(['|', ('id', 'in', stages.ids), ('user_id', '=', self.env.user.id)])
 
     active = fields.Boolean(default=True, export_string_translation=False)
     name = fields.Char(string='Title', tracking=True, required=True, index='trigram')
     description = fields.Html(string='Description', sanitize_attributes=False)
-    priority = fields.Selection([
-        ('0', 'Low priority'),
-        ('1', 'Medium priority'),
-        ('2', 'High priority'),
-        ('3', 'Urgent'),
-    ], default='0', index=True, string="Priority", tracking=True)
+    
     sequence = fields.Integer(string='Sequence', default=10, export_string_translation=False)
     stage_id = fields.Many2one('project.task.type', string='Stage', compute='_compute_stage_id',
         store=True, readonly=False, ondelete='restrict', tracking=True, index=True,
@@ -37,16 +103,7 @@ class ProjectTaskTemplate(models.Model):
     create_date = fields.Datetime("Created On", readonly=True, index=True)
     write_date = fields.Datetime("Last Updated On", readonly=True)
     date_end = fields.Datetime(string='Ending Date', index=True, copy=False)
-    date_assign = fields.Datetime(string='Assigning Date', copy=False, readonly=True,
-        help="Date on which this task was last assigned (or unassigned). Based on this, you can get statistics on the time it usually takes to assign tasks.")
     date_deadline = fields.Datetime(string='Deadline', index=True, tracking=True, copy=False)
-
-    date_last_stage_update = fields.Datetime(string='Last Stage Update',
-        index=True,
-        copy=False,
-        readonly=True,
-        help="Date on which the state of your task has last been modified.\n"
-            "Based on this information you can identify tasks that are stalling and get statistics on the time it usually takes to move tasks from one stage/state to another.")
 
     project_id = fields.Many2one('project.project', string='Project', domain="['|', ('company_id', '=', False), ('company_id', '=?',  company_id), ('is_template', 'in', [is_template, False])]",
                                  compute="_compute_project_id", store=True, precompute=True, recursive=True, readonly=False, index=True, tracking=True, change_default=True, falsy_value_label=_lt("🔒 Private"))
@@ -55,7 +112,6 @@ class ProjectTaskTemplate(models.Model):
     allocated_hours = fields.Float("Allocated Time", tracking=True)
     subtask_allocated_hours = fields.Float("Sub-tasks Allocated Time", compute='_compute_subtask_allocated_hours', export_string_translation=False,
         help="Sum of the hours allocated for all the sub-tasks (and their own sub-tasks) linked to this task. Usually less than or equal to the allocated hours of this task.")
-    role_ids = fields.Many2many('project.role', string='Project Roles')
     # Tracking of this field is done in the write function
     user_ids = fields.Many2many('res.users', relation='project_task_user_rel', column1='task_id', column2='user_id',
         string='Assignees', context={'active_test': False}, tracking=True, default=_default_user_ids, domain="[('share', '=', False), ('active', '=', True)]", falsy_value_label=_lt("👤 Unassigned"))
@@ -86,7 +142,6 @@ class ProjectTaskTemplate(models.Model):
     )
     # Need this field to check there is no email loops when Odoo reply automatically
     email_from = fields.Char('Email From')
-    email_cc = fields.Char(help='Email addresses that were in the CC of the incoming emails from this task and that are not currently linked to an existing customer.')
     company_id = fields.Many2one('res.company', string='Company', compute='_compute_company_id', store=True, readonly=False, recursive=True, copy=True, default=_default_company_id)
     color = fields.Integer(string='Color Index', export_string_translation=False)
     rating_active = fields.Boolean(string='Project Rating Status', related="project_id.rating_active")
@@ -104,15 +159,8 @@ class ProjectTaskTemplate(models.Model):
     child_ids = fields.One2many('project.task', 'parent_id', string="Sub-tasks", domain="[('recurring_task', '=', False)]", export_string_translation=False)
     subtask_count = fields.Integer("Sub-task Count", compute='_compute_subtask_count', export_string_translation=False)
     closed_subtask_count = fields.Integer("Closed Sub-tasks Count", compute='_compute_subtask_count', export_string_translation=False)
-    project_privacy_visibility = fields.Selection(related='project_id.privacy_visibility', string="Project Visibility", tracking=False)
     subtask_completion_percentage = fields.Float(compute="_compute_subtask_completion_percentage", export_string_translation=False)
     # Computed field about working time elapsed between record creation and assignation/closing.
-    working_hours_open = fields.Float(compute='_compute_elapsed', string='Working Hours to Assign', digits=(16, 2), store=True, aggregator="avg")
-    working_hours_close = fields.Float(compute='_compute_elapsed', string='Working Hours to Close', digits=(16, 2), store=True, aggregator="avg")
-    working_days_open = fields.Float(compute='_compute_elapsed', string='Working Days to Assign', store=True, aggregator="avg")
-    working_days_close = fields.Float(compute='_compute_elapsed', string='Working Days to Close', store=True, aggregator="avg")
-    # customer portal: include comment and (incoming/outgoing) emails in communication history
-    website_message_ids = fields.One2many(domain=lambda self: [('model', '=', self._name), ('message_type', 'in', ['email', 'comment', 'email_outgoing', 'auto_comment'])], export_string_translation=False)
     allow_milestones = fields.Boolean(related='project_id.allow_milestones', export_string_translation=False)
     milestone_id = fields.Many2one(
         'project.milestone',
@@ -175,10 +223,7 @@ class ProjectTaskTemplate(models.Model):
             Make sure to use the right format and order e.g. Improve the configuration screen #feature #v16 @Mitchell !""",
     )
     link_preview_name = fields.Char(compute='_compute_link_preview_name', export_string_translation=False)
-    is_template = fields.Boolean(copy=False, export_string_translation=False)
     has_project_template = fields.Boolean(related='project_id.is_template', string="Has Project Template", export_string_translation=False)
-    has_template_ancestor = fields.Boolean(compute='_compute_has_template_ancestor', search='_search_has_template_ancestor',
-                                           recursive=True, export_string_translation=False)
 
     _recurring_task_has_no_parent = models.Constraint(
         'CHECK (NOT (recurring_task IS TRUE AND parent_id IS NOT NULL))',
@@ -204,14 +249,6 @@ class ProjectTaskTemplate(models.Model):
         for task in self:
             if not task.project_id and task.subtask_count:
                 raise ValidationError(_('This task has sub-tasks, so it can\'t be private.'))
-
-    @property
-    def TASK_PORTAL_READABLE_FIELDS(self):
-        return PROJECT_TASK_READABLE_FIELDS
-
-    @property
-    def TASK_PORTAL_WRITABLE_FIELDS(self):
-        return PROJECT_TASK_WRITABLE_FIELDS
 
     @api.depends('parent_id.project_id')
     def _compute_project_id(self):
@@ -664,20 +701,6 @@ class ProjectTaskTemplate(models.Model):
             if task.project_id:
                 link_preview_name += f' | {task.project_id.sudo().name}'
             task.link_preview_name = link_preview_name
-
-    @api.depends('is_template', 'parent_id.has_template_ancestor')
-    def _compute_has_template_ancestor(self):
-        for task in self:
-            task.has_template_ancestor = task.is_template or (task.parent_id and task.parent_id.has_template_ancestor)
-
-    def _search_has_template_ancestor(self, operator, value):
-        if operator not in ['=', '!='] or not isinstance(value, bool):
-            return NotImplemented
-        template_tasks = self.env['project.task'].with_context(active_test=False).sudo().search([('is_template', '=', True)])
-        domain = [('id', 'child_of', template_tasks.ids)]
-        if (operator == "=") != value:
-            domain = ['!', ('id', 'child_of', template_tasks.ids)]
-        return domain
 
     def copy_data(self, default=None):
         default = dict(default or {})
@@ -1268,8 +1291,6 @@ class ProjectTaskTemplate(models.Model):
             Use the project partner_id if any, or else the parent task partner_id.
         """
         for task in self:
-            if task.has_template_ancestor:
-                continue
             if task.partner_id and not (task.project_id or task.parent_id):
                 task.partner_id = False
                 continue
@@ -1780,18 +1801,17 @@ class ProjectTaskTemplate(models.Model):
                     'message': _('Private tasks cannot be converted into templates'),
                 },
             }
-        if self.is_template:
-            if self.project_id.is_template:
-                raise UserError(self.env._("Tasks in a project template cannot be converted into regular tasks."))
+        # to do: ppr
+            # if self.project_id.is_template:
+            #     raise UserError(self.env._("Tasks in a project template cannot be converted into regular tasks."))
 
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'project_show_template_undo_confirmation_dialog',
-                'params': {
-                    'task_id': self.id,
-                },
-            }
-        self.is_template = True
+            # return {
+            #     'type': 'ir.actions.client',
+            #     'tag': 'project_show_template_undo_confirmation_dialog',
+            #     'params': {
+            #         'task_id': self.id,
+            #     },
+            # }
         self.message_post(body=_("Task converted to template"))
         return {
             'type': 'ir.actions.client',
@@ -1807,8 +1827,6 @@ class ProjectTaskTemplate(models.Model):
 
     def action_undo_convert_to_template(self):
         self.ensure_one()
-        self.is_template = False
-        self.role_ids = False
         self.message_post(body=_("Template converted back to regular task"))
         return {
             'type': 'ir.actions.client',
