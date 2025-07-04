@@ -1,10 +1,12 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from werkzeug.exceptions import NotFound, Forbidden
+from urllib.parse import urlencode
 
 from odoo import http
 from odoo.http import request
-from odoo.addons.portal.controllers.mail import PortalChatter
+from odoo.addons.portal.controllers.mail import MailController, PortalChatter
+from odoo.addons.mail.models.discuss.mail_guest import add_guest_to_context
 from odoo.tools import plaintext2html, html2plaintext
 
 
@@ -77,3 +79,21 @@ class SlidesPortalChatter(PortalChatter):
             'default_attachment_ids': message.attachment_ids.sudo().read(['id', 'name', 'mimetype', 'file_size', 'access_token']),
             'force_submit_url': '/slides/mail/update_comment',
         }
+
+
+class SlidesMailController(MailController):
+
+    @add_guest_to_context
+    def mail_thread_message_redirect(self, message_id, **kwargs):
+        message = request.env["mail.message"].search([('id', '=', message_id)])
+        if (
+            message.model == "slide.channel" and
+            message.message_type == "comment" and
+            not request.env.user._is_internal()
+        ):
+            url_params = {"active_tab": "review"}
+            if highlight_message_id := kwargs.get("highlight_message_id"):
+                url_params["highlight_message_id"] = highlight_message_id
+            url = f"/slides/{message.res_id}?{urlencode(url_params)}"
+            return request.redirect(url)
+        return super().mail_thread_message_redirect(message_id, **kwargs)
