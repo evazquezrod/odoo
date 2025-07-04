@@ -11,6 +11,12 @@ _logger = logging.getLogger(__name__)
 
 DEFAULT_FACTURX_DATE_FORMAT = '%Y%m%d'
 
+# Full list on https://service.unece.org/trade/untdid/d16b/tred/tred4461.htm
+PAYMENT_MEANS_CODES = {
+    'Payment to bank account': 42,
+    'SEPA direct debit': 59
+}
+
 
 class AccountEdiXmlCII(models.AbstractModel):
     _name = "account.edi.xml.cii"
@@ -228,6 +234,11 @@ class AccountEdiXmlCII(models.AbstractModel):
         # Fixed taxes: set the total adjusted amounts on the document level
         template_values['tax_basis_total_amount'] = tax_details['base_amount_currency']
         template_values['tax_total_amount'] = tax_details['tax_amount_currency']
+
+        if invoice._fields.get('sdd_mandate_id') and invoice.sdd_mandate_id:
+            template_values['payment_means_code'] = PAYMENT_MEANS_CODES['Direct debit']
+        else:
+            template_values['payment_means_code'] = PAYMENT_MEANS_CODES['Payment to bank account']
 
         return template_values
 
