@@ -1,0 +1,16 @@
+<odoo>
+    <record id="view_move_form" model="ir.ui.view">
+        <field name="name">account.move.form.inherit.sign.dsc.token</field>
+        <field name="model">account.move</field>
+        <field name="priority" eval="55"/>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_print_pdf']" position="after">
+                <button name="action_sign_with_dsc_token"
+                    type="object"
+                    invisible="state != 'posted' or is_being_sent"
+                    string="Sign with DSC USB Token"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
