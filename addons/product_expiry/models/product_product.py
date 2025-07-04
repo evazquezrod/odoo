@@ -32,7 +32,7 @@ class ProductProduct(models.Model):
             domain_quant += [('owner_id', '=', owner_id)]
         if package_id is not None:
             domain_quant += [('package_id', '=', package_id)]
-        domain_quant += [('removal_date', '<=', datetime.date.today())]
+        domain_quant += [('removal_date', '<=', to_date.date())]
         Quant = self.env['stock.quant'].with_context(active_test=False)
 
         # A & B
