@@ -3,6 +3,7 @@ import { redirect } from "@web/core/utils/urls";
 import publicWidget from "@web/legacy/js/public/public_widget";
 import VariantMixin from "@website_sale/js/sale_variant_mixin";
 import wSaleUtils from "@website_sale/js/website_sale_utils";
+import { _t } from "@web/core/l10n/translation";
 
 // VariantMixin events are overridden on purpose here
 // to avoid registering them more than once since they are already registered
@@ -110,6 +111,16 @@ publicWidget.registry.ProductWishlist = publicWidget.Widget.extend(VariantMixin,
                     let currentProductId = $el.data('product-product-id');
                     if ($el.hasClass('o_add_wishlist_dyn')) {
                         currentProductId = parseInt($el.closest('.js_product').find('.product_id:checked').val());
+                    } else if ($el.hasClass('o_add_wishlist')) {
+                        let btnEl = $el[0];
+                        let iconEl = btnEl.querySelector('.fa');
+
+                        if (iconEl) {
+                            iconEl.classList.remove('fa-heart-o');
+                            iconEl.classList.add('fa-heart');
+                        }
+
+                        btnEl.title = _t("Handle your wishlist from the top-bar icon.");
                     }
                     if (productId === currentProductId) {
                         $el.prop("disabled", true).addClass('disabled');
