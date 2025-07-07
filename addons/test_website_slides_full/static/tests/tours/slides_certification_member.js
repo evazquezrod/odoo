@@ -25,6 +25,7 @@ var startCertificationSurvey = [{
     content: 'eLearning: go to certification course',
     trigger: 'a:contains("DIY Furniture - TEST")',
     run: "click",
+    expectUnloadPage: true,
 }, {
     content: 'eLearning: user should be enrolled',
     trigger: '.o_wslides_js_course_join:contains("You\'re enrolled")',
@@ -119,6 +120,7 @@ var certificationCompletionSteps = [{
     content: 'Survey: back to course home page',
     trigger: 'a:contains("Go back to course")',
     run: "click",
+    expectUnloadPage: true,
 }, {
     content: 'eLearning: course should be completed',
     trigger: '.o_wslides_channel_completion_completed',

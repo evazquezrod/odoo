@@ -21,6 +21,7 @@ registry.category("web_tour.tours").add("invoicePoSOrderWithSelfInvocing", {
         {
             trigger: ".o_portal_wrap button:contains('Request Invoice')",
             run: "click",
+            expectUnloadPage: true,
         },
         {
             trigger: ".o_portal_wrap input[name='name']",

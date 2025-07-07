@@ -151,6 +151,7 @@ registry.category('web_tour.tours').add('donation_snippet_use_2', {
             content: "Click on the 'Amount to donate' input field",
             trigger: "input#other_amount_value",
             run: "click",
+            expectUnloadPage: true,
         },
         {
             content: "Change custom amount to 67",
