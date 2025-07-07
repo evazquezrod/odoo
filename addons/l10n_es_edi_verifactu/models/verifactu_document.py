@@ -282,6 +282,13 @@ class L10nEsEdiVerifactuDocument(models.Model):
         if need_refund_reason and not vals['refund_reason']:
             errors.append(_("The refund reason is not specified."))
 
+        simplified_partner = self.env.ref('l10n_es.partner_simplified', raise_if_not_found=False)
+        partner_is_simplified_partner = simplified_partner and vals['partner'] == simplified_partner
+        partner_specified = vals['partner'] and not partner_is_simplified_partner
+        if need_refund_reason and vals['refund_reason'] != 'R5' and not partner_specified:
+            errors.append(_("A refund with Refund Reason %(refund_reason)s needs a partner.",
+                            refund_reason=vals['refund_reason']))
+
         if not vals['verifactu_tax_type']:
             errors.append(_("Missing Veri*Factu Taxs Type (Impuesto)."))
 
@@ -957,16 +964,16 @@ class L10nEsEdiVerifactuDocument(models.Model):
         service = client.bind(wsdl['service'], wsdl['port'])
 
         if operation == 'registration':
-            operation = service[wsdl[operation]]
+            function = service[wsdl[operation]]
         else:
             # operation == 'registration_xml'
-            __client = client._Client__obj  # get the "real" zeep client from the odoo specific wrapper
-            service = __client.bind(wsdl['service'], wsdl['port'])
+            zeep_client = client._Client__obj  # get the "real" zeep client from the odoo specific wrapper
+            service = zeep_client.bind(wsdl['service'], wsdl['port'])
 
-            def operation(*args, **kwargs):
-                return __client.create_message(service, wsdl['registration'], *args, **kwargs)
+            def function(*args, **kwargs):
+                return zeep_client.create_message(service, wsdl['registration'], *args, **kwargs)
 
-        return operation, info
+        return function, info
 
     @api.model
     def _get_zeep_registration_operation(self):

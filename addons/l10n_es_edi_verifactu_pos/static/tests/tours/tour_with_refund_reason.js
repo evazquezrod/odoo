@@ -26,7 +26,7 @@ registry.category("web_tour.tours").add("l10n_es_edi_verifactu_pos.tour_with_ref
         TicketScreen.toRefundTextContains("To Refund: 1.00"),
         TicketScreen.confirmRefund(),
         {
-            trigger: 'button:contains("R1")',
+            trigger: 'button:contains("R5")',
         },
         ProductScreen.isShown(),
         ProductScreen.clickPayButton(),

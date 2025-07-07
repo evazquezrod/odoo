@@ -79,7 +79,8 @@ class PosOrder(models.Model):
                     warning_level = 'warning'
 
             if last_document._filter_waiting():
-                warning = (warning + '\n' if warning else '') + _("A Veri*Factu document is waiting to be sent as soon as possible.")
+                warning = _("%(existing_warning)sA Veri*Factu document is waiting to be sent as soon as possible.",
+                            existing_warning=(warning + '\n' if warning else ''))
                 warning_level = warning_level or 'info'
 
             order.l10n_es_edi_verifactu_warning = warning
@@ -191,7 +192,7 @@ class PosOrder(models.Model):
             'delivery_date': False,
             'description': None,
             'invoice_date': self.date_order.date(),
-            'is_simplified': True,  # TODO:
+            'is_simplified': True,
             # NOTE: invoice with negative amounts possible (when no `refunded_order` specified)
             'move_type': 'out_refund' if refunded_order else 'out_invoice',
             'verifactu_move_type': 'correction_incremental' if refunded_order else 'invoice',

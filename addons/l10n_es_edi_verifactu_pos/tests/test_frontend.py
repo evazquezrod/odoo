@@ -25,7 +25,7 @@ class TestL10nEsEdiVerifactuPosFrontend(TestL10nEsEdiVerifactuPosCommon, TestPoi
 
         self.assertTrue(order.l10n_es_edi_verifactu_document_ids.json_attachment_base64)
 
-        self.assertEqual(refund.l10n_es_edi_verifactu_refund_reason, 'R1')
+        self.assertEqual(refund.l10n_es_edi_verifactu_refund_reason, 'R5')
         self.assertTrue(refund.l10n_es_edi_verifactu_document_ids.json_attachment_base64)
 
     def test_tour_invoice_with_refund_reason(self):
@@ -48,5 +48,5 @@ class TestL10nEsEdiVerifactuPosFrontend(TestL10nEsEdiVerifactuPosCommon, TestPoi
 
         self.assertTrue(order_move.l10n_es_edi_verifactu_document_ids.json_attachment_base64)
 
-        self.assertEqual(refund_move.l10n_es_edi_verifactu_refund_reason, 'R1')
+        self.assertEqual(refund_move.l10n_es_edi_verifactu_refund_reason, 'R5')
         self.assertTrue(refund_move.l10n_es_edi_verifactu_document_ids.json_attachment_base64)

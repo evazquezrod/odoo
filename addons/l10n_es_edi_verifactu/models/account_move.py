@@ -198,7 +198,8 @@ class AccountMove(models.Model):
                     warning_level = 'warning'
 
             if last_document._filter_waiting():
-                warning = (warning + '\n' if warning else '') + _("A Veri*Factu document is waiting to be sent as soon as possible.")
+                warning = _("%(existing_warning)sA Veri*Factu document is waiting to be sent as soon as possible.",
+                            existing_warning=(warning + '\n' if warning else ''))
                 warning_level = warning_level or 'info'
 
             move.l10n_es_edi_verifactu_warning = warning
