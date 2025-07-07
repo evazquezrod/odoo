@@ -32,6 +32,7 @@ class AccountMoveSend(models.TransientModel):
         return values
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     @api.depends('move_ids.l10n_es_edi_verifactu_required')
     def _compute_l10n_es_edi_verifactu_compute_checkbox(self):
         for wizard in self:
@@ -43,6 +44,8 @@ class AccountMoveSend(models.TransientModel):
             wizard.l10n_es_edi_verifactu_send_checkbox = checked_by_default
             wizard.l10n_es_edi_verifactu_send_readonly = readonly
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     def _l10n_es_edi_verifactu_get_move_info(self):
         # EXTENDS 'account'
         self.ensure_one()
@@ -68,11 +71,15 @@ class AccountMoveSend(models.TransientModel):
             wizard.l10n_es_edi_verifactu_send_enable = enable
             wizard.l10n_es_edi_verifactu_send_checkbox = checked_by_default
             wizard.l10n_es_edi_verifactu_send_readonly = not enable or not move_info['moves_to_send']
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 
     @api.depends('l10n_es_edi_verifactu_send_readonly')
     def _compute_l10n_es_edi_verifactu_warnings(self):
         for wizard in self:
+<<<<<<< HEAD
 <<<<<<< HEAD
             waiting_moves = wizard.move_ids.filtered(lambda m: m.l10n_es_edi_verifactu_document_ids._filter_waiting())
             wizard.l10n_es_edi_verifactu_warnings = _(
@@ -80,6 +87,8 @@ class AccountMoveSend(models.TransientModel):
                 ', '.join(waiting_moves.mapped('name'))
             ) if waiting_moves else False
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             warnings = []
             move_info = wizard._l10n_es_edi_verifactu_get_move_info()
             if move_info['waiting_moves']:
@@ -93,7 +102,10 @@ class AccountMoveSend(models.TransientModel):
                     ', '.join(move_info['registered_moves'].mapped('name'))
                 ))
             wizard.l10n_es_edi_verifactu_warnings = '\n'.join(warnings) if warnings else False
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 
     @api.model
     def _call_web_service_before_invoice_pdf_render(self, invoices_data):

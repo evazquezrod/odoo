@@ -1,9 +1,14 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 from odoo import _, api, fields, models, tools
 =======
 from odoo import _, api, fields, models
 from odoo.exceptions import RedirectWarning
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+from odoo import _, api, fields, models
+from odoo.exceptions import RedirectWarning
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 
 
 class AccountMove(models.Model):
@@ -12,10 +17,14 @@ class AccountMove(models.Model):
     l10n_es_edi_verifactu_required = fields.Boolean(
         string="Veri*Factu Required",
 <<<<<<< HEAD
+<<<<<<< HEAD
         compute='_compute_l10n_es_edi_verifactu_required',
 =======
         related='company_id.l10n_es_edi_verifactu_required',
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+        related='company_id.l10n_es_edi_verifactu_required',
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     )
     l10n_es_edi_verifactu_document_ids = fields.One2many(
         comodel_name='l10n_es_edi_verifactu.document',
@@ -46,6 +55,7 @@ class AccountMove(models.Model):
         compute="_compute_l10n_es_edi_verifactu_warning",
     )
 <<<<<<< HEAD
+<<<<<<< HEAD
     l10n_es_edi_verifactu_error_level = fields.Selection(
         string="Veri*Factu Error Level",
         selection=[
@@ -67,6 +77,11 @@ class AccountMove(models.Model):
         string="Veri*Factu QR Code",
         compute='_compute_l10n_es_edi_verifactu_qr_code',
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+    l10n_es_edi_verifactu_qr_code = fields.Char(
+        string="Veri*Factu QR Code",
+        compute='_compute_l10n_es_edi_verifactu_qr_code',
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     )
     l10n_es_edi_verifactu_show_cancel_button = fields.Boolean(
         string="Show Veri*Factu Cancel Button",
@@ -140,6 +155,7 @@ class AccountMove(models.Model):
 
         taxes = self.invoice_line_ids.tax_ids.flatten_taxes_hierarchy()
 <<<<<<< HEAD
+<<<<<<< HEAD
         return taxes._l10n_es_edi_verifactu_get_verifactu_tax_type()
 
     @api.model
@@ -149,6 +165,11 @@ class AccountMove(models.Model):
 
     @api.model
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+        return taxes._l10n_es_edi_verifactu_get_tax_type()
+
+    @api.model
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     def _l10n_es_edi_verifactu_get_available_clave_regimens_map(self):
         """
         Return dictionary (Veri*Factu Tax Type -> set(operation types))
@@ -197,6 +218,7 @@ class AccountMove(models.Model):
             move.l10n_es_edi_verifactu_clave_regimen = clave_regimen
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     @api.depends('country_code')
     def _compute_l10n_es_edi_verifactu_required(self):
         for move in self:
@@ -212,6 +234,8 @@ class AccountMove(models.Model):
 
 =======
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     @api.depends('l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.state')
     def _compute_l10n_es_edi_verifactu_state(self):
         for move in self:
@@ -219,16 +243,21 @@ class AccountMove(models.Model):
             move.l10n_es_edi_verifactu_state = state
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     @api.depends('l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.record_identifier')
 =======
     @api.depends('l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.json_attachment_base64')
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+    @api.depends('l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.json_attachment_base64')
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     def _compute_l10n_es_edi_verifactu_qr_code(self):
         for move in self:
             last_submission = move.l10n_es_edi_verifactu_document_ids._get_last('submission')
             url = last_submission._get_qr_code_img_url() if last_submission else False
             move.l10n_es_edi_verifactu_qr_code = url
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     @api.depends('l10n_es_edi_verifactu_state', 'l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.state')
     def _compute_l10n_es_edi_verifactu_warning(self):
@@ -247,6 +276,8 @@ class AccountMove(models.Model):
                 warning = _("A Veri*Factu document is waiting to be sent as soon as possible.")
                 warning_level = 'info'
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     @api.depends('state', 'l10n_es_edi_verifactu_state', 'l10n_es_edi_verifactu_document_ids',
                  'l10n_es_edi_verifactu_document_ids.state', 'l10n_es_edi_verifactu_document_ids.errors')
     def _compute_l10n_es_edi_verifactu_warning(self):
@@ -274,7 +305,10 @@ class AccountMove(models.Model):
                             existing_warning=(warning + '\n' if warning else ''))
                 warning_level = warning_level or 'info'
 
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             move.l10n_es_edi_verifactu_warning = warning
             move.l10n_es_edi_verifactu_warning_level = warning_level
 
@@ -299,7 +333,10 @@ class AccountMove(models.Model):
                 move.show_reset_to_draft_button = False
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     @api.model
     def _l10n_es_edi_verifactu_action_go_to_journal_entry(self, move):
         return {
@@ -311,7 +348,10 @@ class AccountMove(models.Model):
             'context': self._context,
         }
 
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     def l10n_es_edi_verifactu_button_cancel(self):
         self._l10n_es_edi_verifactu_mark_for_next_batch(cancellation=True)
 
@@ -323,6 +363,7 @@ class AccountMove(models.Model):
             errors.append(_("The journal entry has to be posted."))
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         clave_regimen = self.l10n_es_edi_verifactu_clave_regimen
         if not clave_regimen:
             errors.append(_("The journal entry has no Veri*Factu Regime Key."))
@@ -331,11 +372,16 @@ class AccountMove(models.Model):
         available_clave_regimens = self._l10n_es_edi_verifactu_get_available_clave_regimens_map()[verifactu_tax_type]
         if clave_regimen and clave_regimen not in available_clave_regimens:
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         verifactu_tax_type = self._l10n_es_edi_verifactu_get_verifactu_tax_type()
         selected_clave_regimen = self.l10n_es_edi_verifactu_clave_regimen
         available_clave_regimens_map = self._l10n_es_edi_verifactu_get_available_clave_regimens_map()
         if selected_clave_regimen and selected_clave_regimen not in available_clave_regimens_map.get(verifactu_tax_type, set()):
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             errors.append(_("The Veri*Factu Regime Key is not compatible with the Veri*Factu Tax Type."))
 
         return errors
@@ -365,16 +411,22 @@ class AccountMove(models.Model):
         # again after a cancellation (else we get the error '[3000] Registro de facturación duplicado.').
         rejected_before = documents._get_last(document_type).state == 'rejected'
 <<<<<<< HEAD
+<<<<<<< HEAD
         is_simplified = self.l10n_es_is_simplified
 
         verifactu_tax_type = self._l10n_es_edi_verifactu_get_verifactu_tax_type()
         clave_regimen = self.l10n_es_edi_verifactu_clave_regimen.split('_', 1)[0]
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 
         verifactu_tax_type = self._l10n_es_edi_verifactu_get_verifactu_tax_type()
         selected_clave_regimen = self.l10n_es_edi_verifactu_clave_regimen
         clave_regimen = selected_clave_regimen and selected_clave_regimen.split('_', 1)[0]
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         substituted_move = self.l10n_es_edi_verifactu_substituted_entry_id
         reversed_move = self.reversed_entry_id
 
@@ -396,10 +448,14 @@ class AccountMove(models.Model):
             'description': self.invoice_origin[:500] if self.invoice_origin else None,
             'invoice_date': self.invoice_date,
 <<<<<<< HEAD
+<<<<<<< HEAD
             'is_simplified': is_simplified,
 =======
             'is_simplified': self.l10n_es_is_simplified,
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+            'is_simplified': self.l10n_es_is_simplified,
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             'move_type': move_type,
             'verifactu_move_type': verifactu_move_type,
             'name': self.name,
@@ -410,10 +466,14 @@ class AccountMove(models.Model):
             'substituted_document_reversal_document': substituted_move.reversal_move_id.l10n_es_edi_verifactu_document_ids._get_last('submission'),
             'documents': documents,
 <<<<<<< HEAD
+<<<<<<< HEAD
             'record_identifier': documents._get_last('submission').record_identifier,
 =======
             'record_identifier': documents._get_last('submission')._get_record_identifier(),
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+            'record_identifier': documents._get_last('submission')._get_record_identifier(),
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             'verifactu_tax_type': verifactu_tax_type,
             'clave_regimen': clave_regimen or None,
         })
@@ -429,7 +489,10 @@ class AccountMove(models.Model):
         vals['errors'] = self.env['l10n_es_edi_verifactu.document']._check_record_values(vals)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         # Add redirect warnings to journal entries with missing Veri*Factu documents for easier user flow.
         if vals['verifactu_move_type'] == 'correction_substitution' and not vals['substituted_document']:
             msg = _("There is no Veri*Factu document for the substituted record.")
@@ -444,7 +507,10 @@ class AccountMove(models.Model):
             action = self._l10n_es_edi_verifactu_action_go_to_journal_entry(reversed_move)
             raise RedirectWarning(msg, action, _("Go to the journal entry"))
 
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         return vals
 
     def _l10n_es_edi_verifactu_create_documents(self, cancellation=False):

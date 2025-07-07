@@ -8,10 +8,14 @@ class PosOrder(models.Model):
     l10n_es_edi_verifactu_required = fields.Boolean(
         string="Veri*Factu Required",
 <<<<<<< HEAD
+<<<<<<< HEAD
         compute='_compute_l10n_es_edi_verifactu_required',
 =======
         related='company_id.l10n_es_edi_verifactu_required',
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+        related='company_id.l10n_es_edi_verifactu_required',
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     )
     l10n_es_edi_verifactu_document_ids = fields.One2many(
         comodel_name='l10n_es_edi_verifactu.document',
@@ -33,6 +37,7 @@ class PosOrder(models.Model):
                 - Cancelled: Registered by the AEAT as cancelled""",
     )
 <<<<<<< HEAD
+<<<<<<< HEAD
     l10n_es_edi_verifactu_error_level = fields.Selection(
         string="Veri*Factu Error Level",
         selection=[
@@ -45,6 +50,8 @@ class PosOrder(models.Model):
         string="Veri*Factu Errors",
         compute="_compute_l10n_es_edi_verifactu_errors_and_error_level",
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     l10n_es_edi_verifactu_warning_level = fields.Char(
         string="Veri*Factu Warning Level",
         compute="_compute_l10n_es_edi_verifactu_warning",
@@ -52,7 +59,10 @@ class PosOrder(models.Model):
     l10n_es_edi_verifactu_warning = fields.Html(
         string="Veri*Factu Warning",
         compute="_compute_l10n_es_edi_verifactu_warning",
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     )
     l10n_es_edi_verifactu_qr_code = fields.Char(
         string="Veri*Factu QR Code",
@@ -75,6 +85,7 @@ class PosOrder(models.Model):
     )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     @api.depends('country_code')
     def _compute_l10n_es_edi_verifactu_required(self):
         for order in self:
@@ -88,6 +99,8 @@ class PosOrder(models.Model):
             order.l10n_es_edi_verifactu_error_level = error_level
             order.l10n_es_edi_verifactu_errors = last_document.errors
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     @api.depends('state', 'l10n_es_edi_verifactu_state', 'l10n_es_edi_verifactu_document_ids',
                  'l10n_es_edi_verifactu_document_ids.state', 'l10n_es_edi_verifactu_document_ids.errors')
     def _compute_l10n_es_edi_verifactu_warning(self):
@@ -117,7 +130,10 @@ class PosOrder(models.Model):
 
             order.l10n_es_edi_verifactu_warning = warning
             order.l10n_es_edi_verifactu_warning_level = warning_level
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 
     @api.depends('l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.state')
     def _compute_l10n_es_edi_verifactu_state(self):
@@ -126,10 +142,14 @@ class PosOrder(models.Model):
             order.l10n_es_edi_verifactu_state = state
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     @api.depends('l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.record_identifier')
 =======
     @api.depends('l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.json_attachment_base64')
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+    @api.depends('l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.json_attachment_base64')
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     def _compute_l10n_es_edi_verifactu_qr_code(self):
         for order in self:
             invoice = order.account_move
@@ -157,10 +177,14 @@ class PosOrder(models.Model):
 
         taxes = self.lines.tax_ids.flatten_taxes_hierarchy()
 <<<<<<< HEAD
+<<<<<<< HEAD
         return taxes._l10n_es_edi_verifactu_get_verifactu_tax_type()
 =======
         return taxes._l10n_es_edi_verifactu_get_tax_type()
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+        return taxes._l10n_es_edi_verifactu_get_tax_type()
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 
     def _l10n_es_edi_verifactu_get_clave_regimen(self):
         """
@@ -175,15 +199,21 @@ class PosOrder(models.Model):
         taxes = self.lines.tax_ids.flatten_taxes_hierarchy()
         special_regime = self.company_id.l10n_es_edi_verifactu_special_vat_regime
 <<<<<<< HEAD
+<<<<<<< HEAD
         return taxes._l10n_es_edi_verifactu_get_suggested_clave_regimen(
             special_regime, forced_verifactu_tax_type=verifactu_tax_type
         )
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         selected_clave_regimen = taxes._l10n_es_edi_verifactu_get_suggested_clave_regimen(
             special_regime, forced_verifactu_tax_type=verifactu_tax_type
         )
         return selected_clave_regimen and selected_clave_regimen.split('_', 1)[0]
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 
     @api.model
     def l10n_es_edi_verifactu_get_refund_reason_selection(self):
@@ -251,10 +281,14 @@ class PosOrder(models.Model):
             'substituted_document_reversal_document': None,
             'documents': documents,
 <<<<<<< HEAD
+<<<<<<< HEAD
             'record_identifier': documents._get_last('submission').record_identifier,
 =======
             'record_identifier': documents._get_last('submission')._get_record_identifier(),
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+            'record_identifier': documents._get_last('submission')._get_record_identifier(),
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             'verifactu_tax_type': verifactu_tax_type,
             'clave_regimen': clave_regimen,
         })
@@ -329,8 +363,17 @@ class PosOrder(models.Model):
             if len(refunded_order) > 1:
                 raise UserError(_("You can only refund products from the same order."))
             if refunded_order:
+<<<<<<< HEAD
                 if refunded_order and not self.l10n_es_edi_verifactu_refund_reason:
                     raise UserError(_("You have to specify a refund reason."))
+=======
+                if not self.l10n_es_edi_verifactu_refund_reason:
+                    raise UserError(_("You have to specify a refund reason."))
+                simplified_partner = self.env.ref('l10n_es.partner_simplified', raise_if_not_found=False)
+                partner_specified = self.partner_id and self.partner_id != simplified_partner
+                if not partner_specified and self.l10n_es_edi_verifactu_refund_reason != 'R5':
+                    raise UserError(_("A partner has to be specified for the selected Veri*Factu Refund Reason."))
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
                 if self.to_invoice and refunded_order.state != 'invoiced':
                     raise UserError(_("You cannot invoice a refund whose linked order hasn't been invoiced."))
                 if not self.to_invoice and refunded_order.state == 'invoiced':

@@ -3,12 +3,17 @@ from datetime import datetime, timedelta
 from pytz import timezone
 from werkzeug.urls import url_quote_plus, url_encode
 
+<<<<<<< HEAD
 import contextlib
 import hashlib
 <<<<<<< HEAD
 =======
 import logging
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+import hashlib
+import logging
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 import math
 import requests.exceptions
 import json
@@ -21,9 +26,13 @@ from odoo.tools import float_repr, float_round, zeep
 import odoo.release
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 _logger = logging.getLogger(__name__)
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+_logger = logging.getLogger(__name__)
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 
 VERIFACTU_VERSION = "1.0"
 
@@ -80,6 +89,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
         help="Index in the chain of Veri*Factu Documents. It is only set if the generation was succesful.",
     )
 <<<<<<< HEAD
+<<<<<<< HEAD
     record_identifier = fields.Json(
         string="Veri*Factu Record Identifier",
         readonly=True,
@@ -87,6 +97,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
     )
 =======
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     document_type = fields.Selection(
         string="Document Type",
         selection=[
@@ -143,6 +155,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
             document.json_attachment_filename = name
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     def _get_document_dict(self):
         self.ensure_one()
         if not self.json_attachment_base64:
@@ -151,6 +164,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
         return json.loads(json_data)
 
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     @api.ondelete(at_uninstall=False)
     def _never_unlink_chained_documents(self):
         for document in self:
@@ -201,7 +216,10 @@ class L10nEsEdiVerifactuDocument(models.Model):
             })
         return identifiers
 
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     @api.model
     def _format_errors(self, title, errors):
         error = {
@@ -211,7 +229,10 @@ class L10nEsEdiVerifactuDocument(models.Model):
         return self.env['account.move.send']._format_error_html(error)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     ####################################################################
     # Helpers to be used on the records ('account.move' / 'pos.order') #
     ####################################################################
@@ -253,7 +274,10 @@ class L10nEsEdiVerifactuDocument(models.Model):
         url = url_quote_plus(f"{endpoint_url}?{url_params}")
         return f'/report/barcode/?barcode_type=QR&value={url}&barLevel=M&width=180&height=180'
 
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     @api.model
     def _check_record_values(self, vals):
         errors = []
@@ -269,6 +293,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
                             name=vals['name']))
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         if vals['documents'] and vals['documents']._filter_waiting():
             errors.append(_("We are waiting to send a Veri*Factu record to the AEAT already."))
 
@@ -279,6 +304,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
             errors.append(_("The name of the record is not between 1 and 60 characters long: %(name)s.",
                             name=vals['name']))
 
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         if vals['documents'] and vals['documents']._filter_waiting():
             errors.append(_("We are waiting to send a Veri*Factu record to the AEAT already."))
 
@@ -287,7 +314,10 @@ class L10nEsEdiVerifactuDocument(models.Model):
         if not vals['cancellation'] and verifactu_registered:
             errors.append(_("The record is Veri*Factu registered already."))
         # We currently do not support cancelling records that are not registered or were registered outside odoo.
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         if vals['cancellation'] and not verifactu_registered:
             errors.append(_("The cancelled record is not Veri*Factu registered (inside Odoo)."))
 
@@ -318,21 +348,33 @@ class L10nEsEdiVerifactuDocument(models.Model):
             errors.append(_("The refund reason is not specified."))
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
         simplified_partner = self.env.ref('l10n_es.partner_simplified', raise_if_not_found=False)
         partner_is_simplified_partner = simplified_partner and vals['partner'] == simplified_partner
         partner_specified = vals['partner'] and not partner_is_simplified_partner
+=======
+        simplified_partner = self.env.ref('l10n_es.partner_simplified', raise_if_not_found=False)
+        partner_specified = vals['partner'] and vals['partner'] != simplified_partner
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         if need_refund_reason and vals['refund_reason'] != 'R5' and not partner_specified:
             errors.append(_("A refund with Refund Reason %(refund_reason)s needs a partner.",
                             refund_reason=vals['refund_reason']))
 
         if not vals['verifactu_tax_type']:
+<<<<<<< HEAD
             errors.append(_("Missing Veri*Factu Taxs Type (Impuesto)."))
+=======
+            errors.append(_("Missing Veri*Factu Tax Type (Impuesto)."))
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 
         if vals['verifactu_tax_type'] in ('01', '03') and not vals['clave_regimen']:
             errors.append(_("Missing Veri*Factu Regime Key (ClaveRegimen)."))
 
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         sujeto_tax_types = self.env['account.tax']._l10n_es_get_sujeto_tax_types()
         ignored_tax_types = ['ignore', 'retencion']
         supported_tax_types = sujeto_tax_types + ignored_tax_types + ['no_sujeto', 'no_sujeto_loc', 'recargo', 'exento']
@@ -353,7 +395,11 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 if float_round(tax_percentage, precision_digits=2) or float_round(tax_amount, precision_digits=2):
                     errors.append(_("No Sujeto VAT taxes must have 0 amount."))
             if len(tax_detail['recargo_taxes']) > 1:
+<<<<<<< HEAD
                 errors.append(_("Only a single recargo tax may used per \"main\" tax."))
+=======
+                errors.append(_("Only a single recargo tax may be used per \"main\" tax."))
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 
         verifactu_tax_types = {
             tax_detail['verifactu_tax_type']
@@ -375,6 +421,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
         return errors
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     def _create_for_record(self, record_values, previous_record_identifier=None):
         """Note: In case we succesfully create a JSON we delete all linked documents that failed the JSON creation."""
         document_vals = record_values['document_vals']
@@ -382,6 +429,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
         if record_values['errors']:
             error_title = _("The Veri*Factu document could not be created")
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     #####################
     # Document Creation #
     #####################
@@ -392,21 +441,30 @@ class L10nEsEdiVerifactuDocument(models.Model):
         error_title = _("The Veri*Factu document could not be created")
 
         if record_values['errors']:
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             document_vals['errors'] = self._format_errors(error_title, record_values['errors'])
         else:
             render_vals = self._render_vals(
                 record_values, previous_record_identifier=previous_record_identifier,
             )
 <<<<<<< HEAD
+<<<<<<< HEAD
             # We do not allow generating documents that would change the record identifier (i.e. values in the QR code)
             record_identifier = render_vals['record_identifier']
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             document_dict = {render_vals['record_type']: render_vals[render_vals['record_type']]}
 
             # We do not allow generating documents that would change the record identifier (i.e. values in the QR code)
             record_identifier = self._extract_record_identifiers(document_dict)
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             old_record_identifier = record_values['record_identifier']
             if old_record_identifier:
                 # A cancellation does not specify 'ImporteTotal'
@@ -425,11 +483,14 @@ class L10nEsEdiVerifactuDocument(models.Model):
                               for key, (old, new) in changed_identifiers.items()]
                     document_vals['errors'] = self._format_errors(error_title, errors)
 <<<<<<< HEAD
+<<<<<<< HEAD
             if not document_vals.get('errors'):
                 document_dict = {render_vals['record_type']: render_vals[render_vals['record_type']]}
                 document_vals.update({
                     'record_identifier': record_identifier,
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 
             create_message = None
             try:
@@ -455,7 +516,10 @@ class L10nEsEdiVerifactuDocument(models.Model):
 
             if not document_vals.get('errors'):
                 document_vals.update({
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
                     'chain_index': record_values['company']._l10n_es_edi_verifactu_get_next_chain_index(),
                     'json_attachment_base64': b64encode(json.dumps(document_dict, indent=4).encode()),
                 })
@@ -504,16 +568,25 @@ class L10nEsEdiVerifactuDocument(models.Model):
                     record_values['errors'].append(lock_error)
                 document = self.env['l10n_es_edi_verifactu.document']._create_for_record(
 <<<<<<< HEAD
+<<<<<<< HEAD
                     record_values, previous_record_identifier=previous_document.record_identifier,
 =======
                     record_values, previous_record_identifier=previous_document._get_record_identifier(),
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
                 )
                 if document.state != 'error':
+=======
+                    record_values, previous_record_identifier=previous_document._get_record_identifier(),
+                )
+                # In case we can not generate a valid document we do not generate the JSON.
+                # Such documents are not part of the chain.
+                if document.chain_index:
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
                     previous_document = document
                 result[record_values['record']] = document
         return result
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     @api.model
     def trigger_next_batch(self):
@@ -857,6 +930,14 @@ class L10nEsEdiVerifactuDocument(models.Model):
 
     @api.model
     def _format_date_fecha_type(self, date):
+=======
+    #################
+    # JSON Creation #
+    #################
+
+    @api.model
+    def _format_date_type(self, date):
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         if not date:
             return None
         # Format as 'fecha' type from xsd
@@ -865,15 +946,23 @@ class L10nEsEdiVerifactuDocument(models.Model):
     @api.model
     def _round_format_number_2(self, number):
         # Round and format as number with 2 precision digits
+<<<<<<< HEAD
+=======
+        # I.e. used for 'ImporteSgn12.2Type' and 'Tipo2.2Type' XSD types.
+        # We do not check / fix the number of digits in front of the decimal separator
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         if number is None:
             return None
         rounded = float_round(number, precision_digits=2)
         return float_repr(rounded, precision_digits=2)
 
+<<<<<<< HEAD
     # We do not check / fix the number of digits in front of the decimal separator
     _format_number_ImporteSgn12_2 = _round_format_number_2
     _format_number_Tipo2_2 = _round_format_number_2
 
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     @api.model
     def _render_vals(self, vals, previous_record_identifier=None):
         def remove_None_and_False(value):
@@ -902,6 +991,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
         generation_time_string = fields.Datetime.now(timezone('Europe/Madrid')).astimezone(timezone('Europe/Madrid')).isoformat()
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         record_type_vals = {}
         record_type_vals.update({
             'IDVersion': VERIFACTU_VERSION,
@@ -919,6 +1009,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
             record_type_vals.update(new_render_vals)
 
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         record_type_vals = {
             'IDVersion': VERIFACTU_VERSION,
             'FechaHoraHusoGenRegistro': generation_time_string,
@@ -927,23 +1019,33 @@ class L10nEsEdiVerifactuDocument(models.Model):
             **self._render_vals_monetary_amounts(vals),
             **self._render_vals_SistemaInformatico(vals),
         }
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         render_vals[record_type] = remove_None_and_False(record_type_vals)
 
         self._update_render_vals_with_chaining_info(render_vals)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
         record_identifier = self._extract_record_identifiers(render_vals)
         render_vals['record_identifier'] = record_identifier
 
 =======
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         return render_vals
 
     @api.model
     def _render_vals_operation(self, vals):
         company_values = vals['company'].partner_id._l10n_es_edi_verifactu_get_values()
+<<<<<<< HEAD
         invoice_date = self._format_date_fecha_type(vals['invoice_date'])
+=======
+        invoice_date = self._format_date_type(vals['invoice_date'])
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 
         if vals['cancellation']:
             render_vals = {
@@ -965,8 +1067,12 @@ class L10nEsEdiVerifactuDocument(models.Model):
         }
 
         simplified_partner = self.env.ref('l10n_es.partner_simplified', raise_if_not_found=False)
+<<<<<<< HEAD
         partner_is_simplified_partner = simplified_partner and vals['partner'] == simplified_partner
         partner_specified = vals['partner'] and not partner_is_simplified_partner
+=======
+        partner_specified = vals['partner'] and vals['partner'] != simplified_partner
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 
         if partner_specified:
             render_vals['Destinatarios'] = {
@@ -980,7 +1086,11 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 tipo_factura = 'F2'
             else:
                 tipo_factura = 'F1'
+<<<<<<< HEAD
             delivery_date = self._format_date_fecha_type(vals['delivery_date'])
+=======
+            delivery_date = self._format_date_type(vals['delivery_date'])
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             fecha_operacion = delivery_date if delivery_date and delivery_date != invoice_date else None
         elif vals['verifactu_move_type'] == 'reversal_for_substitution':
             tipo_rectificativa = None
@@ -993,27 +1103,37 @@ class L10nEsEdiVerifactuDocument(models.Model):
             tipo_rectificativa = 'S'
             tipo_factura = vals['refund_reason']
 <<<<<<< HEAD
+<<<<<<< HEAD
             rectified = rectified_document.record_identifier
 =======
             rectified = rectified_document._get_record_identifier()
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+            rectified = rectified_document._get_record_identifier()
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             fecha_operacion = rectified['FechaOperacion'] or rectified['FechaExpedicionFactura']
         else:
             # vals['verifactu_move_type'] == 'correction_incremental':
             tipo_rectificativa = 'I'
             tipo_factura = vals['refund_reason']
 <<<<<<< HEAD
+<<<<<<< HEAD
             rectified = rectified_document.record_identifier
             fecha_operacion = rectified['FechaOperacion'] or rectified['FechaExpedicionFactura']
 
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             rectified = rectified_document._get_record_identifier()
             fecha_operacion = rectified['FechaOperacion'] or rectified['FechaExpedicionFactura']
 
         # Note: Error [1189]
         # Si TipoFactura es F1 o F3 o R1 o R2 o R3 o R4 el bloque Destinatarios tiene que estar cumplimentado.
 
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         render_vals.update({
             'TipoFactura': tipo_factura,
             'TipoRectificativa': tipo_rectificativa,  # may be None
@@ -1028,6 +1148,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
 
         if vals['verifactu_move_type'] in ('correction_incremental', 'correction_substitution'):
 <<<<<<< HEAD
+<<<<<<< HEAD
             rectified_record_identifier = rectified_document.record_identifier
             render_vals.update({
                 'FacturasRectificadas': [{
@@ -1036,13 +1157,18 @@ class L10nEsEdiVerifactuDocument(models.Model):
                         'NumSerieFactura': rectified_record_identifier['NumSerieFactura'],
                         'FechaExpedicionFactura': rectified_record_identifier['FechaExpedicionFactura'],
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             rectified_record_identifier = rectified_document._get_record_identifier()
             render_vals.update({
                 'FacturasRectificadas': [{
                     'IDFacturaRectificada': {
                         key: rectified_record_identifier[key]
                         for key in ['IDEmisorFactura', 'NumSerieFactura', 'FechaExpedicionFactura']
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
                     }
                 }],
             })
@@ -1052,8 +1178,13 @@ class L10nEsEdiVerifactuDocument(models.Model):
             # ('Opción 2' in the FAQ under '¿Cómo registra el emisor una factura rectificativa por sustitución “S”?')
             render_vals.update({
                 'ImporteRectificacion': {
+<<<<<<< HEAD
                     'BaseRectificada': self._format_number_ImporteSgn12_2(0),
                     'CuotaRectificada': self._format_number_ImporteSgn12_2(0),
+=======
+                    'BaseRectificada': self._round_format_number_2(0),
+                    'CuotaRectificada': self._round_format_number_2(0),
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
                 },
             })
 
@@ -1185,9 +1316,18 @@ class L10nEsEdiVerifactuDocument(models.Model):
             # - In the no sujeto cases (calification_operacion in ('N1', 'N2')) we may not include them.
             # - In the (calification_operacion == S2) case the tags have to be included with value 0.
             #
+<<<<<<< HEAD
             # See the following errors
             # [1198]
             #     Si CalificacionOperacion es S2 TipoImpositivo y CuotaRepercutida deberan tener valor 0.
+=======
+            # See the following errors:
+            # [1198]
+            #     Si CalificacionOperacion es S2 TipoImpositivo y CuotaRepercutida deberan tener valor 0.
+            # [1237]
+            #     El valor del campo CalificacionOperacion está informado como N1 o N2 y el impuesto es IVA.
+            #     No se puede informar de los campos TipoImpositivo, CuotaRepercutida, TipoRecargoEquivalencia y CuotaRecargoEquivalencia.
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             if calificacion_operacion in ('N1', 'N2') and vals['verifactu_tax_type'] == '01':
                 tax_percentage = None
                 tax_amount = None
@@ -1197,11 +1337,19 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 'ClaveRegimen': vals['clave_regimen'],
                 'CalificacionOperacion': calificacion_operacion,
                 'OperacionExenta': exempt_reason,
+<<<<<<< HEAD
                 'TipoImpositivo': self._format_number_Tipo2_2(tax_percentage),
                 'BaseImponibleOimporteNoSujeto': self._format_number_ImporteSgn12_2(base_amount),
                 'CuotaRepercutida': self._format_number_ImporteSgn12_2(tax_amount),
                 'TipoRecargoEquivalencia': self._format_number_Tipo2_2(recargo_percentage),
                 'CuotaRecargoEquivalencia': self._format_number_ImporteSgn12_2(recargo_amount),
+=======
+                'TipoImpositivo': self._round_format_number_2(tax_percentage),
+                'BaseImponibleOimporteNoSujeto': self._round_format_number_2(base_amount),
+                'CuotaRepercutida': self._round_format_number_2(tax_amount),
+                'TipoRecargoEquivalencia': self._round_format_number_2(recargo_percentage),
+                'CuotaRecargoEquivalencia': self._round_format_number_2(recargo_amount),
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             }
 
             detalles.append(detalle)
@@ -1214,8 +1362,13 @@ class L10nEsEdiVerifactuDocument(models.Model):
             'Desglose': {
                 'DetalleDesglose': detalles
             },
+<<<<<<< HEAD
             'CuotaTotal': self._format_number_ImporteSgn12_2(tax_amount),
             'ImporteTotal': self._format_number_ImporteSgn12_2(total_amount),
+=======
+            'CuotaTotal': self._round_format_number_2(tax_amount),
+            'ImporteTotal': self._round_format_number_2(total_amount),
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         }
 
         return render_vals
@@ -1247,6 +1400,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
 
         return render_vals
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     def _extract_record_identifiers(self, render_vals):
         """Return a dictionary that includes:
@@ -1282,6 +1436,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
 
 =======
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     @api.model
     def _update_render_vals_with_chaining_info(self, render_vals):
         record_type_vals = render_vals[render_vals['record_type']]
@@ -1296,16 +1452,22 @@ class L10nEsEdiVerifactuDocument(models.Model):
             encadenamiento = {
                 'RegistroAnterior': {
 <<<<<<< HEAD
+<<<<<<< HEAD
                     'IDEmisorFactura': predecessor.get('IDEmisorFactura'),
                     'NumSerieFactura': predecessor.get('NumSerieFactura'),
                     'FechaExpedicionFactura': predecessor.get('FechaExpedicionFactura'),
                     'Huella': predecessor.get('Huella'),
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
                     'IDEmisorFactura': predecessor['IDEmisorFactura'],
                     'NumSerieFactura': predecessor['NumSerieFactura'],
                     'FechaExpedicionFactura': predecessor['FechaExpedicionFactura'],
                     'Huella': predecessor['Huella'],
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
                 }
             }
         # The 'Encadenamiento' info needs to be set already during the `_fingerprint` computation
@@ -1329,18 +1491,23 @@ class L10nEsEdiVerifactuDocument(models.Model):
         if render_vals['cancellation']:
             fingerprint_values = [
 <<<<<<< HEAD
+<<<<<<< HEAD
                 ('IDEmisorFacturaAnulada', id_factura['IDEmisorFacturaAnulada']),
                 ('NumSerieFacturaAnulada', id_factura['NumSerieFacturaAnulada']),
                 ('FechaExpedicionFacturaAnulada', id_factura['FechaExpedicionFacturaAnulada']),
 =======
                 *[(key, id_factura[key]) for key in ['IDEmisorFacturaAnulada', 'NumSerieFacturaAnulada', 'FechaExpedicionFacturaAnulada']],
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+                *[(key, id_factura[key]) for key in ['IDEmisorFacturaAnulada', 'NumSerieFacturaAnulada', 'FechaExpedicionFacturaAnulada']],
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
                 ('Huella', registro_anterior['Huella'] if registro_anterior else ''),
                 ('FechaHoraHusoGenRegistro', record_type_vals['FechaHoraHusoGenRegistro']),
             ]
             string = "&".join([f"{field}={value.strip()}" for (field, value) in fingerprint_values])
         else:
             fingerprint_values = [
+<<<<<<< HEAD
 <<<<<<< HEAD
                 ('IDEmisorFactura', id_factura['IDEmisorFactura']),
                 ('NumSerieFactura', id_factura['NumSerieFactura']),
@@ -1352,12 +1519,17 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 *[(key, id_factura[key]) for key in ['IDEmisorFactura', 'NumSerieFactura', 'FechaExpedicionFactura']],
                 *[(key, record_type_vals[key]) for key in ['TipoFactura', 'CuotaTotal', 'ImporteTotal']],
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+                *[(key, id_factura[key]) for key in ['IDEmisorFactura', 'NumSerieFactura', 'FechaExpedicionFactura']],
+                *[(key, record_type_vals[key]) for key in ['TipoFactura', 'CuotaTotal', 'ImporteTotal']],
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
                 ('Huella', registro_anterior['Huella'] if registro_anterior else ''),
                 ('FechaHoraHusoGenRegistro', record_type_vals['FechaHoraHusoGenRegistro']),
             ]
             string = "&".join([f"{field}={value.strip()}" for (field, value) in fingerprint_values])
         return _sha256(string)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     def _filter_waiting(self):
         return self.filtered(lambda doc: not doc.state and doc.json_attachment_base64)
@@ -1396,6 +1568,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
         url = url_quote_plus(f"{endpoint_url}?{url_params}")
         return f'/report/barcode/?barcode_type=QR&value={url}&barLevel=M&width=180&height=180'
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     ###########
     # Sending #
     ###########
@@ -1763,6 +1937,14 @@ class L10nEsEdiVerifactuDocument(models.Model):
         for document in self:
             invoice = document.move_id
             if invoice.l10n_es_edi_verifactu_state == 'cancelled' and invoice.state != 'cancel':
+<<<<<<< HEAD
                 with contextlib.suppress(UserError):
                     invoice.button_cancel()
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+                try:
+                    invoice.button_cancel()
+                except UserError as error:
+                    _logger.error("Error while canceling journal entry %(name)s (id %(record_id)s) after Veri*Factu cancellation:\n%(error)s",
+                                  record_id=invoice.id, name=invoice.name, error=error)
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c

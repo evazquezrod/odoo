@@ -1,5 +1,6 @@
 "id","l10n_es_applicability"
 <<<<<<< HEAD
+<<<<<<< HEAD
 "account_tax_template_s_iva21b","iva"
 "account_tax_template_p_iva4_bc","iva"
 "account_tax_template_p_iva4_ibc","iva"
@@ -90,6 +91,8 @@
 "account_tax_template_s_iva0_g_i","iva"
 "account_tax_template_s_iva0_g_e","iva"
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 "account_tax_template_s_iva21b","01"
 "account_tax_template_p_iva4_bc","01"
 "account_tax_template_p_iva4_ibc","01"
@@ -179,4 +182,7 @@
 "account_tax_template_p_iva105_gan","01"
 "account_tax_template_s_iva0_g_i","01"
 "account_tax_template_s_iva0_g_e","01"
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c

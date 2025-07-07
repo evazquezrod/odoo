@@ -24,10 +24,14 @@ class TestL10nEsEdiVerifactuCommon(AccountTestInvoicingCommon):
         cls.maxDiff = None
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         certificate_path = 'l10n_es_edi_verifactu/demo/certificates/Certificado_RPJ_A39200019_CERTIFICADO_ENTIDAD_PRUEBAS_4_Pre.p12'
 =======
         certificate_path = 'l10n_es_edi_verifactu/demo/certificates/Certificado_RPJ_A39200019_CERTIFICADO_ENTIDAD_PRUEBAS_5_Pre.p12'
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+        certificate_path = 'l10n_es_edi_verifactu/demo/certificates/Certificado_RPJ_A39200019_CERTIFICADO_ENTIDAD_PRUEBAS_5_Pre.p12'
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         cls.certificate = cls.env['l10n_es_edi_verifactu.certificate'].create({
             'content': base64.encodebytes(misc.file_open(certificate_path, 'rb').read()),
             'password': '1234',
@@ -78,11 +82,17 @@ class TestL10nEsEdiVerifactuCommon(AccountTestInvoicingCommon):
         cls.user.groups_id = [Command.unlink(cls.env.ref('base.group_system').id)]
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
         # Do not do zeep xml / xsd validation during tests (needs network connection to create the client)
         cls.startClassPatcher(cls._mock_zeep_registration_xml_operation(None, None))
 
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+        # Do not do zeep xml / xsd validation during tests (needs network connection to create the client)
+        cls.startClassPatcher(cls._mock_zeep_registration_xml_operation(None, None))
+
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     @classmethod
     def _read_file(cls, path, *args):
         with file_open(path, *args) as f:
@@ -109,12 +119,17 @@ class TestL10nEsEdiVerifactuCommon(AccountTestInvoicingCommon):
 
     def _mock_zeep_registration_operation_function(self, register_function):
 <<<<<<< HEAD
+<<<<<<< HEAD
         request_function_path = 'odoo.addons.l10n_es_edi_verifactu.models.verifactu_document.L10nEsEdiVerifactuDocument._get_zeep_registration_operations'
         return mock.patch(request_function_path, return_value=register_function)
 =======
         request_function_path = 'odoo.addons.l10n_es_edi_verifactu.models.verifactu_document.L10nEsEdiVerifactuDocument._get_zeep_registration_operation'
         return mock.patch(request_function_path, return_value=(register_function, {}))
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+        request_function_path = 'odoo.addons.l10n_es_edi_verifactu.models.verifactu_document.L10nEsEdiVerifactuDocument._get_zeep_registration_operation'
+        return mock.patch(request_function_path, return_value=(register_function, {}))
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 
     def _mock_zeep_registration_operation(self, response_file_json):
         # Note: The real result is of type 'odoo.tools.zeep.client.SerialProxy'; here it is a dict
@@ -129,12 +144,18 @@ class TestL10nEsEdiVerifactuCommon(AccountTestInvoicingCommon):
         return self._mock_zeep_registration_operation_function(_raise_certificate_error)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     def _mock_zeep_registration_xml_operation(self, return_value):
         request_function_path = 'odoo.addons.l10n_es_edi_verifactu.models.verifactu_document.L10nEsEdiVerifactuDocument._get_zeep_registration_xml_operation'
         return mock.patch(request_function_path, return_value=(return_value, {}))
 
+<<<<<<< HEAD
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     def _mock_cron_trigger(self, cron_trigger_result_dict):
         trigger_function_path = 'odoo.addons.base.models.ir_cron.ir_cron._trigger'
 

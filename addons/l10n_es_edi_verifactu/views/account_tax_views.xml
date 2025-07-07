@@ -2,6 +2,7 @@
 <odoo>
     <data>
 <<<<<<< HEAD
+<<<<<<< HEAD
         <record id="view_tax_tree_inherit_l10n_es_edi_verifactu" model="ir.ui.view">
             <field name="name">account.tax.tree.inherit.l10n_es_edi_verifactu</field>
             <field name="inherit_id" ref="account.view_tax_tree"/>
@@ -15,6 +16,8 @@
 
 =======
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         <record id="view_tax_form_inherit_l10n_es_edi_verifactu" model="ir.ui.view">
             <field name="name">account.tax.form.inherit.l10n_es_edi_verifactu</field>
             <field name="model">account.tax</field>

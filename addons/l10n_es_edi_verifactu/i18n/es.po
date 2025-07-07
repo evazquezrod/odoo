@@ -228,10 +228,14 @@ msgstr ""
 #, python-format
 msgid "General regime operation"
 <<<<<<< HEAD
+<<<<<<< HEAD
 msgstr ""
 =======
 msgstr "Operación de régimen general"
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+msgstr "Operación de régimen general"
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
 
 #. module: l10n_es_edi_verifactu
 #: model:ir.model.fields,field_description:l10n_es_edi_verifactu.field_l10n_es_edi_verifactu_certificate__id

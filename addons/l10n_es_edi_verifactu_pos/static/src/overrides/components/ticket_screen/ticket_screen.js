@@ -10,7 +10,17 @@ patch(TicketScreen.prototype, {
     async addAdditionalRefundInfo(order, destinationOrder) {
         if (this.pos.config.is_spanish) {
             let selectionList = await this.orm.call("pos.order", "l10n_es_edi_verifactu_get_refund_reason_selection", []);
+<<<<<<< HEAD
             selectionList = selectionList.map((el) => {
+=======
+            const simplified_partner = this.pos.db.partner_by_id[this.pos.config.simplified_partner_id[0]];
+            const partner_specified = order.partner && order.partner != simplified_partner;
+            selectionList = selectionList.filter((el) => {
+                // Allow values that are not R5 only if a partner is specified; see Error [1189]:
+                // Si TipoFactura es F1 o F3 o R1 o R2 o R3 o R4 el bloque Destinatarios tiene que estar cumplimentado.
+                return partner_specified || (el[0] === 'R5')
+            }).map((el) => {
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
                 return { 'id': el[0], 'label': el[1], 'item': el[0]}
             })
             const { confirmed, payload } = await this.popup.add(SelectionPopup, {

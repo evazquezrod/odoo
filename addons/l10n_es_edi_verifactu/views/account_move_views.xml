@@ -67,10 +67,14 @@
             <field name="arch" type="xml">
                 <xpath expr="//header" position="after">
 <<<<<<< HEAD
+<<<<<<< HEAD
                    <field name="l10n_es_edi_verifactu_warning_level" invisible="1"/>
 =======
                     <field name="l10n_es_edi_verifactu_warning_level" invisible="1"/>
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+                    <field name="l10n_es_edi_verifactu_warning_level" invisible="1"/>
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
                     <div class="alert alert-info" role="alert"
                         invisible="not l10n_es_edi_verifactu_warning or l10n_es_edi_verifactu_warning_level != 'info'">
                         <field class="d-inline-block" name="l10n_es_edi_verifactu_warning"/>
@@ -79,6 +83,7 @@
                         invisible="not l10n_es_edi_verifactu_warning or l10n_es_edi_verifactu_warning_level != 'warning'">
                         <field class="d-inline-block" name="l10n_es_edi_verifactu_warning"/>
                     </div>
+<<<<<<< HEAD
 <<<<<<< HEAD
                     <field name="l10n_es_edi_verifactu_error_level" invisible="1"/>
                     <div class="alert alert-danger" role="alert"
@@ -93,6 +98,11 @@
                         invisible="not l10n_es_edi_verifactu_warning or l10n_es_edi_verifactu_warning_level != 'danger'">
                         <field class="d-inline-block" name="l10n_es_edi_verifactu_warning"/>
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+                    <div class="alert alert-danger" role="alert"
+                        invisible="not l10n_es_edi_verifactu_warning or l10n_es_edi_verifactu_warning_level != 'danger'">
+                        <field class="d-inline-block" name="l10n_es_edi_verifactu_warning"/>
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
                     </div>
                 </xpath>
                 <xpath expr="//button[@name='button_cancel']" position="after">
@@ -116,11 +126,14 @@
                             <field name="l10n_es_edi_verifactu_substituted_entry_id" invisible="not l10n_es_edi_verifactu_substituted_entry_id"/>
                             <field name="reversed_entry_id" invisible="not reversed_entry_id"/>
 <<<<<<< HEAD
+<<<<<<< HEAD
                             <field name="l10n_es_edi_verifactu_errors" groups="base.group_no_one"/>
                             <field name="l10n_es_edi_verifactu_error_level" groups="base.group_no_one"/>
                             <field name="l10n_es_edi_verifactu_required" groups="base.group_no_one"/>
 =======
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
                             <field name="l10n_es_edi_verifactu_required" invisible="1"/>
                             <field name="l10n_es_edi_verifactu_available_clave_regimens" invisible="1"/>
                             <field name="l10n_es_edi_verifactu_clave_regimen"

@@ -39,9 +39,13 @@ class ResCompany(models.Model):
             ('recargo', "Recargo de Equivalencia"),
         ],
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
         help="Leave empty for the normal regimen.",
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+        help="Leave empty for the normal regimen.",
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
     )
 
     def _l10n_es_edi_verifactu_get_endpoints(self):

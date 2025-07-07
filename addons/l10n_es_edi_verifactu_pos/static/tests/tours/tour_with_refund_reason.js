@@ -27,10 +27,14 @@ registry.category("web_tour.tours").add("l10n_es_edi_verifactu_pos.tour_with_ref
         TicketScreen.confirmRefund(),
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
             trigger: 'button:contains("R1")',
 =======
             trigger: 'button:contains("R5")',
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+            trigger: 'button:contains("R5")',
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         },
         ProductScreen.isShown(),
         ProductScreen.clickPayButton(),

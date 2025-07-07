@@ -18,6 +18,12 @@ class TestL10nEsEdiVerifactuPosOrder(TestL10nEsEdiVerifactuPosCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+<<<<<<< HEAD
+=======
+
+        cls.config = cls.basic_config
+
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
         # Ensure the date of all orders is in the past.
         # Else the associated move does not get posted (since it will be in the future / on the order date).
         cls.fakenow = datetime.datetime(2025, 1, 1)
@@ -104,10 +110,14 @@ class TestL10nEsEdiVerifactuPosOrder(TestL10nEsEdiVerifactuPosCommon):
                 'FechaExpedicionFactura': '2024-11-10',
                }
 <<<<<<< HEAD
+<<<<<<< HEAD
             record_identifier = order.l10n_es_edi_verifactu_document_ids.record_identifier
 =======
             record_identifier = order.l10n_es_edi_verifactu_document_ids._get_record_identifier()
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+            record_identifier = order.l10n_es_edi_verifactu_document_ids._get_record_identifier()
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
             self.assertDictEqual(record_identifier, expected_record_identifier | record_identifier)
 
     def test_error_above_simplified_limit(self):

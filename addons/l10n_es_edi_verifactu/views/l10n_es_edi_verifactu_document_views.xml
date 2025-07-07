@@ -22,9 +22,12 @@
                             <group name="bottom" colspan="2">
                                 <field name="errors"/>
 <<<<<<< HEAD
+<<<<<<< HEAD
                                 <field name="record_identifier" string="Record Identifier" widget="jsonb" groups="base.group_no_one"/>
 =======
 >>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
+=======
+>>>>>>> cdd38b7973e8950b4cebf96aa4d0ca15122f1e0c
                             </group>
                         </group>
                     </sheet>
