@@ -231,6 +231,13 @@ export class SyntaxHighlightingPlugin extends Plugin {
         }
         const pre = codeBlock.querySelector("pre");
         const textarea = codeBlock.querySelector("textarea.o_prism_source");
+        // Preserve the selection in the textarea which sometimes gets lost for
+        // unclear reasons.
+        const textareaSelection = {
+            start: textarea.selectionStart,
+            end: textarea.selectionEnd,
+            direction: textarea.selectionDirection,
+        };
         const languageId = codeBlock.dataset.languageId || DEFAULT_LANGUAGE_ID;
         // Make sure the step is properly recorded to include the code block's
         // data attribute and the PRE's content.
@@ -263,6 +270,11 @@ export class SyntaxHighlightingPlugin extends Plugin {
         if (focus) {
             textarea.focus({ preventScroll: true });
         }
+        textarea.setSelectionRange(
+            textareaSelection.start,
+            textareaSelection.end,
+            textareaSelection.direction
+        );
     }
 
     setActiveCodeBlock(codeBlock) {
