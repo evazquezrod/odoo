@@ -126,7 +126,7 @@
                         />
                     </t>
                 </button>
-                <t t-slot="addDateButton" />
+                <t t-slot="addDateButton" timeValues="state.timeValues" addDate.bind="addDate" removeDate.bind="removeDate"/>
             </nav>
             <t t-if="state.precision === 'days'">
                 <t t-call="web.DateTimePicker.Days" />
