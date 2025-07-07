@@ -238,3 +238,66 @@ class TestReportStockQuantity(tests.TransactionCase):
             1.0, 2.0,   # in two days
         ]):
             self.assertEqual(qty_rd, qty, f"Incorrect qty for Date '{date_day}' Warehouse '{warehouse.display_name}'")
+
+    def test_past_date_quantity_with_multistep_delivery(self):
+        """
+        Verify that available quantities are correctly computed at different past dates
+        when using a multi-step delivery process across warehouses.
+        """
+        product = self.env['product.product'].create({
+            'name': 'Test',
+            'default_code': 'T3ST',
+            'is_storable': True,
+            'tracking': 'none',
+        })
+
+        wh01, wh02 = self.env['stock.warehouse'].create([{
+            'name': 'Warehouse 01',
+            'code': 'WH01',
+        }, {
+            'name': 'Warehouse 02',
+            'code': 'WH02',
+        }])
+
+        move_in = self.env['stock.move'].create({
+            'name': 'test_in',
+            'location_id': self.supplier_location.id,
+            'location_dest_id': wh01.lot_stock_id.id,
+            'product_id': product.id,
+            'quantity': 100.0,
+            'picked': True,
+        })
+        move_in._action_done()
+        move_in.date = fields.Datetime.subtract(fields.Datetime.now(), days=7)
+
+        # Need to recreate a multi-step delivery
+        move_internal = self.env['stock.move'].create([{
+            'name': 'Inter WH Move',
+            'location_id': wh01.lot_stock_id.id,
+            'location_dest_id': wh02.lot_stock_id.id,
+            'location_final_id': self.customer_location.id,
+            'product_id': product.id,
+            'quantity': 60.0,
+            'picked': True,
+        }])
+        move_internal._action_done()
+        move_internal.date = fields.Datetime.subtract(fields.Datetime.now(), days=3)
+
+        move_out = self.env['stock.move'].create({
+            'name': 'test_out',
+            'location_id': wh02.lot_stock_id.id,
+            'location_dest_id': self.customer_location.id,
+            'product_id': product.id,
+            'quantity': 25.0,
+            'picked': True,
+        })
+        move_out._action_done()
+        move_out.date = move_internal.date
+
+        quantity_available_before_in = product.with_context(to_date=fields.Date.to_string(fields.Date.subtract(move_in.date, days=1))).qty_available
+        quantity_available_before_out = product.with_context(to_date=fields.Date.to_string(fields.Date.subtract(move_out.date, days=1))).qty_available
+        quantity_available_after_out = product.with_context(to_date=move_out.date).qty_available
+
+        self.assertEqual(quantity_available_before_in, 0.0)
+        self.assertEqual(quantity_available_before_out, 100.0)
+        self.assertEqual(quantity_available_after_out, 75.0)
