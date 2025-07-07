@@ -216,8 +216,10 @@ export class HistoryPlugin extends Plugin {
         this._onKeyupResetContenteditableNodes = [];
         this.addDomListener(this.document, "beforeinput", this._onDocumentBeforeInput.bind(this));
         this.addDomListener(this.document, "input", this._onDocumentInput.bind(this));
-        this.addDomListener(this.editable, "pointerup", () => {
-            this.stageSelection();
+        this.addGlobalDomListener("pointerup", (ev) => {
+            if (this.editable.contains(ev.target)) {
+                this.stageSelection();
+            }
         });
         this.observer = new MutationObserver(this.handleNewRecords.bind(this));
         this.enableObserverCallbacks = new Set();
@@ -606,6 +608,7 @@ export class HistoryPlugin extends Plugin {
      * when reverting the step.
      */
     stageSelection() {
+        this.stageFocus();
         const selection = this.dependencies.selection.getEditableSelection();
         if (this.getIsCurrentStepModified()) {
             console.warn(
@@ -614,6 +617,13 @@ export class HistoryPlugin extends Plugin {
             return;
         }
         this.currentStep.selection = this.serializeSelection(selection);
+    }
+    stageFocus() {
+        let activeElement = this.document.activeElement;
+        if (activeElement.contains(this.editable)) {
+            activeElement = this.editable;
+        }
+        this.currentStep.activeElement = this.nodeToIdMap.get(activeElement);
     }
     /**
      * @param { HistoryMutationRecord[] } records
@@ -876,6 +886,12 @@ export class HistoryPlugin extends Plugin {
             this.stepsStates.set(revertedStep.id, "consumed");
             this.revertMutations(revertedStep.mutations, { forNewStep: true });
             this.setSerializedSelection(revertedStep.selection);
+            const elementToFocus =
+                revertedStep.activeElement && this.idToNodeMap.get(revertedStep.activeElement);
+            if (elementToFocus && elementToFocus !== this.document.activeElement) {
+                elementToFocus.focus();
+            }
+            this.stageFocus();
             this.addStep({ stepState: "undo", extraStepInfos: revertedStep.extraStepInfos });
             // Consider the last position of the history as an undo.
         }
@@ -899,6 +915,12 @@ export class HistoryPlugin extends Plugin {
             this.stepsStates.set(revertedStep.id, "consumed");
             this.revertMutations(revertedStep.mutations, { forNewStep: true });
             this.setSerializedSelection(revertedStep.selection);
+            const elementToFocus =
+                revertedStep.activeElement && this.idToNodeMap.get(revertedStep.activeElement);
+            if (elementToFocus && elementToFocus !== this.document.activeElement) {
+                elementToFocus.focus();
+            }
+            this.stageFocus();
             this.addStep({ stepState: "redo", extraStepInfos: revertedStep.extraStepInfos });
         }
         this.dispatchTo("post_redo_handlers", revertedStep);
@@ -1354,6 +1376,12 @@ export class HistoryPlugin extends Plugin {
         // TODO ABD TODO @phoenix: review selections, this selection could be obsolete
         // depending on the non-reversible steps that were applied.
         this.setSerializedSelection(lastRevertedStep.selection);
+        const elementToFocus =
+            lastRevertedStep.activeElement && this.idToNodeMap.get(lastRevertedStep.activeElement);
+        if (elementToFocus && elementToFocus !== this.document.activeElement) {
+            elementToFocus.focus();
+        }
+        this.stageFocus();
         // Register resulting mutations as a new consumed step (prevent undo).
         this.dispatchContentUpdated();
         this.addStep({ stepState: "consumed" });

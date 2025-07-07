@@ -64,16 +64,7 @@ export class SyntaxHighlightingPlugin extends Plugin {
     }
 
     prepareCodeBlocks(root = this.editable, activate = false) {
-        let activeTextarea =
-            this.document.activeElement.nodeName === "TEXTAREA" && this.document.activeElement;
-        const textareaSelection = {
-            start: activeTextarea?.selectionStart || 0,
-            end: activeTextarea?.selectionEnd || 0,
-            direction: activeTextarea?.selectionDirection || "forward",
-        };
-        if (activeTextarea) {
-            console.log(activeTextarea.selectionStart);
-        }
+        let activeTextarea;
         for (const pre of root.querySelectorAll("pre")) {
             if (!pre.closest("div.o_syntax_highlighting")) {
                 const font = getComputedStyle(pre).font.replaceAll('"', "'");
@@ -114,17 +105,12 @@ export class SyntaxHighlightingPlugin extends Plugin {
         if (activeTextarea) {
             if (activate) {
                 this.setActiveCodeBlock(activeTextarea.parentElement);
-                activeTextarea.focus();
+                if (activeTextarea !== this.document.activeElement) {
+                    activeTextarea.focus();
+                    this.dependencies.history.stageSelection();
+                    // TODO: would stageFocus suffice?
+                }
             }
-            setTimeout(
-                () =>
-                    activeTextarea.setSelectionRange(
-                        textareaSelection.start,
-                        textareaSelection.end,
-                        textareaSelection.direction
-                    ),
-                10
-            );
         }
     }
 

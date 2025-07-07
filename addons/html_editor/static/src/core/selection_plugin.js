@@ -208,11 +208,13 @@ export class SelectionPlugin extends Plugin {
 
     setup() {
         this.resetSelection();
-        this.addDomListener(this.document, "selectionchange", () => {
-            this.updateActiveSelection();
-            const selection = this.document.getSelection();
-            if (this.isSelectionInEditable(selection)) {
-                scrollToSelection(selection);
+        this.addGlobalDomListener("selectionchange", (ev) => {
+            if (this.document.contains(ev.target)) {
+                this.updateActiveSelection();
+                const selection = this.document.getSelection();
+                if (this.isSelectionInEditable(selection)) {
+                    scrollToSelection(selection);
+                }
             }
         });
         this.addDomListener(this.editable, "mousedown", (ev) => {

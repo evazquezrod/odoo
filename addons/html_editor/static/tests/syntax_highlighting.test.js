@@ -112,6 +112,26 @@ test("changing languages in a code block changes its highlighting", async () => 
 });
 test("multiple ctrl+z in a highlighted code block undo changes in the block and any other changes before (all redone with ctrl+y or ctrl+shift+z)", async () => {
     const { editor, el } = await setupEditor(`<pre>some code</pre><p>hell[]</p>`);
+
+    const testSelectionInTextarea = (textarea, value, start, end = start) => {
+        const { anchorNode, anchorOffset, focusNode, focusOffset } = editor.document.getSelection();
+        expect({
+            activeElement: editor.document.activeElement,
+            anchorTarget: anchorNode.childNodes[anchorOffset],
+            focusTarget: focusNode.childNodes[focusOffset],
+            textareaValue: textarea.value,
+            textareaSelection: [textarea.selectionStart, textarea.selectionEnd],
+        }).toEqual(
+            {
+                activeElement: textarea,
+                anchorTarget: textarea,
+                focusTarget: textarea,
+                textareaValue: value,
+                textareaSelection: [start, end],
+            },
+            { message: "Selection should be correct in the textarea." }
+        );
+    };
     const preStyle = getPreStyle(editor);
 
     // Perform a series of actions to undo later.
@@ -122,6 +142,9 @@ test("multiple ctrl+z in a highlighted code block undo changes in the block and 
         actionNumbers
             .map((actionNumber) => `${actionNumber}. ${actions[actionNumber - 1]}`)
             .join("\n");
+
+    // Perform a series of actions to undo later.
+    // ------------------------------------------
 
     // Write in the P.
     actions.push("type: insert 'o' into the paragraph", "type: insert '!' into the paragraph");
@@ -138,6 +161,8 @@ test("multiple ctrl+z in a highlighted code block undo changes in the block and 
             "<p>hello!</p>",
         { message: listActions(3) }
     );
+    const textarea = queryOne("textarea");
+    testSelectionInTextarea(textarea, "some code", textarea.value.length);
     // Write in the TEXTAREA.
     actions.push("type: insert 'n' into the pre", "type: insert 'o' into the pre");
     await click("textarea");
@@ -167,6 +192,7 @@ test("multiple ctrl+z in a highlighted code block undo changes in the block and 
             message: listActions(6, 7, 8, 9, 10),
         }
     );
+    testSelectionInTextarea(textarea, "some codeyes", textarea.value.length);
     // Write in the P again.
     actions.push("type: insert 'o' into the paragraph", "type: insert 'k' into the paragraph");
     await click("p");
@@ -188,6 +214,7 @@ test("multiple ctrl+z in a highlighted code block undo changes in the block and 
             "<p>hello!ok</p>",
         { message: listActions(13) }
     );
+    testSelectionInTextarea(textarea, "some codeyesh", textarea.value.length);
 
     // Undo everything.
     // ----------------
@@ -200,6 +227,7 @@ test("multiple ctrl+z in a highlighted code block undo changes in the block and 
             message: `undo:\n${listActions(13)}`,
         }
     );
+    testSelectionInTextarea(textarea, "some codeyes", textarea.value.length);
     await press(["ctrl", "z"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!o[]</p>
     await press(["ctrl", "z"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello![]</p>
     expect(getContent(el)).toBe(
@@ -219,6 +247,7 @@ test("multiple ctrl+z in a highlighted code block undo changes in the block and 
             message: `undo:\n${listActions(10, 9, 8)}`,
         }
     );
+    testSelectionInTextarea(textarea, "some code", textarea.value.length);
     await press(["ctrl", "z"]); // <wrapper><highlight><pre>some coden</pre></highlight></wrapper><p>hello!</p>
     await press(["ctrl", "z"]); // <wrapper><highlight><pre>some codeno</pre></highlight></wrapper><p>hello!</p>
     expect(getContent(el).replace("[]", "")).toBe(
@@ -228,6 +257,7 @@ test("multiple ctrl+z in a highlighted code block undo changes in the block and 
             message: `undo:\n${listActions(7, 6)}`,
         }
     );
+    testSelectionInTextarea(textarea, "some codeno", textarea.value.length);
     await press(["ctrl", "z"]); // <wrapper><highlight><pre>some coden</pre></highlight></wrapper><p>hello!</p>
     await press(["ctrl", "z"]); // <wrapper><highlight><pre>some code</pre></highlight></wrapper><p>hello!</p>
     expect(getContent(el).replace("[]", "")).toBe(
@@ -237,6 +267,7 @@ test("multiple ctrl+z in a highlighted code block undo changes in the block and 
             message: `undo:\n${listActions(5, 4)}`,
         }
     );
+    testSelectionInTextarea(textarea, "some code", textarea.value.length);
     await press(["ctrl", "z"]); // <wrapper><pre>some code</pre></wrapper><p>hello!</p>
     expect(getContent(el).replace("[]", "")).toBe(
         SYNTAX_HIGHLIGHTING_WRAPPER(`some code`, preStyle, {
@@ -247,6 +278,7 @@ test("multiple ctrl+z in a highlighted code block undo changes in the block and 
             message: `undo:\n${listActions(3)}`,
         }
     );
+    testSelectionInTextarea(textarea, "some code", textarea.value.length);
     await press(["ctrl", "z"]); // <wrapper><pre>some code</pre></wrapper><p>hello</p>
     await press(["ctrl", "z"]); // <wrapper><pre>some code</pre></wrapper><p>hell</p>
     expect(getContent(el)).toBe(
@@ -296,6 +328,7 @@ test("multiple ctrl+z in a highlighted code block undo changes in the block and 
             "<p>hello!</p>",
         { message: `redo:\n${listActions(4, 5)}` }
     );
+    testSelectionInTextarea(textarea, "some codeno", textarea.value.length);
     await press(["ctrl", "shift", "z"]); // <wrapper><highlight><pre>some coden</pre></highlight></wrapper><p>hello!</p>
     await press(["ctrl", "shift", "z"]); // <wrapper><highlight><pre>some code</pre></highlight></wrapper><p>hello!</p>
     expect(getContent(el).replace("[]", "")).toBe(
@@ -303,6 +336,7 @@ test("multiple ctrl+z in a highlighted code block undo changes in the block and 
             "<p>hello!</p>",
         { message: `redo:\n${listActions(6, 7)}` }
     );
+    testSelectionInTextarea(textarea, "some code", textarea.value.length);
     await press(["ctrl", "y"]); // <wrapper><highlight><pre>some codey</pre></highlight></wrapper><p>hello!</p>
     await press(["ctrl", "y"]); // <wrapper><highlight><pre>some codeye</pre></highlight></wrapper><p>hello!</p>
     await press(["ctrl", "y"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!</p>
@@ -311,14 +345,15 @@ test("multiple ctrl+z in a highlighted code block undo changes in the block and 
             "<p>hello!</p>",
         { message: `redo:\n${listActions(8, 9, 10)}` }
     );
+    testSelectionInTextarea(textarea, "some codeyes", textarea.value.length);
     await press(["ctrl", "shift", "z"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!o</p>
     await press(["ctrl", "shift", "z"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!ok</p>
-    expect(getContent(el).replace("[]", "")).toBe(
+    expect(getContent(el)).toBe(
         SYNTAX_HIGHLIGHTING_WRAPPER(`some codeyes`, preStyle, { language: "javascript" }) +
-            "<p>hello!ok</p>",
+            "<p>hello!ok[]</p>",
         { message: `redo:\n${listActions(11, 12)}` }
     );
-    await press(["ctrl", "y"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!ok[]</p>
+    await press(["ctrl", "y"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!ok</p>
     expect(getContent(el).replace("[]", "")).toBe(
         SYNTAX_HIGHLIGHTING_WRAPPER(`some codeyesh`, preStyle, { language: "javascript" }) +
             "<p>hello!ok</p>",
@@ -326,6 +361,7 @@ test("multiple ctrl+z in a highlighted code block undo changes in the block and 
             message: `redo:\n${listActions(13)}`,
         }
     );
+    testSelectionInTextarea(textarea, "some codeyesh", textarea.value.length);
     await press(["ctrl", "shift", "z"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!ok</p>
     await press(["ctrl", "y"]); // <wrapper><highlight><pre>some codeyes</pre></highlight></wrapper><p>hello!ok</p>
     expect(getContent(el).replace("[]", "")).toBe(
@@ -335,7 +371,9 @@ test("multiple ctrl+z in a highlighted code block undo changes in the block and 
             message: `redo: should have done nothing`,
         }
     );
+    testSelectionInTextarea(textarea, "some codeyesh", textarea.value.length);
 });
 test("tab in code block inserts 4 spaces", async () => {});
 test("tab in selection in code block indents each selected line", async () => {});
 test("shift+tab in selection in code block outdents each selected line", async () => {});
+test("can switch between code blocks without issues", async () => {});
