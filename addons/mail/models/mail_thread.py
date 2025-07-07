@@ -2034,7 +2034,7 @@ class MailThread(models.AbstractModel):
             for mail in mails:
                 mail_normalized = email_normalize(mail, strict=False)
                 email_key = mail_normalized or mail
-                emails_key_res_ids[email_key].append(record.id)
+                emails_key_res_ids[email_key].append(record._origin.id)
                 if record_company and email_key:  # False is not interesting anyway
                     emails_key_company_id[email_key] = record_company.id
                 emails_all.append(mail)
