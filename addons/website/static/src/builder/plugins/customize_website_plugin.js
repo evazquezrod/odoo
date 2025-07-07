@@ -35,6 +35,8 @@ export class CustomizeWebsitePlugin extends Plugin {
         "setPendingThemeRequests",
         "isPluginDestroyed",
         "reloadBundles",
+        "addActionOnSave",
+        "removeActionOnSave",
     ];
 
     resources = {
@@ -47,6 +49,7 @@ export class CustomizeWebsitePlugin extends Plugin {
             RemoveFontAction,
             CustomizeButtonStyleAction,
             WebsiteConfigAction,
+            PreviewableWebsiteConfigAction,
             SelectTemplateAction,
         },
         color_combination_getters: withSequence(5, (el, actionParam) => {
@@ -56,11 +59,17 @@ export class CustomizeWebsitePlugin extends Plugin {
                 return `o_cc${getCSSVariableValue(combination, style)}`;
             }
         }),
+        save_handlers: this.onSave.bind(this),
     };
-
+    async onSave() {
+        for (const [, action] of this.actionsOnSave) {
+            await action();
+        }
+    }
     cache = {};
     activeRecords = {};
     activeTemplateViews = {};
+    actionsOnSave = new Map();
     pendingViewRequests = new Set();
     pendingAssetRequests = new Set();
     /**
@@ -342,6 +351,12 @@ export class CustomizeWebsitePlugin extends Plugin {
             this.activeRecords[record] = resolvedValue;
         });
     }
+    addActionOnSave(ID, action) {
+        this.actionsOnSave.set(ID, action);
+    }
+    removeActionOnSave(ID) {
+        this.actionsOnSave.delete(ID);
+    }
     isPluginDestroyed() {
         return this.isDestroyed;
     }
@@ -594,7 +609,10 @@ export class WebsiteConfigAction extends BuilderAction {
             }
             for (const item of action.selectableContext.items) {
                 for (const a of item.getActions()) {
-                    if (a.actionId === "websiteConfig") {
+                    if (
+                        a.actionId === "websiteConfig" ||
+                        a.actionId === "previewableWebsiteConfig"
+                    ) {
                         for (const record of a.actionParam[paramName] || []) {
                             // disable all
                             prepareRecord(record, true);
@@ -683,6 +701,99 @@ export class WebsiteConfigAction extends BuilderAction {
             }
         }, 0);
         return def;
+    }
+}
+
+export class PreviewableWebsiteConfigAction extends WebsiteConfigAction {
+    static id = "previewableWebsiteConfig";
+    static dependencies = ["customizeWebsite", "history"];
+    setup() {
+        this.preview = {};
+    }
+    load(action) {
+        const el = this.getElement(action);
+        if (!el.dataset.originalClassList) {
+            const classList = JSON.stringify([...el.classList]);
+            el.dataset.originalClassList = classList;
+        }
+    }
+    getElement(action) {
+        let el;
+        if (action.params.previewSelector) {
+            el = action.editingElement.querySelector(action.params.previewSelector);
+        } else if (action.params.previewSelectorParent) {
+            el = action.editingElement.closest(action.params.previewSelectorParent);
+        } else {
+            el = action.editingElement;
+        }
+        return el;
+    }
+    isApplied(action) {
+        const el = this.getElement(action);
+        const className = action.params.previewClasses[action.params.previewClassIdx];
+        if (className) {
+            return el.classList.contains(className);
+        } else {
+            // Return true if no class from previewClasses is applied
+            return action.params.previewClasses.every(
+                (className) => !className || !el.classList.contains(className)
+            );
+        }
+    }
+    apply(action) {
+        const el = this.getElement(action);
+        const className = action.params.previewClasses[action.params.previewClassIdx];
+        if (className) {
+            el.classList.add(className);
+        } else {
+            // If className is empty, we remove any other class
+            for (const className of action.params.previewClasses) {
+                if (className) {
+                    el.classList.remove(className);
+                }
+            }
+        }
+
+        if (!action.isPreviewing) {
+            const actionOnSave = (async () => {
+                await this._toggleConfig(action, true);
+            }).bind(this);
+            const actionID = crypto.randomUUID();
+            this.dependencies.customizeWebsite.addActionOnSave(actionID, actionOnSave);
+            this.dependencies.history.addCustomMutation({
+                apply: () => {
+                    this.dependencies.customizeWebsite.addActionOnSave(actionID, actionOnSave);
+                },
+                revert: () => {
+                    this.dependencies.customizeWebsite.removeActionOnSave(actionID);
+                },
+            });
+        }
+    }
+    clean(action) {
+        const el = this.getElement(action);
+        for (const className of action.params.previewClasses) {
+            if (className) {
+                el.classList.remove(className);
+            }
+        }
+        if (!action.isPreviewing) {
+            const actionOnSave = (async () => {
+                el.className = JSON.parse(el.dataset.originalClassList).join(" ");
+                delete el.dataset.originalClassList;
+                await this._toggleConfig(action, false);
+            }).bind(this);
+            const actionID = crypto.randomUUID();
+            this.dependencies.customizeWebsite.addActionOnSave(actionID, actionOnSave);
+            this.dependencies.history.addCustomMutation({
+                apply: () => {
+                    this.dependencies.customizeWebsite.addActionOnSave(actionID, actionOnSave);
+                },
+                revert: () => {
+                    this.dependencies.customizeWebsite.removeActionOnSave(actionID);
+                },
+            });
+        }
     }
 }
 
