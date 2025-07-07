@@ -161,9 +161,18 @@ export class FormatPlugin extends Plugin {
         clean_for_save_handlers: this.cleanForSave.bind(this),
         normalize_handlers: this.normalize.bind(this),
         selectionchange_handlers: this.removeEmptyInlineElement.bind(this),
+        update_content_edited_nodes: this.removeInlineFormat.bind(this),
 
         intangible_char_for_keyboard_navigation_predicates: (_, char) => char === "\u200b",
     };
+
+    removeInlineFormat(el) {
+        if (el instanceof this.window.HTMLHeadingElement) {
+            // Will remove all children elements, but keep the whole text.
+            // eslint-disable-next-line no-self-assign
+            el.textContent = el.textContent;
+        }
+    }
 
     removeFormat() {
         const targetedNodes = this.dependencies.selection.getTargetedNodes();

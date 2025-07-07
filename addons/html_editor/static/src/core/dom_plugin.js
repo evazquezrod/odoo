@@ -586,6 +586,7 @@ export class DomPlugin extends Plugin {
                 if (block.nodeName === "LI") {
                     this.delegateTo("set_tag_overrides", block, newEl);
                 }
+                this.dispatchTo("update_content_edited_nodes", newEl);
             } else {
                 // eg do not change a <div> into a h1: insert the h1
                 // into it instead.
