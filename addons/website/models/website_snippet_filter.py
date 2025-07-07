@@ -58,8 +58,8 @@ class WebsiteSnippetFilter(models.Model):
                 if not field_name.strip():
                     raise ValidationError(_("Empty field name in “%s”", record.field_names))
 
-    def _render(self, template_key, limit, search_domain=None, with_sample=False, **custom_template_data):
-        """Renders the website dynamic snippet items"""
+    def _render(self, template_key, limit, offset=0, search_domain=None, with_sample=False, **custom_template_data):
+        """Renders the website dynamic snippet items with lazy loading support"""
         self.ensure_one()
         assert '.dynamic_filter_template_' in template_key, _("You can only use template prefixed by dynamic_filter_template_ ")
         if search_domain is None:
@@ -71,7 +71,7 @@ class WebsiteSnippetFilter(models.Model):
         if self.model_name.replace('.', '_') not in template_key:
             return ''
 
-        records = self._prepare_values(limit=limit, search_domain=search_domain)
+        records = self._prepare_values(limit=limit, offset=offset, search_domain=search_domain)
         is_sample = with_sample and not records
         if is_sample:
             records = self._prepare_sample(limit)
@@ -82,10 +82,9 @@ class WebsiteSnippetFilter(models.Model):
         ))
         return [etree.tostring(el, encoding='unicode', method='html') for el in html.fromstring('<root>%s</root>' % str(content)).getchildren()]
 
-    def _prepare_values(self, limit=None, search_domain=None):
-        """Gets the data and returns it the right format for render."""
+    def _prepare_values(self, limit=None, offset=0, search_domain=None):
+        """Gets the data and returns it in the right format for render with lazy loading."""
         self.ensure_one()
-
         limit = limit or self.limit or 16
 
         if self.filter_id:
@@ -105,7 +104,8 @@ class WebsiteSnippetFilter(models.Model):
                 records = self.env[filter_sudo.model_id].sudo(False).with_context(**literal_eval(filter_sudo.context)).search(
                     domain,
                     order=','.join(literal_eval(filter_sudo.sort)) or None,
-                    limit=limit
+                    limit=limit,
+                    offset=offset
                 )
                 return self._filter_records_to_values(records.sudo())
             except MissingError:
@@ -116,6 +116,7 @@ class WebsiteSnippetFilter(models.Model):
                 return self.action_server_id.with_context(
                     dynamic_filter=self,
                     limit=limit,
+                    offset=offset,
                     search_domain=search_domain,
                 ).sudo().run() or []
             except MissingError:
