@@ -529,10 +529,11 @@ export class ToggleBlockPlugin extends Plugin {
 
     normalize(element) {
         const cursors = this.dependencies.selection.preserveSelection();
-        for (const titleChild of selectElements(
+        const titleChildren = selectElements(
             element,
             `${toggleSelector} ${titleSelector} > *:first-child`
-        )) {
+        );
+        for (const titleChild of titleChildren) {
             const title = titleChild.parentElement;
             const toggle = closestElement(title, toggleSelector);
             if (titleChild.nextElementSibling) {
@@ -544,7 +545,10 @@ export class ToggleBlockPlugin extends Plugin {
                 toggle.after(titleChild);
             }
         }
-        cursors.restore();
+        if (titleChildren.length) {
+            cursors.restore(); // THIS IS WHERE IT FUCKING BREAKS (not anymore with the if)
+            // It made us lose textarea.selectionStart
+        }
         for (const emptyToggleNode of selectElements(
             element,
             `${toggleSelector} [data-embedded-editable]:empty`

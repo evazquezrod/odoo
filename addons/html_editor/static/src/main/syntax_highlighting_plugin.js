@@ -30,8 +30,8 @@ export class SyntaxHighlightingPlugin extends Plugin {
     static dependencies = ["overlay", "history", "selection", "protectedNode"];
     resources = {
         normalize_handlers: (root) => this.prepareCodeBlocks(root, true),
-        post_undo_handlers: () => this.prepareCodeBlocks(this.editable, true),
-        post_redo_handlers: () => this.prepareCodeBlocks(this.editable, true),
+        post_undo_handlers: () => this.afterUndoRedo(),
+        post_redo_handlers: () => this.afterUndoRedo(),
     };
 
     setup() {
@@ -53,6 +53,10 @@ export class SyntaxHighlightingPlugin extends Plugin {
         }
     }
 
+    afterUndoRedo() {
+        this.prepareCodeBlocks(this.editable, true);
+    }
+
     destroy() {
         for (const codeBlock of this.editable.querySelectorAll("div.o_syntax_highlighting")) {
             this.removeListeners(codeBlock);
@@ -64,7 +68,7 @@ export class SyntaxHighlightingPlugin extends Plugin {
     }
 
     prepareCodeBlocks(root = this.editable, activate = false) {
-        let activeTextarea;
+        let textareaToActivate;
         for (const pre of root.querySelectorAll("pre")) {
             if (!pre.closest("div.o_syntax_highlighting")) {
                 const font = getComputedStyle(pre).font.replaceAll('"', "'");
@@ -89,7 +93,7 @@ export class SyntaxHighlightingPlugin extends Plugin {
                 textarea.style.padding = preStyle.padding;
                 textarea.style.margin = preStyle.margin;
                 codeBlock.append(textarea);
-                activeTextarea = activate && textarea; // It's the latest inserted one.
+                textareaToActivate = activate && textarea; // It's the latest inserted one.
             }
             // Trailing br gives \n in innerText but should not be visible.
             const trailingBrs = pre.innerHTML.match(/(<br>)+$/)?.length || 0;
@@ -102,14 +106,12 @@ export class SyntaxHighlightingPlugin extends Plugin {
             }
             this.resetListeners(codeBlock);
         }
-        if (activeTextarea) {
-            if (activate) {
-                this.setActiveCodeBlock(activeTextarea.parentElement);
-                if (activeTextarea !== this.document.activeElement) {
-                    activeTextarea.focus();
-                    this.dependencies.history.stageSelection();
-                    // TODO: would stageFocus suffice?
-                }
+        if (textareaToActivate) {
+            this.setActiveCodeBlock(textareaToActivate.parentElement);
+            if (textareaToActivate !== this.document.activeElement) {
+                textareaToActivate.focus();
+                this.dependencies.history.stageSelection();
+                // TODO: would stageFocus suffice?
             }
         }
     }
@@ -233,11 +235,6 @@ export class SyntaxHighlightingPlugin extends Plugin {
         const textarea = codeBlock.querySelector("textarea.o_prism_source");
         // Preserve the selection in the textarea which sometimes gets lost for
         // unclear reasons.
-        const textareaSelection = {
-            start: textarea.selectionStart,
-            end: textarea.selectionEnd,
-            direction: textarea.selectionDirection,
-        };
         const languageId = codeBlock.dataset.languageId || DEFAULT_LANGUAGE_ID;
         // Make sure the step is properly recorded to include the code block's
         // data attribute and the PRE's content.
@@ -270,11 +267,6 @@ export class SyntaxHighlightingPlugin extends Plugin {
         if (focus) {
             textarea.focus({ preventScroll: true });
         }
-        textarea.setSelectionRange(
-            textareaSelection.start,
-            textareaSelection.end,
-            textareaSelection.direction
-        );
     }
 
     setActiveCodeBlock(codeBlock) {

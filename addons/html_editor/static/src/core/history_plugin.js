@@ -124,6 +124,7 @@ import { toggleClass } from "@html_editor/utils/dom";
  * @property { HistoryPlugin['resetFromSteps'] } resetFromSteps
  * @property { HistoryPlugin['serializeSelection'] } serializeSelection
  * @property { HistoryPlugin['stageSelection'] } stageSelection
+ * @property { HistoryPlugin['stageFocus'] } stageFocus
  * @property { HistoryPlugin['undo'] } undo
  * @property { HistoryPlugin['getIsPreviewing'] } getIsPreviewing
  * @property { HistoryPlugin['setStepExtra'] } setStepExtra
@@ -152,6 +153,7 @@ export class HistoryPlugin extends Plugin {
         "resetFromSteps",
         "serializeSelection",
         "stageSelection",
+        "stageFocus",
         "undo",
         "getIsPreviewing",
         "setStepExtra",
