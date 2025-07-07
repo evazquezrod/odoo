@@ -16,5 +16,5 @@ class AccountMoveSend(models.AbstractModel):
         # EXTENDS 'account'
         return (
             super()._get_invoice_extra_attachments(move)
-            + move.l10n_my_edi_file_id
+            + move._get_active_document().myinvois_file_id
         )

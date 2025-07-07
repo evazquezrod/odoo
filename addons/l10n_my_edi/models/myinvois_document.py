@@ -277,7 +277,7 @@ class MyInvoisDocument(models.Model):
         # When sending an individual document, we can raise once we are sure we logged the errors.
         if len(self) == 1 and errors:
             if self._can_commit():
-                self._cr.commit()  # Save the error logged in the chatter.
+                self.env.cr.commit()  # Save the error logged in the chatter.
             raise UserError(errors[self.id])
 
         # Try and get the status, up to three time, stopping if all documents have a status already.
@@ -285,7 +285,8 @@ class MyInvoisDocument(models.Model):
             self._myinvois_submission_statuses_update()
             if not any(document.myinvois_state == 'in_progress' for document in self):
                 break
-            time.sleep(1)
+            if self._can_commit():  # avoid the sleep in tests.
+                time.sleep(1)
 
     def action_update_submission_status(self):
         """
@@ -330,6 +331,27 @@ class MyInvoisDocument(models.Model):
         """ Cancel the document on the platform. """
         self.ensure_one()
         return self._action_myinvois_update_document(new_status='cancelled')
+
+    def action_show_myinvois_documents(self):
+        """ Open the documents in self in the correct view based on the amount of records. """
+        if len(self) == 1:
+            action_vals = {
+                'type': 'ir.actions.act_window',
+                'res_model': 'myinvois.document',
+                'view_mode': 'form',
+                'res_id': self.id,
+                'views': [(self.env.ref('l10n_my_edi.myinvois_document_form_view').id, 'form')],
+            }
+        else:
+            action_vals = {
+                'name': self.env._("Consolidated Invoices"),
+                'type': 'ir.actions.act_window',
+                'res_model': 'myinvois.document',
+                'view_mode': 'list,form',
+                'views': [(self.env.ref('l10n_my_edi.myinvois_document_list_view').id, 'list'), (self.env.ref('l10n_my_edi.myinvois_document_form_view').id, 'form')],
+                'domain': [('id', 'in', self.ids)],
+            }
+        return action_vals
 
     # ----------------
     # Business methods
@@ -376,37 +398,25 @@ class MyInvoisDocument(models.Model):
     def _myinvois_generate_xml_file(self):
         """ Generate the xml file representing this record(s) attached to this document. """
         self.ensure_one()
-        xml_vals = self._myinvois_export_document()
-        if not xml_vals:
-            raise UserError(self.env._("This consolidated invoice does not contain any relevant orders to send to MyInvois."))
-        errors = [constraint for constraint in self._myinvois_export_document_constraints(xml_vals).values() if constraint]
-        template = self.env['account.edi.xml.ubl_myinvois_my']._get_document_template(xml_vals)
-        nsmap = self.env['account.edi.xml.ubl_myinvois_my']._get_document_nsmap(xml_vals)
-        xml_content = dict_to_xml(xml_vals['template'], nsmap=nsmap, template=template)
+        builder = self.env['account.edi.xml.ubl_myinvois_my']
+        # 1. Validate the structure of the taxes
+        self._validate_taxes()
+        # 2. Export the file data
+        vals = {'myinvois_document': self.with_context(lang=self.env.company.partner_id.lang)}
+        document_node = builder._get_myinvois_document_node(vals)
+        vals['document_node'] = document_node
+        # 3. Check for any issue with the data
+        errors = [constraint for constraint in builder._export_myinvois_document_constraints(vals).values() if constraint]
+        # 4. Generate the xml file
+        template = builder._get_document_template(vals)
+        nsmap = builder._get_document_nsmap(vals)
+        xml_content = dict_to_xml(document_node, nsmap=nsmap, template=template)
         return etree.tostring(xml_content, xml_declaration=True, encoding='UTF-8'), set(errors)
 
-    def _myinvois_export_document(self):
-        """
-        To be extended by the implementations to return a dict with the values needed to generate the XML file.
-        The values used here are used to generate a MyInvois UBL file.
-        """
-        self.ensure_one()
+    def _validate_taxes(self):
+        """ Makes use of account.edi.xml.ubl_myinvois_my to validate the taxes for the records in self."""
         if self.invoice_ids:
-            # Only pick the first invoice for now, we don't yet support consolidated invoices in accounting.
-            invoice = self.invoice_ids[0]
-            return self.env['account.edi.xml.ubl_myinvois_my'].with_context(convert_fixed_taxes=False)._export_invoice_vals(invoice.with_context(lang=invoice.partner_id.lang))
-
-        return {}
-
-    def _myinvois_export_document_constraints(self, xml_vals):
-        """ Provides generic constraints that would apply to any documents. """
-        self.ensure_one()
-        if self.invoice_ids:
-            # Only pick the first invoice for now, we don't yet support consolidated invoices in accounting.
-            invoice = self.invoice_ids[0]
-            return self.env['account.edi.xml.ubl_myinvois_my']._export_invoice_constraints(invoice, xml_vals)
-
-        return {}
+            self.env["account.edi.xml.ubl_myinvois_my"]._validate_taxes(self.invoice_ids.invoice_line_ids.tax_ids)
 
     def _myinvois_submit_documents(self, submissions_content):
         """
@@ -485,7 +495,7 @@ class MyInvoisDocument(models.Model):
                         record.write(updated_values)
 
                 if self._can_commit():
-                    self._cr.commit()
+                    self.env.cr.commit()
 
         if success_messages:
             successful_records = self.browse(list(success_messages.keys()))
@@ -547,7 +557,8 @@ class MyInvoisDocument(models.Model):
                     # While unlikely, if we end up with too many documents we will start by getting all the info.
                     if result['document_count'] > 100:
                         for page in range(2, (result['document_count'] // 100) + 1):
-                            time.sleep(0.3)
+                            if self._can_commit():  # avoid the sleep in tests.
+                                time.sleep(0.3)
                             page_result = proxy_user._l10n_my_edi_contact_proxy(
                                 endpoint='api/l10n_my_edi/1/get_submission_statuses',
                                 params={
@@ -562,7 +573,8 @@ class MyInvoisDocument(models.Model):
                         if record:
                             results[submission_uid]['statuses'][record] = status
 
-                time.sleep(0.3)
+                if self._can_commit():  # avoid the sleep in tests.
+                    time.sleep(0.3)
         return results
 
     def _myinvois_set_state(self, state, message=None):
@@ -670,7 +682,7 @@ class MyInvoisDocument(models.Model):
                 record._myinvois_set_validation_fields(status)
 
             if with_commit and self._can_commit():
-                self._cr.commit()
+                self.env.cr.commit()
 
     def _myinvois_check_can_update_status(self):
         """ The document status can only be updated (for rejection, or cancellation) up to 72h after the validation time.
@@ -730,7 +742,7 @@ class MyInvoisDocument(models.Model):
             )
 
         if self._can_commit():
-            self._cr.commit()
+            self.env.cr.commit()
 
     @api.model
     def _myinvois_statuses_update_cron(self):
@@ -758,23 +770,24 @@ class MyInvoisDocument(models.Model):
             aggregates=['id:recordset'],
             limit=MAX_SUBMISSION_UPDATE,
         )
+        document_count = self.search_count(domain)  # Count the total amount of documents to process.
 
+        processed_documents = 0
         for submission_uid, documents in grouped_documents:
             # Update the status for that one submission. In case of errors, we log it and continue.
             # Errors are quite unlikely in this flow.
-            documents._myinvois_submission_statuses_update(with_commit=False)  # We handle the commit here.
+            documents._myinvois_submission_statuses_update(with_commit=False)  # We handle the commit after notifying of progress.
 
+            processed_documents += len(documents)
             # Commit if we can, in case an issue arises later.
             if self._can_commit():
-                self._cr.commit()
+                self.env['ir.cron']._commit_progress(processed=processed_documents, remaining=document_count - processed_documents)
 
-            # Avoid sleeping on the last loop
-            if grouped_documents.index((submission_uid, documents)) != (len(grouped_documents) - 1):
-                time.sleep(0.3)  # There is a limit of how many calls we can do, so we spread them out a bit.
-
-        # If we received the maximum amount of submissions, it's likely that we have more to process so we'll re-trigger the cron with a slight delay.
-        if len(grouped_documents) == MAX_SUBMISSION_UPDATE:
-            self.env.ref('l10n_my_edi_pos.ir_cron_myinvois_document_sync')._trigger(fields.Datetime.now() + datetime.timedelta(minutes=1))
+                # Avoid sleeping on the last loop and in tests
+                if grouped_documents.index((submission_uid, documents)) != (len(grouped_documents) - 1):
+                    time.sleep(0.3)  # There is a limit of how many calls we can do, so we spread them out a bit.
+        if self._can_commit():
+            self.env['ir.cron']._commit_progress(processed=processed_documents, remaining=document_count - processed_documents)
 
     @staticmethod
     def _can_commit():
@@ -917,3 +930,169 @@ class MyInvoisDocument(models.Model):
                 for document_id, message in bodies.items():
                     invoice_bodies.update({invoice.id: message for invoice in documents_per_id[document_id].invoice_ids})
                 self.invoice_ids._message_log_batch(bodies=invoice_bodies)
+
+    def _is_refund_document(self):
+        """
+        :return: True if this document is linked to a single refund invoice.
+        """
+        has_single_document = self.invoice_ids and len(self.invoice_ids) == 1
+        return has_single_document and self.invoice_ids[0].move_type in ('out_refund', 'in_refund')
+
+    def _get_rounded_base_lines(self):
+        """
+        The base lines used when exporting the document will highly differ based on whether this is
+        or not a consolidated invoice, as well as whether this is for PoS.
+
+        :return: The rounded base lines to be used when exporting the document.
+        """
+        self.ensure_one()
+        # Refunds of consolidated invoices are treated as regular invoice besides for the fixed customer.
+        if self._is_consolidated_invoice():
+            AccountTax = self.env['account.tax']
+            grouped_records = self._split_consolidated_invoice_record_in_lines()
+
+            tax_data_fields = (
+                "raw_base_amount_currency",
+                "raw_base_amount",
+                "raw_tax_amount_currency",
+                "raw_tax_amount",
+                "base_amount_currency",
+                "base_amount",
+                "tax_amount_currency",
+                "tax_amount",
+            )
+            consolidated_base_lines = []
+            for index, records in enumerate(grouped_records):
+                base_lines = []
+                for record in records:
+                    base_lines += self._get_record_rounded_base_lines(record)
+
+                # Aggregate the base lines into one.
+                new_tax_details = {
+                    "raw_total_excluded_currency": 0.0,
+                    "total_excluded_currency": 0.0,
+                    "raw_total_excluded": 0.0,
+                    "total_excluded": 0.0,
+                    "raw_total_included_currency": 0.0,
+                    "total_included_currency": 0.0,
+                    "raw_total_included": 0.0,
+                    "total_included": 0.0,
+                    "delta_total_excluded_currency": 0.0,
+                    "delta_total_excluded": 0.0,
+                }
+                new_taxes_data_map = {}
+
+                taxes = self.env["account.tax"]
+                for base_line in base_lines:
+                    tax_details = base_line["tax_details"]
+                    sign = -1 if base_line["is_refund"] else 1
+                    for key in new_tax_details:
+                        new_tax_details[key] += sign * tax_details[key]
+                    for tax_data in tax_details["taxes_data"]:
+                        tax = tax_data["tax"]
+                        taxes |= tax
+                        if tax in new_taxes_data_map:
+                            for key in tax_data_fields:
+                                new_taxes_data_map[tax][key] += sign * tax_data[key]
+                        else:
+                            new_taxes_data_map[tax] = dict(tax_data)
+                            for key in tax_data_fields:
+                                new_taxes_data_map[tax][key] = sign * tax_data[key]
+
+                total_amount_discounted = new_tax_details["total_excluded"] + new_tax_details["delta_total_excluded"]
+                total_amount_discounted_currency = new_tax_details["total_excluded_currency"] + new_tax_details["delta_total_excluded_currency"]
+                total_amount = total_amount_currency = 0.0
+                for base_line in base_lines:
+                    sign = -1 if base_line["is_refund"] else 1
+                    total_amount += sign * (
+                        (base_line["price_unit"] / base_line["rate"])
+                        * base_line["quantity"]
+                    )
+                    total_amount_currency += sign * (
+                        base_line["price_unit"] * base_line["quantity"]
+                    )
+
+                new_base_line = AccountTax._prepare_base_line_for_taxes_computation(
+                    {},
+                    tax_ids=taxes,
+                    price_unit=total_amount_currency,
+                    discount_amount=total_amount - total_amount_discounted,
+                    discount_amount_currency=total_amount_currency - total_amount_discounted_currency,
+                    quantity=1.0,
+                    currency_id=self.currency_id,
+                    tax_details={
+                        **new_tax_details,
+                        "taxes_data": list(new_taxes_data_map.values()),
+                    },
+                    line_name=f"{records[0].name}-{records[-1].name}" if len(records) > 1 else records[0].name,
+                )
+                consolidated_base_lines.append(new_base_line)
+
+            base_lines = consolidated_base_lines
+        else:
+            invoice = self.invoice_ids[0]  # Otherwise it would be a consolidated invoice.
+            base_lines, _tax_lines = invoice._get_rounded_base_and_tax_lines()
+            base_lines = base_lines
+        # In any cases, we'll provide a reference to the document in the base lines.
+        # This will help later on when it is time to handle tax grouping as we may need to get the
+        # tax exemption info.
+        for base_line in base_lines:
+            base_line['myinvois_document'] = self
+
+        return base_lines
+
+    # Consolidated invoices helpers.
+
+    def _is_consolidated_invoice(self):
+        """
+        In a few flows, we need to know if we're dealing with a consolidated invoice in order to set
+        the correct customer for example.
+        This method is here for that; in practice we will be dealing with a consolidated invoice when:
+        - The document is linked to multiple records or;
+        - The document is a refund/credit note of another document linked to multiple records.
+
+        :return: True if this invoice is a consolidated invoice or the refund of one.
+        """
+        self.ensure_one()
+        return len(self.invoice_ids) > 1
+
+    def _is_consolidated_invoice_refund(self):
+        """
+        :return: True if this document is a refund specifically for a consolidated invoice.
+        """
+        is_consolidated_invoice_refund = False
+        if self._is_refund_document():
+            refunded_invoice = self.invoice_ids.reversed_entry_id
+            refunded_document = refunded_invoice.l10n_my_edi_document_ids._get_active_document(including_in_progress=True)
+            is_consolidated_invoice_refund = len(refunded_document.invoice_ids) > 1
+        return is_consolidated_invoice_refund
+
+    def _split_consolidated_invoice_record_in_lines(self):
+        """
+        When dealing with consolidated invoices, all continuous records are grouped in a single line,
+        with a split happening only when the continuity is broken (a document was sent individually,...)
+
+        The role of this method is to handle this grouping so that it can be used later when preparing the
+        base lines for export.
+
+        :return: a list of recordset containing the related records split into one recordset per line.
+        """
+        if not self._is_consolidated_invoice() or not self.invoice_ids:
+            return []
+
+        # We will be working on that soon, but for now we do not support it.
+        raise NotImplementedError("Support for consolidated invoices in the invoicing app is not yet implemented.")
+
+    def _get_record_rounded_base_lines(self, record):
+        """
+        Little helper to return the rounded base line for a record.
+        It is extracted in order to allow extending the logic to support other business models.
+        :param record: The record from which to get the base lines.
+        :return: The rounder base line for the provided record.
+        """
+        self.ensure_one()
+        record.ensure_one()
+        base_lines = []
+        if record and record._name == 'account.move':
+            base_lines, _tax_lines = record._get_rounded_base_and_tax_lines()
+        return base_lines
