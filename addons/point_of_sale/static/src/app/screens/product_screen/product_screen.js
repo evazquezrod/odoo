@@ -138,6 +138,8 @@ export class ProductScreen extends Component {
             BACKSPACE,
         ]).map((button) => ({
             ...button,
+            disabled:
+                button.disabled || (button.value === "-" && this.pos.cashier._role === "minimal"),
             class: `
                 ${defaultLastRowValues.includes(button.value) ? "" : ""}
                 ${colorClassMap[button.value] || ""}
