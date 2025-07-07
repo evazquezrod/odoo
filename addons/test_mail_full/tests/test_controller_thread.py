@@ -18,7 +18,9 @@ class TestPortalThreadController(MailControllerThreadCommon):
         fetched_messages = fetched_data["data"]["mail.message"]
         self.assertNotEqual(len(fetched_messages), len(messages))
         self.assertEqual(len(fetched_messages), 1)
-        self.assertMessageFields(fetched_messages[0], {'is_note': False})
+        self.assertMessageFields(
+            fetched_messages[0], {"subtype_id": self.env.ref("mail.mt_comment").id}
+        )
 
     def test_message_post_portal_no_partner(self):
         """Test access of message post for portal without partner."""

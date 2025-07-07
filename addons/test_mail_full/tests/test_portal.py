@@ -11,7 +11,6 @@ from odoo.exceptions import AccessError
 from odoo.tests import tagged, users
 from odoo.tests.common import HttpCase
 from odoo.tools import html_escape, mute_logger
-from odoo.tools.misc import limited_field_access_token
 
 
 @tagged('portal')
@@ -32,7 +31,7 @@ class TestPortalControllers(TestPortal):
 
     def test_portal_avatar(self):
         portal_partner = self.record_portal.partner_id
-        access_token = limited_field_access_token(portal_partner, "avatar_128")
+        access_token = portal_partner._get_avatar_128_access_token()
         unique = fields.Datetime.to_string(portal_partner.write_date)
         response = self.url_open(
             f"/web/image/res.partner/{portal_partner.id}/avatar_128?access_token={access_token}&unique={unique}"

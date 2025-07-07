@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from markupsafe import Markup
 
 from odoo import Command, fields
-from odoo.addons.mail.tests.common import mail_new_test_user
 from odoo.addons.test_mail.tests.test_performance import BaseMailPostPerformance
 from odoo.tests.common import HttpCase, users, warmup
 from odoo.tests import tagged
@@ -106,14 +105,15 @@ class TestPortalFormatPerformance(FullBaseMailPerformance, HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.record = cls.env["mail.test.rating"].create([
-            {
-                "customer_id": cls.customers[0].id,
-                "name": "TestRating",
-                "user_id": cls.test_users[0].id,
-
-            }
-        ])
+        with cls.mock_push_to_end_point(cls):
+            cls.record = cls.env["mail.test.rating"].create([
+                {
+                    "customer_id": cls.customers[0].id,
+                    "name": "TestRating",
+                    "user_id": cls.user_employee.id,
+    
+                }
+            ])
         cls.comment_1 = cls.env["mail.message"].create([
             {
                 "attachment_ids": [
@@ -221,9 +221,9 @@ class TestPortalFormatPerformance(FullBaseMailPerformance, HttpCase):
                 },
             )
         fetched_messages = res["data"]["mail.message"]
-        self.assertEqual(len(fetched_messages), 2)  # 2 comments only
-        self.assertMessageFields(fetched_messages[0], {"is_note": False})
-        self.assertMessageFields(fetched_messages[1], {"is_note": False})
+        self.assertEqual(len(fetched_messages), 2)
+        self.assertMessageFields(fetched_messages[0], {"subtype_id": self.env.ref("mail.mt_comment").id})
+        self.assertMessageFields(fetched_messages[1], {"subtype_id": self.env.ref("mail.mt_comment").id})
         self.assertEqual(len(res["data"]["rating.rating"]), 1)
         rating = res["data"]["rating.rating"][0]
         self.assertEqual(rating["message_id"], self.comment_1.id)
