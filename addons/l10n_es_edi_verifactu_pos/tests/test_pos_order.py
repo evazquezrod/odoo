@@ -18,6 +18,9 @@ class TestL10nEsEdiVerifactuPosOrder(TestL10nEsEdiVerifactuPosCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+
+        cls.config = cls.basic_config
+
         # Ensure the date of all orders is in the past.
         # Else the associated move does not get posted (since it will be in the future / on the order date).
         cls.fakenow = datetime.datetime(2025, 1, 1)

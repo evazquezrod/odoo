@@ -7,6 +7,12 @@ from .common import TestL10nEsEdiVerifactuPosCommon
 @tagged('post_install_l10n', 'post_install', '-at_install')
 class TestL10nEsEdiVerifactuPosFrontend(TestL10nEsEdiVerifactuPosCommon, TestPointOfSaleHttpCommon):
 
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.config = cls.main_pos_config  # i.e. not a restaurant config
+
     def test_tour_order_with_refund_reason(self):
         # Remove the simplified invoice journal so that the orders are not invoiced by default
         self.config.l10n_es_simplified_invoice_journal_id = False

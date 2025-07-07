@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from pytz import timezone
 from werkzeug.urls import url_quote_plus, url_encode
 
-import contextlib
 import hashlib
 import logging
 import math
@@ -241,10 +240,6 @@ class L10nEsEdiVerifactuDocument(models.Model):
             errors.append(_("The name of the record is not between 1 and 60 characters long: %(name)s.",
                             name=vals['name']))
 
-        if not vals['name'] or len(vals['name']) > 60:
-            errors.append(_("The name of the record is not between 1 and 60 characters long: %(name)s.",
-                            name=vals['name']))
-
         if vals['documents'] and vals['documents']._filter_waiting():
             errors.append(_("We are waiting to send a Veri*Factu record to the AEAT already."))
 
@@ -283,14 +278,13 @@ class L10nEsEdiVerifactuDocument(models.Model):
             errors.append(_("The refund reason is not specified."))
 
         simplified_partner = self.env.ref('l10n_es.partner_simplified', raise_if_not_found=False)
-        partner_is_simplified_partner = simplified_partner and vals['partner'] == simplified_partner
-        partner_specified = vals['partner'] and not partner_is_simplified_partner
+        partner_specified = vals['partner'] and vals['partner'] != simplified_partner
         if need_refund_reason and vals['refund_reason'] != 'R5' and not partner_specified:
             errors.append(_("A refund with Refund Reason %(refund_reason)s needs a partner.",
                             refund_reason=vals['refund_reason']))
 
         if not vals['verifactu_tax_type']:
-            errors.append(_("Missing Veri*Factu Taxs Type (Impuesto)."))
+            errors.append(_("Missing Veri*Factu Tax Type (Impuesto)."))
 
         if vals['verifactu_tax_type'] in ('01', '03') and not vals['clave_regimen']:
             errors.append(_("Missing Veri*Factu Regime Key (ClaveRegimen)."))
@@ -315,7 +309,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 if float_round(tax_percentage, precision_digits=2) or float_round(tax_amount, precision_digits=2):
                     errors.append(_("No Sujeto VAT taxes must have 0 amount."))
             if len(tax_detail['recargo_taxes']) > 1:
-                errors.append(_("Only a single recargo tax may used per \"main\" tax."))
+                errors.append(_("Only a single recargo tax may be used per \"main\" tax."))
 
         verifactu_tax_types = {
             tax_detail['verifactu_tax_type']
@@ -446,7 +440,9 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 document = self.env['l10n_es_edi_verifactu.document']._create_for_record(
                     record_values, previous_record_identifier=previous_document._get_record_identifier(),
                 )
-                if document.state != 'error':
+                # In case we can not generate a valid document we do not generate the JSON.
+                # Such documents are not part of the chain.
+                if document.chain_index:
                     previous_document = document
                 result[record_values['record']] = document
         return result
@@ -456,7 +452,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
     #################
 
     @api.model
-    def _format_date_fecha_type(self, date):
+    def _format_date_type(self, date):
         if not date:
             return None
         # Format as 'fecha' type from xsd
@@ -465,14 +461,12 @@ class L10nEsEdiVerifactuDocument(models.Model):
     @api.model
     def _round_format_number_2(self, number):
         # Round and format as number with 2 precision digits
+        # I.e. used for 'ImporteSgn12.2Type' and 'Tipo2.2Type' XSD types.
+        # We do not check / fix the number of digits in front of the decimal separator
         if number is None:
             return None
         rounded = float_round(number, precision_digits=2)
         return float_repr(rounded, precision_digits=2)
-
-    # We do not check / fix the number of digits in front of the decimal separator
-    _format_number_ImporteSgn12_2 = _round_format_number_2
-    _format_number_Tipo2_2 = _round_format_number_2
 
     @api.model
     def _render_vals(self, vals, previous_record_identifier=None):
@@ -518,7 +512,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
     @api.model
     def _render_vals_operation(self, vals):
         company_values = vals['company'].partner_id._l10n_es_edi_verifactu_get_values()
-        invoice_date = self._format_date_fecha_type(vals['invoice_date'])
+        invoice_date = self._format_date_type(vals['invoice_date'])
 
         if vals['cancellation']:
             render_vals = {
@@ -540,8 +534,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
         }
 
         simplified_partner = self.env.ref('l10n_es.partner_simplified', raise_if_not_found=False)
-        partner_is_simplified_partner = simplified_partner and vals['partner'] == simplified_partner
-        partner_specified = vals['partner'] and not partner_is_simplified_partner
+        partner_specified = vals['partner'] and vals['partner'] != simplified_partner
 
         if partner_specified:
             render_vals['Destinatarios'] = {
@@ -555,7 +548,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 tipo_factura = 'F2'
             else:
                 tipo_factura = 'F1'
-            delivery_date = self._format_date_fecha_type(vals['delivery_date'])
+            delivery_date = self._format_date_type(vals['delivery_date'])
             fecha_operacion = delivery_date if delivery_date and delivery_date != invoice_date else None
         elif vals['verifactu_move_type'] == 'reversal_for_substitution':
             tipo_rectificativa = None
@@ -607,8 +600,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
             # ('Opción 2' in the FAQ under '¿Cómo registra el emisor una factura rectificativa por sustitución “S”?')
             render_vals.update({
                 'ImporteRectificacion': {
-                    'BaseRectificada': self._format_number_ImporteSgn12_2(0),
-                    'CuotaRectificada': self._format_number_ImporteSgn12_2(0),
+                    'BaseRectificada': self._round_format_number_2(0),
+                    'CuotaRectificada': self._round_format_number_2(0),
                 },
             })
 
@@ -740,9 +733,12 @@ class L10nEsEdiVerifactuDocument(models.Model):
             # - In the no sujeto cases (calification_operacion in ('N1', 'N2')) we may not include them.
             # - In the (calification_operacion == S2) case the tags have to be included with value 0.
             #
-            # See the following errors
+            # See the following errors:
             # [1198]
             #     Si CalificacionOperacion es S2 TipoImpositivo y CuotaRepercutida deberan tener valor 0.
+            # [1237]
+            #     El valor del campo CalificacionOperacion está informado como N1 o N2 y el impuesto es IVA.
+            #     No se puede informar de los campos TipoImpositivo, CuotaRepercutida, TipoRecargoEquivalencia y CuotaRecargoEquivalencia.
             if calificacion_operacion in ('N1', 'N2') and vals['verifactu_tax_type'] == '01':
                 tax_percentage = None
                 tax_amount = None
@@ -752,11 +748,11 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 'ClaveRegimen': vals['clave_regimen'],
                 'CalificacionOperacion': calificacion_operacion,
                 'OperacionExenta': exempt_reason,
-                'TipoImpositivo': self._format_number_Tipo2_2(tax_percentage),
-                'BaseImponibleOimporteNoSujeto': self._format_number_ImporteSgn12_2(base_amount),
-                'CuotaRepercutida': self._format_number_ImporteSgn12_2(tax_amount),
-                'TipoRecargoEquivalencia': self._format_number_Tipo2_2(recargo_percentage),
-                'CuotaRecargoEquivalencia': self._format_number_ImporteSgn12_2(recargo_amount),
+                'TipoImpositivo': self._round_format_number_2(tax_percentage),
+                'BaseImponibleOimporteNoSujeto': self._round_format_number_2(base_amount),
+                'CuotaRepercutida': self._round_format_number_2(tax_amount),
+                'TipoRecargoEquivalencia': self._round_format_number_2(recargo_percentage),
+                'CuotaRecargoEquivalencia': self._round_format_number_2(recargo_amount),
             }
 
             detalles.append(detalle)
@@ -769,8 +765,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
             'Desglose': {
                 'DetalleDesglose': detalles
             },
-            'CuotaTotal': self._format_number_ImporteSgn12_2(tax_amount),
-            'ImporteTotal': self._format_number_ImporteSgn12_2(total_amount),
+            'CuotaTotal': self._round_format_number_2(tax_amount),
+            'ImporteTotal': self._round_format_number_2(total_amount),
         }
 
         return render_vals
@@ -1223,5 +1219,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
         for document in self:
             invoice = document.move_id
             if invoice.l10n_es_edi_verifactu_state == 'cancelled' and invoice.state != 'cancel':
-                with contextlib.suppress(UserError):
+                try:
                     invoice.button_cancel()
+                except UserError as error:
+                    _logger.error("Error while canceling journal entry %(name)s (id %(record_id)s) after Veri*Factu cancellation:\n%(error)s",
+                                  record_id=invoice.id, name=invoice.name, error=error)

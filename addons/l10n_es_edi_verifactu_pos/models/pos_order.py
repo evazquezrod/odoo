@@ -278,8 +278,12 @@ class PosOrder(models.Model):
             if len(refunded_order) > 1:
                 raise UserError(_("You can only refund products from the same order."))
             if refunded_order:
-                if refunded_order and not self.l10n_es_edi_verifactu_refund_reason:
+                if not self.l10n_es_edi_verifactu_refund_reason:
                     raise UserError(_("You have to specify a refund reason."))
+                simplified_partner = self.env.ref('l10n_es.partner_simplified', raise_if_not_found=False)
+                partner_specified = self.partner_id and self.partner_id != simplified_partner
+                if not partner_specified and self.l10n_es_edi_verifactu_refund_reason != 'R5':
+                    raise UserError(_("A partner has to be specified for the selected Veri*Factu Refund Reason."))
                 if self.to_invoice and refunded_order.state != 'invoiced':
                     raise UserError(_("You cannot invoice a refund whose linked order hasn't been invoiced."))
                 if not self.to_invoice and refunded_order.state == 'invoiced':
