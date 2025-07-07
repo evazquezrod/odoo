@@ -607,6 +607,9 @@ class AccountMove(models.Model):
         help="Is the move being sent asynchronously",
         compute='_compute_is_being_sent'
     )
+    send_status_display = fields.Char(
+        compute='_compute_send_status_display',
+    )
 
     invoice_user_id = fields.Many2one(
         string='Salesperson',
@@ -774,6 +777,11 @@ class AccountMove(models.Model):
     def _compute_is_being_sent(self):
         for move in self:
             move.is_being_sent = bool(move.sending_data)
+    
+    @api.depends('is_move_sent')
+    def _compute_send_status_display(self):
+        for move in self:
+            move.send_status_display = _('Sent') if move.is_move_sent else _('Not Sent')
 
     def _compute_payment_reference(self):
         for move in self.filtered(lambda m: (
