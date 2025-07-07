@@ -6,7 +6,6 @@ import { _t } from "@web/core/l10n/translation";
 import { isHtmlContentSupported } from "@html_editor/core/selection_plugin";
 import { Tooltip } from "@web/core/tooltip/tooltip";
 
-
 export class MediaWebsitePlugin extends Plugin {
     static id = "media_website";
     static dependencies = ["media", "selection"];
@@ -77,7 +76,7 @@ export class MediaWebsitePlugin extends Plugin {
             if (!targetEl) {
                 return;
             }
-            let isEditable = (targetEl.parentElement && targetEl.parentElement.isContentEditable);
+            let isEditable = targetEl.parentElement && targetEl.parentElement.isContentEditable;
 
             if (!isEditable && targetEl.classList.contains("o_editable_media")) {
                 isEditable = shouldEditableMediaBeEditable(targetEl);
@@ -105,9 +104,13 @@ export class MediaWebsitePlugin extends Plugin {
     openImageTooltip(mediaEl) {
         //delete last tooltip if it's still displayed
         this.removeCurrentTooltip();
-        
-        const removeTooltip = this.popover.add(mediaEl, Tooltip, { tooltip: _t('Double-click to edit')});
-        setTimeout(() => { removeTooltip() }, 1500);
+
+        const removeTooltip = this.popover.add(mediaEl, Tooltip, {
+            tooltip: _t("Double-click to edit"),
+        });
+        setTimeout(() => {
+            removeTooltip();
+        }, 3000);
         this.removeCurrentTooltip = removeTooltip.bind(this);
     }
 
