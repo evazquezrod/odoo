@@ -1,5 +1,6 @@
 import ast
 import base64
+import io
 import json
 import logging
 import lxml
@@ -20,6 +21,7 @@ from odoo.release import major_version
 from odoo.tools import convert_file, exception_to_unicode
 from odoo.tools import file_open, file_open_temporary_directory, ormcache
 from odoo.tools.misc import OrderedSet, topological_sort
+from odoo.tools.translate import TranslationImporter, get_base_langs
 
 _logger = logging.getLogger(__name__)
 
@@ -44,6 +46,36 @@ class IrModuleModule(models.Model):
     def _get_modules_to_load_domain(self):
         # imported modules are not expected to be loaded as regular modules
         return super()._get_modules_to_load_domain() + [('imported', '=', False)]
+
+    @api.model
+    def _load_module_terms(self, modules, langs, overwrite=False):
+        super()._load_module_terms(modules, langs, overwrite=overwrite)
+
+        translation_importer = TranslationImporter(self.env.cr, verbose=False)
+        IrAttachment = self.env['ir.attachment']
+
+        for module in modules:
+            if Manifest.for_addon(module, downloaded=True, display_warning=False):
+                continue
+            for lang in langs:
+                for lang_ in get_base_langs(lang):
+                    attachment = IrAttachment.sudo().search([
+                        ('name', '=', f"{module}_{lang_}.po"),
+                        ('url', '=', f"/{module}/i18n/{lang_}.po"),
+                        ('type', '=', 'binary'),
+                    ], limit=1)
+                    if attachment.raw:
+                        try:
+                            with io.BytesIO(attachment.raw) as fileobj:
+                                fileobj.name = attachment.name
+                                translation_importer.load(fileobj, 'po', lang, module=module)
+                        except Exception:   # noqa: BLE001
+                            _logger.warning('module %s: failed to load translation attachment %s for language %s', module, attachment.name, lang)
+                    # translations from datafile is not supported
+                if lang != 'en_US' and lang not in translation_importer.imported_langs:
+                    _logger.info('module %s: no translation for language %s', module, lang)
+
+        translation_importer.save(overwrite=overwrite)
 
     @api.depends('name')
     def _get_latest_version(self):
@@ -252,7 +284,6 @@ class IrModuleModule(models.Model):
             [module],
             [lang for lang, _name in self.env['res.lang'].get_installed()],
             overwrite=True,
-            imported_module=True,
         )
 
         if ('knowledge.article' in self.env

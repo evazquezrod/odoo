@@ -1363,7 +1363,7 @@ class TranslationModuleReader(TranslationReader):
         modules = self._installed_modules if 'all' in self._modules else list(self._modules)
         xml_defined = set()
         for module in modules:
-            for filepath in get_datafile_translation_path(module, self.env):
+            for filepath in get_datafile_translation_path(module):
                 fileformat = os.path.splitext(filepath)[-1][1:].lower()
                 with file_open(filepath, mode='rb') as source:
                     for entry in translation_file_reader(source, fileformat=fileformat, module=module):
@@ -1755,7 +1755,7 @@ def get_base_langs(lang: str) -> list[str]:
     return langs
 
 
-def get_po_paths(module_name: str, lang: str, env: Environment | None = None) -> Iterator[str]:
+def get_po_paths(module_name: str, lang: str) -> Iterator[str]:
     po_paths = (
         join(module_name, dir_, filename + '.po')
         for filename in get_base_langs(lang)
@@ -1763,17 +1763,17 @@ def get_po_paths(module_name: str, lang: str, env: Environment | None = None) ->
     )
     for path in po_paths:
         with suppress(FileNotFoundError):
-            yield file_path(path, env=env)
+            yield file_path(path)
 
 
-def get_datafile_translation_path(module_name: str, env: Environment | None = None) -> Iterator[str]:
+def get_datafile_translation_path(module_name: str) -> Iterator[str]:
     from odoo.modules import Manifest  # noqa: PLC0415
     # if we are importing a module, we have an env, hide warnings
-    manifest = Manifest.for_addon(module_name, downloaded=True, display_warning=env is None) or {}
+    manifest = Manifest.for_addon(module_name, downloaded=True) or {}
     for data_type in ('data', 'demo'):
         for path in manifest.get(data_type, ()):
             if path.endswith(('.xml', '.csv')):
-                yield file_path(join(module_name, path), env=env)
+                yield file_path(join(module_name, path))
 
 
 class CodeTranslations:

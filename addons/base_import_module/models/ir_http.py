@@ -26,10 +26,10 @@ class IrHttp(models.AbstractModel):
         translations = {}
         for lang_ in get_base_langs(lang):
             attachment = IrAttachment.sudo().search([
-                    ('name', '=', f"{module}_{lang_}.po"),
-                    ('url', '=', f"/{module}/i18n/{lang_}.po"),
-                    ('type', '=', 'binary'),
-                ], limit=1)
+                ('name', '=', f"{module}_{lang_}.po"),
+                ('url', '=', f"/{module}/i18n/{lang_}.po"),
+                ('type', '=', 'binary'),
+            ], limit=1)
             if attachment.raw:
                 try:
                     with io.BytesIO(attachment.raw) as fileobj:

@@ -75,11 +75,23 @@ class TestImportModule(odoo.tests.TransactionCase):
                 msgid "baz"
                 msgstr "qux"
             """),
+            ('bar/i18n/nl.po', b"""
+                #. module: bar
+                #: model:res.country,name:bar.foo
+                msgid "foo"
+                msgstr "dumb_nl"
+
+                #. module: bar
+                #. odoo-javascript
+                #: code:addons/foo/static/js/foo.js:0
+                msgid "baz"
+                msgstr "qux_nl"
+            """)
         ]
         self.env['res.lang']._activate_lang('fr_FR')
-        with self.assertLogs('odoo.addons.base.models.ir_module') as log_catcher:
+        with self.assertLogs('odoo.addons.base_import_module.models.ir_module') as log_catcher:
             self.import_zipfile(files)
-            self.assertIn('INFO:odoo.addons.base.models.ir_module:module foo: no translation for language fr_FR', log_catcher.output)
+            self.assertIn('INFO:odoo.addons.base_import_module.models.ir_module:module foo: no translation for language fr_FR', log_catcher.output)
         self.assertEqual(self.env.ref('foo.foo')._name, 'res.partner')
         self.assertEqual(self.env.ref('foo.foo').name, 'foo')
         self.assertEqual(self.env.ref('foo.bar')._name, 'res.partner')
@@ -104,6 +116,16 @@ class TestImportModule(odoo.tests.TransactionCase):
             self.env['ir.http'].get_translations_for_webclient(['bar'], 'fr_FR')[0]['bar'],
             {'messages': ({'id': 'baz', 'string': 'qux'},)},
         )
+
+        # test importing modules first then activating a language
+        self.env['res.lang']._activate_lang('nl_NL')
+        self.assertEqual(
+            self.env['ir.http'].get_translations_for_webclient(['bar'], 'nl_NL')[0]['bar'],
+            {'messages': ({'id': 'baz', 'string': 'qux_nl'},)},
+        )
+        self.assertEqual(self.env.ref('bar.foo').with_context(lang='nl_NL').name, 'foo')
+        self.env['ir.module.module'].search([('name', '=', 'bar')])._update_translations('nl_NL')
+        self.assertEqual(self.env.ref('bar.foo').with_context(lang='nl_NL').name, 'dumb_nl')
 
     def test_import_zip_invalid_manifest(self):
         """Assert the expected behavior when import a ZIP module with an invalid manifest"""
