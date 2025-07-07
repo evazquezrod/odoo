@@ -153,6 +153,8 @@ class Test_Read_GroupTask(models.Model):
         string="Collaborators",
     )
     date = fields.Date()
+    integer = fields.Integer()
+    key = fields.Char()
 
 
 class ResPartner(models.Model):

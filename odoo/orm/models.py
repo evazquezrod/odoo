@@ -38,7 +38,7 @@ import warnings
 from collections import defaultdict, deque
 from collections.abc import Callable, Mapping
 from inspect import getmembers
-from operator import attrgetter, itemgetter
+from operator import attrgetter, getitem, itemgetter
 
 import babel
 import babel.dates
@@ -1596,12 +1596,13 @@ class BaseModel(metaclass=MetaModel):
         having: DomainType = (),
         order: str | None = None,
     ) -> list[list[tuple]]:
-        """ Performs multiple aggregations with different groupings in a single query.
+        """ Performs multiple aggregations with different groupings in a single query if possible.
 
         This method uses SQL `GROUPING SETS` as a more advanced and efficient
         alternative to calling :meth:`~._read_group` multiple times with different
         `groupby` parameters. It allows you to get different levels of aggregated
         data in one database round-trip.
+        Note that for many2many multiple SQL need to be do because of the duplicated many2many rows.
 
         :param domain: :ref:`A search domain <reference/orm/domains>` to filter records before grouping
         :param grouping_sets: A list of `groupby` specifications. Each inner list
@@ -1648,6 +1649,71 @@ class BaseModel(metaclass=MetaModel):
         result = [[] for __ in grouping_sets]
         if query.is_empty():
             return result
+
+        many2many_groupby_terms = []
+        for i, groupby in enumerate(grouping_sets):
+            for spec in groupby:
+                fname, property_name, __ = parse_read_group_spec(spec)
+                field = self._fields[fname]
+                if field.type == 'many2many':
+                    many2many_groupby_terms.append(spec)
+                elif field.type == 'properties':
+                    definition = self.get_property_definition(f"{fname}.{property_name}")
+                    property_type = definition.get('type')
+                    if property_type in ('tags', 'many2many'):
+                        many2many_groupby_terms.append(spec)
+
+        if many2many_groupby_terms:
+            if all(
+                # These aggregator manage correctly duplicated rows from many2many
+                not aggregate.endswith((':max', ':min', ':bool_and', ':bool_or', ':array_agg_distinct', ':recordset', ':count_distinct'))
+                for aggregate in aggregates
+            ):
+                # ('sum', 'avg', 'array_agg', 'count' + custom) aggregates have a wrong result if duplicated rows exists
+                # Then we need to separated many2many groupby into sub _read_grouping_sets calls
+
+                slices = itertools.starmap(
+                    slice,
+                    itertools.combinations(range(len(many2many_groupby_terms) + 1), 2),
+                )
+                # ['A', 'B', 'C'] => [['A', 'B', 'C'], ['A', 'B'], ['B', 'C'], ['A'], ['B'], ['C']]
+                m2m_combinaisons = sorted(map(getitem, itertools.repeat(many2many_groupby_terms), slices), key=len, reverse=True)
+                # [[index_result, ...], [[groupby, ...]]]
+                m2m_index_result: list[int] = []
+                m2m_sub_grouping_sets: list[list[str]] = []
+                for m2m_comb in m2m_combinaisons:
+                    for i, groupby in enumerate(grouping_sets):
+                        if all(m2m in groupby for m2m in m2m_comb):
+                            m2m_index_result.append(i)
+                            m2m_sub_grouping_sets.append(i)
+                
+                
+                # grouping_sets = [
+                #     [],
+                #     ['a'],
+                #     ['b'],
+                #     ['d_many2many'],
+                #     ['e_many2many'],
+                #     ['a', 'd_many2many'],
+                #     ['b', 'd_many2many'],
+                #     ['e_many2many', 'd_many2many'],
+                #     ['a', 'b', 'e_many2many', 'd_many2many'],
+                # ]
+
+                # => [], ['a'], ['b'], ['c'] <main>
+
+                # => ['d_many2many'], ['a', 'd_many2many']
+
+                # => ['e_many2many']
+
+                # => ['e_many2many', 'd_many2many'], ['a', 'b', 'e_many2many', 'd_many2many']
+            else:
+                # change __count in id:count_distinct to deduplicate __count in case of many2many without
+                # making a extra SQL request (this is the very common case).
+                aggregates = tuple(
+                    aggregate if aggregate != '__count' else 'id:count_distinct'
+                    for aggregate in aggregates
+                )
 
         # grouping_sets: [(a, b), (a), ()]
         # all_groupby_specs: (a, b)
@@ -1705,6 +1771,9 @@ class BaseModel(metaclass=MetaModel):
         # {GROUPING(...): (grouping_sets_index, extractor_method)}
         mask_grouping_mapping = {}
         for result_index, groupby_specs in enumerate(grouping_sets):
+            if result_index in many2many_result:
+                continue
+
             # PostgreSQL Doc: https://www.postgresql.org/docs/17/functions-aggregate.html#Grouping-Operations
             # GROUPING ( group_by_expression(s) ) => integer
             # Returns a bit mask indicating which GROUP BY expressions are not included in the
