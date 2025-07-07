@@ -526,6 +526,7 @@ export function makeActionManager(env, router = _router) {
                 } else {
                     actionRequest = state.action;
                 }
+                actionRequest.params = state;
             }
             if ((state.resId && state.resId !== "new") || state.globalState) {
                 options.props = {};
