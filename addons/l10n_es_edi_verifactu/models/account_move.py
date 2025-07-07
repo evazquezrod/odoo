@@ -277,7 +277,6 @@ class AccountMove(models.Model):
         # Just checking whether the last document was rejected is enough; we do not allow to submit the same record
         # again after a cancellation (else we get the error '[3000] Registro de facturación duplicado.').
         rejected_before = documents._get_last(document_type).state == 'rejected'
-        is_simplified = self.l10n_es_is_simplified
 
         verifactu_tax_type = self._l10n_es_edi_verifactu_get_verifactu_tax_type()
         selected_clave_regimen = self.l10n_es_edi_verifactu_clave_regimen
@@ -302,7 +301,7 @@ class AccountMove(models.Model):
             'delivery_date': self.delivery_date,
             'description': self.invoice_origin[:500] if self.invoice_origin else None,
             'invoice_date': self.invoice_date,
-            'is_simplified': is_simplified,
+            'is_simplified': self.l10n_es_is_simplified,
             'move_type': move_type,
             'verifactu_move_type': verifactu_move_type,
             'name': self.name,
@@ -329,15 +328,15 @@ class AccountMove(models.Model):
 
         # Add redirect warnings to journal entries with missing Veri*Factu documents for easier user flow.
         if vals['verifactu_move_type'] == 'correction_substitution' and not vals['substituted_document']:
-            msg = "There is no Veri*Factu document for the substituted record."
+            msg = _("There is no Veri*Factu document for the substituted record.")
             action = self._l10n_es_edi_verifactu_action_go_to_journal_entry(substituted_move)
             raise RedirectWarning(msg, action, _("Go to the journal entry"))
         if vals['verifactu_move_type'] == 'correction_substitution' and not vals['substituted_document_reversal_document']:
-            msg = "There is no Veri*Factu document for the reversal of the substituted record."
+            msg = _("There is no Veri*Factu document for the reversal of the substituted record.")
             action = self._l10n_es_edi_verifactu_action_go_to_journal_entry(substituted_move.reversal_move_id)
             raise RedirectWarning(msg, action, _("Go to the journal entry"))
         if vals['verifactu_move_type'] in ('correction_incremental', 'reversal_for_substitution') and not vals['refunded_document']:
-            msg = "There is no Veri*Factu document for the refunded record."
+            msg = _("There is no Veri*Factu document for the refunded record.")
             action = self._l10n_es_edi_verifactu_action_go_to_journal_entry(reversed_move)
             raise RedirectWarning(msg, action, _("Go to the journal entry"))
 

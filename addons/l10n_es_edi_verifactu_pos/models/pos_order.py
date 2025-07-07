@@ -7,7 +7,7 @@ class PosOrder(models.Model):
 
     l10n_es_edi_verifactu_required = fields.Boolean(
         string="Veri*Factu Required",
-        compute='_compute_l10n_es_edi_verifactu_required',
+        related='company_id.l10n_es_edi_verifactu_required',
     )
     l10n_es_edi_verifactu_document_ids = fields.One2many(
         comodel_name='l10n_es_edi_verifactu.document',
@@ -56,12 +56,7 @@ class PosOrder(models.Model):
         copy=False,
     )
 
-    @api.depends('country_code')
-    def _compute_l10n_es_edi_verifactu_required(self):
-        for order in self:
-            order.l10n_es_edi_verifactu_required = order.country_code == 'ES' and order.company_id.l10n_es_edi_verifactu_required
-
-    @api.depends('l10n_es_edi_verifactu_state', 'l10n_es_edi_verifactu_document_ids',
+    @api.depends('state', 'l10n_es_edi_verifactu_state', 'l10n_es_edi_verifactu_document_ids',
                  'l10n_es_edi_verifactu_document_ids.state', 'l10n_es_edi_verifactu_document_ids.errors')
     def _compute_l10n_es_edi_verifactu_warning(self):
         for order in self:
@@ -69,15 +64,23 @@ class PosOrder(models.Model):
 
             warning = False
             warning_level = False
-            if last_document.state == 'rejected':
+            if last_document.state == 'registered_with_errors':
                 warning = last_document.errors
-                warning_level == 'danger'
-            elif last_document.state == 'registered_with_errors':
+                warning_level = 'warning'
+            elif last_document.errors:
                 warning = last_document.errors
-                warning_level == 'warning'
-            elif last_document._filter_waiting():
-                warning = _("A Veri*Factu document is waiting to be sent as soon as possible.")
-                warning_level = 'info'
+                warning_level = 'danger'
+            elif order.state == 'draft':
+                if order.l10n_es_edi_verifactu_state:
+                    warning = _("You are modifying an order for which a Veri*Factu document has been sent to the AEAT already.")
+                    warning_level = 'warning'
+                elif last_document._filter_waiting():
+                    warning = _("You are modifying an order for which a Veri*Factu document is waiting to be sent.")
+                    warning_level = 'warning'
+
+            if last_document._filter_waiting():
+                warning = (warning + '\n' if warning else '') + _("A Veri*Factu document is waiting to be sent as soon as possible.")
+                warning_level = warning_level or 'info'
 
             order.l10n_es_edi_verifactu_warning = warning
             order.l10n_es_edi_verifactu_warning_level = warning_level
@@ -188,7 +191,7 @@ class PosOrder(models.Model):
             'delivery_date': False,
             'description': None,
             'invoice_date': self.date_order.date(),
-            'is_simplified': True,
+            'is_simplified': True,  # TODO:
             # NOTE: invoice with negative amounts possible (when no `refunded_order` specified)
             'move_type': 'out_refund' if refunded_order else 'out_invoice',
             'verifactu_move_type': 'correction_incremental' if refunded_order else 'invoice',

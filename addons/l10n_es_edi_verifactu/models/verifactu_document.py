@@ -241,6 +241,10 @@ class L10nEsEdiVerifactuDocument(models.Model):
             errors.append(_("The name of the record is not between 1 and 60 characters long: %(name)s.",
                             name=vals['name']))
 
+        if not vals['name'] or len(vals['name']) > 60:
+            errors.append(_("The name of the record is not between 1 and 60 characters long: %(name)s.",
+                            name=vals['name']))
+
         if vals['documents'] and vals['documents']._filter_waiting():
             errors.append(_("We are waiting to send a Veri*Factu record to the AEAT already."))
 
@@ -564,6 +568,9 @@ class L10nEsEdiVerifactuDocument(models.Model):
             tipo_factura = vals['refund_reason']
             rectified = rectified_document._get_record_identifier()
             fecha_operacion = rectified['FechaOperacion'] or rectified['FechaExpedicionFactura']
+
+        # Note: Error [1189]
+        # Si TipoFactura es F1 o F3 o R1 o R2 o R3 o R4 el bloque Destinatarios tiene que estar cumplimentado.
 
         render_vals.update({
             'TipoFactura': tipo_factura,

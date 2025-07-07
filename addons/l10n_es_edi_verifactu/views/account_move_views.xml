@@ -100,7 +100,6 @@
                                    readonly="state != 'draft'"/>
                             <field name="l10n_es_edi_verifactu_substituted_entry_id" invisible="not l10n_es_edi_verifactu_substituted_entry_id"/>
                             <field name="reversed_entry_id" invisible="not reversed_entry_id"/>
-                            <field name="l10n_es_edi_verifactu_required" groups="base.group_no_one"/>
                             <field name="l10n_es_edi_verifactu_required" invisible="1"/>
                             <field name="l10n_es_edi_verifactu_available_clave_regimens" invisible="1"/>
                             <field name="l10n_es_edi_verifactu_clave_regimen"

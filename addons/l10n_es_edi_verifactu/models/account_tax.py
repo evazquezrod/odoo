@@ -71,21 +71,21 @@ class AccountTax(models.Model):
         oss_tag = self.env.ref('l10n_eu_oss.tag_oss', raise_if_not_found=False)
 
         regimen_key = None
-        if VAT and special_regime == 'simplified':
-            # simplified
-            regimen_key = '20_iva'
-        elif VAT and special_regime == 'reagyp':
-            # REAGYP
-            regimen_key = '19_iva'
-        elif VAT and recargo_taxes:
-            # recargo
-            regimen_key = '18_iva'
-        elif VAT and oss_tag and oss_tag.id in taxes.repartition_line_ids.tag_ids.ids:
+        if VAT and oss_tag and oss_tag.id in taxes.repartition_line_ids.tag_ids.ids:
             # oss
             regimen_key = '17_iva'
         elif taxes.filtered(lambda tax: tax.l10n_es_type == 'exento' and tax.l10n_es_exempt_reason == 'E2'):
             # export
             regimen_key = '02'
+        elif VAT and recargo_taxes:
+            # recargo
+            regimen_key = '18_iva'
+        elif VAT and special_regime == 'simplified':
+            # simplified
+            regimen_key = '20_iva'
+        elif VAT and special_regime == 'reagyp':
+            # REAGYP
+            regimen_key = '19_iva'
         else:
             regimen_key = '01'
 
