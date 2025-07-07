@@ -32,6 +32,14 @@
         'bus.websocket_worker_assets': [
             'web/static/src/module_loader.js',
             'bus/static/src/workers/*',
+            ('remove', 'bus/static/src/workers/election_worker.js'),
+            ('remove', 'bus/static/src/workers/election_worker_script.js'),
+        ],
+        'bus.election_worker_assets': [
+            'web/static/src/module_loader.js',
+            'bus/static/src/workers/election_worker.js',
+            'bus/static/src/workers/election_worker_script.js',
+            'bus/static/src/workers/websocket_worker_utils.js',
         ],
     },
     'author': 'Odoo S.A.',
