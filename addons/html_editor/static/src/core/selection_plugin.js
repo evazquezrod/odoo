@@ -808,8 +808,13 @@ export class SelectionPlugin extends Plugin {
      * @returns {boolean} Whether the selection was fixed
      */
     fixSelectionOnEditableRoot(selectionData) {
-        const { editableSelection, documentSelectionIsInEditable } = selectionData;
-        if (this.config.allowInlineAtRoot || !documentSelectionIsInEditable) {
+        const { editableSelection, documentSelectionIsInEditable, documentSelectionIsProtecting } =
+            selectionData;
+        if (
+            this.config.allowInlineAtRoot ||
+            !documentSelectionIsInEditable ||
+            documentSelectionIsProtecting
+        ) {
             return false;
         }
         const isSelectionOnEditableRoot = (s) => s.isCollapsed && s.anchorNode === this.editable;
