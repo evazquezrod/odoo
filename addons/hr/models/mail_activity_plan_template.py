@@ -57,7 +57,7 @@ class MailActivityPlanTemplate(models.Model):
         result = {"error": "", "warning": "", "responsible": False}
         if self.responsible_type == 'coach':
             if not employee.coach_id:
-                result['error'] = _('Coach of employee %s is not set.', employee.name)
+                result['error'] = _('%s has no coach.', employee.name)
             result['responsible'] = employee.coach_id.user_id
             if employee.coach_id and not result['responsible']:
                 # If a plan cannot be launched due to the coach not being linked to an user,
@@ -68,13 +68,13 @@ class MailActivityPlanTemplate(models.Model):
                     employee=employee,
                     responsible=employee.coach_id.parent_id,
                     error_message=_(
-                        "The user of %s's coach is not set.", employee.name
+                        "%s's coach (%s) has no user.", employee.name, employee.coach_id.name
                     ),
                 )
 
         elif self.responsible_type == 'manager':
             if not employee.parent_id:
-                result['error'] = _('Manager of employee %s is not set.', employee.name)
+                result['warning'] = _('%s has no manager.', employee.name)
             result['responsible'] = employee.parent_id.user_id
             if employee.parent_id and not result['responsible']:
                 # If a plan cannot be launched due to the manager not being linked to an user,
@@ -85,7 +85,7 @@ class MailActivityPlanTemplate(models.Model):
                     employee=employee,
                     responsible=employee.parent_id.parent_id,
                     error_message=_(
-                        "The manager of %s should be linked to a user.", employee.name
+                        "%s's manager (%s) has no user.", employee.name, employee.parent_id.name
                     ),
                 )
 
@@ -100,9 +100,7 @@ class MailActivityPlanTemplate(models.Model):
                     employee=employee,
                     responsible=employee.parent_id,
                     error_message=_(
-                        "The employee %s should be linked to a user.", employee.name
+                        "%s has no user.", employee.name
                     ),
                 )
-
-        if result['error'] or result['responsible']:
-            return result
+        return result
