@@ -9,11 +9,10 @@ class ResConfigSettings(models.TransientModel):
     onboarding_payment_provider = fields.Selection(
         selection=[('razorpay', "Razorpay"), ('stripe', "Stripe")],
         compute='_compute_onboarding_payment_provider',
-        store=True,
     )
-    providers_state = fields.Selection(
+    active_provider = fields.Selection(
         selection=[('onboarding_provider', "Onboarding Provider"), ('other', "Other Provider")],
-        compute='_compute_providers_state',
+        compute='_compute_active_provider',
     )
 
     # === COMPUTE METHODS === #
@@ -25,16 +24,18 @@ class ResConfigSettings(models.TransientModel):
                 config.onboarding_payment_provider = 'razorpay'
             elif config.company_id.country_id.is_stripe_supported_country:
                 config.onboarding_payment_provider = 'stripe'
+            else:
+                config.onboarding_payment_provider = False
 
     @api.depends('company_id')
-    def _compute_providers_state(self):
+    def _compute_active_provider(self):
         for config in self:
             providers = config._get_activated_providers()
             onboarding_provider = next(
                 (p for p in providers if p.code == config.onboarding_payment_provider),
-                None
+                None,
             )
-            config.providers_state = (
+            config.active_provider = (
                 'onboarding_provider' if onboarding_provider else 'other' if providers else False
             )
 
@@ -67,8 +68,7 @@ class ResConfigSettings(models.TransientModel):
         )
 
     def _get_activated_providers(self):
-        self.ensure_one()
-        return self.env['payment.provider'].search(self._get_activate_providers_domain())
+        return self.env['payment.provider'].search(self._get_activated_providers_domain())
 
-    def _get_activate_providers_domain(self):
+    def _get_activated_providers_domain(self):
         return [('state', '!=', 'disabled'), ('code', 'not in', ['custom', 'demo'])]
