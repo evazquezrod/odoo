@@ -9,6 +9,11 @@ from odoo.exceptions import AccessError
 @tagged('website_visitor')
 class WebsiteVisitorTestsLivechat(WebsiteVisitorTestsCommon):
 
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.set_registry_readonly_mode(False)
+
     def test_link_to_visitor_livechat(self):
         """ Same as parent's 'test_link_to_visitor' except we also test that conversations
         are merged into main visitor. """
@@ -51,3 +56,62 @@ class WebsiteVisitorTestsLivechat(WebsiteVisitorTestsCommon):
         visitor.with_user(operator).page_count
         with self.assertRaises(AccessError):
             visitor.with_user(operator).page_ids
+
+    def test_visitor_id_continuity_across_sessions(self):
+        operator = self.user_admin
+        demo_user = new_test_user(self.env, "awesome_user")
+        livechat_channel = self.env["im_livechat.channel"].create({
+            "name": "Awesome Channel",
+            "user_ids": [(6, 0, [operator.id])],
+        })
+        self.env["mail.presence"]._update_presence(operator)
+
+        def authenticate(login, pwd):
+            res = self.url_open("/web/login")
+            csrf_anchor = '<input type="hidden" name="csrf_token" value="'
+            self.url_open(
+                "/web/login",
+                timeout=200,
+                data={
+                    "login": login,
+                    "password": pwd,
+                    "csrf_token": res.text.partition(csrf_anchor)[2].partition('"')[0],
+                },
+            )
+
+        self.url_open(self.tracked_page.url)
+        res_1 = self.make_jsonrpc_request(
+            "/im_livechat/get_session",
+            {
+                "anonymous_name": "Anonymous Visitor 1",
+                "channel_id": livechat_channel.id,
+            },
+        )
+        channel_1 = self.env["discuss.channel"].browse(res_1["channel_id"])
+        visitor_1 = self._get_last_visitor()
+        self.assertEqual(
+            channel_1.livechat_visitor_id,
+            visitor_1,
+        )
+        channel_1._close_livechat_session()
+
+        authenticate(demo_user.login, "awesome_user")
+        self.url_open(self.tracked_page.url)
+        res_2 = self.make_jsonrpc_request(
+            "/im_livechat/get_session",
+            {
+                "anonymous_name": "Anonymous Visitor 1",
+                "channel_id": livechat_channel.id,
+            },
+        )
+        channel_2 = self.env["discuss.channel"].browse(res_2["channel_id"])
+        visitor_2 = self._get_last_visitor()
+        self.assertEqual(channel_2.livechat_visitor_id, visitor_2)
+        channel_2._close_livechat_session()
+
+        self.url_open("/web/session/logout")
+        self.url_open(self.tracked_page.url)
+        visitor_3 = self._get_last_visitor()
+        self.assertEqual(channel_1.livechat_visitor_id, visitor_3)
+        self.assertNotEqual(visitor_1, visitor_3)
+        self.assertNotEqual(visitor_3, visitor_2)
