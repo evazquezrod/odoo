@@ -57,9 +57,16 @@
 
     <t t-name="stock_account.StockValuationReport.InventoryValuationLines">
         <t t-foreach="data.inventory_valuation.lines" t-as="line" t-key="line.id">
-            <StockValuationReportLine class="'line_level_2'" line="line" value="line.total_value" label="line.display_name" onClickMethod.bind="openStockReport"/>
+            <StockValuationReportLine class="'line_level_2'"
+                line="line"
+                value="line.total_value"
+                label="line.display_name"
+                onClickMethod.bind="openStockReport"/>
         </t>
-        <StockValuationReportLine class="'total line_level_1'" label="'Total Inventory Valuation'" value="data.inventory_valuation.total" onClickMethod.bind="openStockReport"/>
+        <StockValuationReportLine class="'total line_level_1'"
+            label="'Total Inventory Valuation'"
+            value="data.inventory_valuation.total"
+            onClickMethod.bind="openStockReport"/>
     </t>
 
     <t t-name="stock_account.StockValuationReport.Footer">

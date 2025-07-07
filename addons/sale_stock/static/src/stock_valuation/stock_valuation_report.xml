@@ -3,31 +3,31 @@
     <t t-inherit="stock_account.StockValuationReport" t-inherit-mode="extension">
         <xpath expr="//t[@t-call='stock_account.StockValuationReport.InventoryValuation']" position="after">
             <t t-call="stock_account.StockValuationReport.EmptyLine"/>
-            <t t-call="purchase_stock.StockValuationReport.NotInvoicedValuation"/>
+            <t t-call="sale_stock.StockValuationReport.NotInvoicedValuation"/>
         </xpath>
     </t>
 
-    <t t-name="purchase_stock.StockValuationReport.NotInvoicedValuation">
-        <tr t-att-class="{'unfolded': state.displayNotInvoicedReceivedGoods}">
-            <td t-on-click="toggleNotInvoicedReceivedGoodsFold">
+    <t t-name="sale_stock.StockValuationReport.NotInvoicedValuation">
+        <tr t-att-class="{'unfolded': state.displayNotInvoicedDeliveredGoods}">
+            <td t-on-click="toggleNotInvoicedDeliveredGoodsFold">
                 <div class="wrapper">
                     <button class="btn btn_foldable">
-                        <i t-attf-class="fa fa-caret-#{state.displayNotInvoicedReceivedGoods ? 'down' : 'right'}"/>
+                        <i t-attf-class="fa fa-caret-#{state.displayNotInvoicedDeliveredGoods ? 'down' : 'right'}"/>
                     </button>
-                    <span>Goods Delivered Not Invoiced</span>
+                    <span>Goods Received Not Invoiced</span>
                 </div>
             </td>
             <td>
                 <a t-if="!state.displayNotInvoicedDeliveredGoods" href="#"
                    t-on-click="() => this.openSaleOrder()"
-                   t-out="notInvoicedReceivedValuation"/>
+                   t-out="notInvoicedDeliveredValuation"/>
             </td>
         </tr>
-        <t t-if="state.displayNotInvoicedReceivedGoods" t-call="purchase_stock.StockValuationReport.NotInvoicedValuationLines"/>
+        <t t-if="state.displayNotInvoicedDeliveredGoods" t-call="sale_stock.StockValuationReport.NotInvoicedValuationLines"/>
     </t>
 
-    <t t-name="purchase_stock.StockValuationReport.NotInvoicedValuationLines">
-        <t t-foreach="data.not_invoiced_received_goods.lines" t-as="line" t-key="line.id">
+    <t t-name="sale_stock.StockValuationReport.NotInvoicedValuationLines">
+        <t t-foreach="data.not_invoiced_delivered_goods.lines" t-as="line" t-key="line.id">
             <StockValuationReportLine class="'line_level_2'"
                 line="line"
                 value="line.total_value"
@@ -36,7 +36,7 @@
         </t>
         <StockValuationReportLine class="'total line_level_1'"
             label="'Total'"
-            value="data.not_invoiced_received_goods.total"
+            value="data.not_invoiced_delivered_goods.total"
             onClickMethod.bind="openSaleOrder"/>
     </t>
 </templates>
