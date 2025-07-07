@@ -43,8 +43,8 @@
         <BuilderRow label.translate="Breadcrumb">
             <BuilderCheckbox actionParam="{views: ['website_blog.opt_blog_post_breadcrumb']}"/>
         </BuilderRow>
-        <BuilderRow label.translate="Extra">
-            <BuilderButton label.translate="Comments" actionParam="{views: ['website_blog.opt_blog_post_comment']}"/>
+        <BuilderRow label.translate="Comments" tooltip.translate="Enable comments">
+            <BuilderButton actionParam="{views: ['website_blog.opt_blog_post_comment']}"/>
         </BuilderRow>
 
         <BuilderRow label.translate="Bottom">
