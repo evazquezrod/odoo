@@ -103,7 +103,11 @@ class TestL10nEsEdiVerifactuPosOrder(TestL10nEsEdiVerifactuPosCommon):
                 'NumSerieFactura': 'INV/2019/00004',
                 'FechaExpedicionFactura': '2024-11-10',
                }
+<<<<<<< HEAD
             record_identifier = order.l10n_es_edi_verifactu_document_ids.record_identifier
+=======
+            record_identifier = order.l10n_es_edi_verifactu_document_ids._get_record_identifier()
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
             self.assertDictEqual(record_identifier, expected_record_identifier | record_identifier)
 
     def test_error_above_simplified_limit(self):

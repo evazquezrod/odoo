@@ -7,7 +7,11 @@ class PosOrder(models.Model):
 
     l10n_es_edi_verifactu_required = fields.Boolean(
         string="Veri*Factu Required",
+<<<<<<< HEAD
         compute='_compute_l10n_es_edi_verifactu_required',
+=======
+        related='company_id.l10n_es_edi_verifactu_required',
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
     )
     l10n_es_edi_verifactu_document_ids = fields.One2many(
         comodel_name='l10n_es_edi_verifactu.document',
@@ -28,6 +32,7 @@ class PosOrder(models.Model):
                 - Accepted: Registered by the AEAT without errors
                 - Cancelled: Registered by the AEAT as cancelled""",
     )
+<<<<<<< HEAD
     l10n_es_edi_verifactu_error_level = fields.Selection(
         string="Veri*Factu Error Level",
         selection=[
@@ -39,6 +44,15 @@ class PosOrder(models.Model):
     l10n_es_edi_verifactu_errors = fields.Html(
         string="Veri*Factu Errors",
         compute="_compute_l10n_es_edi_verifactu_errors_and_error_level",
+=======
+    l10n_es_edi_verifactu_warning_level = fields.Char(
+        string="Veri*Factu Warning Level",
+        compute="_compute_l10n_es_edi_verifactu_warning",
+    )
+    l10n_es_edi_verifactu_warning = fields.Html(
+        string="Veri*Factu Warning",
+        compute="_compute_l10n_es_edi_verifactu_warning",
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
     )
     l10n_es_edi_verifactu_qr_code = fields.Char(
         string="Veri*Factu QR Code",
@@ -60,6 +74,7 @@ class PosOrder(models.Model):
         copy=False,
     )
 
+<<<<<<< HEAD
     @api.depends('country_code')
     def _compute_l10n_es_edi_verifactu_required(self):
         for order in self:
@@ -72,6 +87,37 @@ class PosOrder(models.Model):
             error_level = False if last_document.state == 'accepted' else last_document.state
             order.l10n_es_edi_verifactu_error_level = error_level
             order.l10n_es_edi_verifactu_errors = last_document.errors
+=======
+    @api.depends('state', 'l10n_es_edi_verifactu_state', 'l10n_es_edi_verifactu_document_ids',
+                 'l10n_es_edi_verifactu_document_ids.state', 'l10n_es_edi_verifactu_document_ids.errors')
+    def _compute_l10n_es_edi_verifactu_warning(self):
+        for order in self:
+            last_document = order.l10n_es_edi_verifactu_document_ids.sorted()[:1]
+
+            warning = False
+            warning_level = False
+            if last_document.state == 'registered_with_errors':
+                warning = last_document.errors
+                warning_level = 'warning'
+            elif last_document.errors:
+                warning = last_document.errors
+                warning_level = 'danger'
+            elif order.state == 'draft':
+                if order.l10n_es_edi_verifactu_state:
+                    warning = _("You are modifying an order for which a Veri*Factu document has been sent to the AEAT already.")
+                    warning_level = 'warning'
+                elif last_document._filter_waiting():
+                    warning = _("You are modifying an order for which a Veri*Factu document is waiting to be sent.")
+                    warning_level = 'warning'
+
+            if last_document._filter_waiting():
+                warning = _("%(existing_warning)sA Veri*Factu document is waiting to be sent as soon as possible.",
+                            existing_warning=(warning + '\n' if warning else ''))
+                warning_level = warning_level or 'info'
+
+            order.l10n_es_edi_verifactu_warning = warning
+            order.l10n_es_edi_verifactu_warning_level = warning_level
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
 
     @api.depends('l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.state')
     def _compute_l10n_es_edi_verifactu_state(self):
@@ -79,7 +125,11 @@ class PosOrder(models.Model):
             state = order.l10n_es_edi_verifactu_document_ids._get_state()
             order.l10n_es_edi_verifactu_state = state
 
+<<<<<<< HEAD
     @api.depends('l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.record_identifier')
+=======
+    @api.depends('l10n_es_edi_verifactu_document_ids', 'l10n_es_edi_verifactu_document_ids.json_attachment_base64')
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
     def _compute_l10n_es_edi_verifactu_qr_code(self):
         for order in self:
             invoice = order.account_move
@@ -106,7 +156,11 @@ class PosOrder(models.Model):
             return False
 
         taxes = self.lines.tax_ids.flatten_taxes_hierarchy()
+<<<<<<< HEAD
         return taxes._l10n_es_edi_verifactu_get_verifactu_tax_type()
+=======
+        return taxes._l10n_es_edi_verifactu_get_tax_type()
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
 
     def _l10n_es_edi_verifactu_get_clave_regimen(self):
         """
@@ -120,9 +174,16 @@ class PosOrder(models.Model):
 
         taxes = self.lines.tax_ids.flatten_taxes_hierarchy()
         special_regime = self.company_id.l10n_es_edi_verifactu_special_vat_regime
+<<<<<<< HEAD
         return taxes._l10n_es_edi_verifactu_get_suggested_clave_regimen(
             special_regime, forced_verifactu_tax_type=verifactu_tax_type
         )
+=======
+        selected_clave_regimen = taxes._l10n_es_edi_verifactu_get_suggested_clave_regimen(
+            special_regime, forced_verifactu_tax_type=verifactu_tax_type
+        )
+        return selected_clave_regimen and selected_clave_regimen.split('_', 1)[0]
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
 
     @api.model
     def l10n_es_edi_verifactu_get_refund_reason_selection(self):
@@ -189,7 +250,11 @@ class PosOrder(models.Model):
             'substituted_document': None,
             'substituted_document_reversal_document': None,
             'documents': documents,
+<<<<<<< HEAD
             'record_identifier': documents._get_last('submission').record_identifier,
+=======
+            'record_identifier': documents._get_last('submission')._get_record_identifier(),
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
             'verifactu_tax_type': verifactu_tax_type,
             'clave_regimen': clave_regimen,
         })

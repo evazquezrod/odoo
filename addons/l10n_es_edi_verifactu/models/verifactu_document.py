@@ -5,6 +5,10 @@ from werkzeug.urls import url_quote_plus, url_encode
 
 import contextlib
 import hashlib
+<<<<<<< HEAD
+=======
+import logging
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
 import math
 import requests.exceptions
 import json
@@ -16,6 +20,10 @@ from odoo.tools import float_repr, float_round, zeep
 
 import odoo.release
 
+<<<<<<< HEAD
+=======
+_logger = logging.getLogger(__name__)
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
 
 VERIFACTU_VERSION = "1.0"
 
@@ -71,11 +79,14 @@ class L10nEsEdiVerifactuDocument(models.Model):
         readonly=True,
         help="Index in the chain of Veri*Factu Documents. It is only set if the generation was succesful.",
     )
+<<<<<<< HEAD
     record_identifier = fields.Json(
         string="Veri*Factu Record Identifier",
         readonly=True,
         help="Technical field containing the values used to identify records in the Veri*Factu system.",
     )
+=======
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
     document_type = fields.Selection(
         string="Document Type",
         selection=[
@@ -131,6 +142,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
             name = f"verifactu_registro_{document.id}_{document_type}.json"
             document.json_attachment_filename = name
 
+<<<<<<< HEAD
     def _get_document_dict(self):
         self.ensure_one()
         if not self.json_attachment_base64:
@@ -138,6 +150,58 @@ class L10nEsEdiVerifactuDocument(models.Model):
         json_data = b64decode(self.json_attachment_base64)
         return json.loads(json_data)
 
+=======
+    @api.ondelete(at_uninstall=False)
+    def _never_unlink_chained_documents(self):
+        for document in self:
+            if document.chain_index:
+                raise UserError(_("You cannot delete Veri*Factu Documents that are part of the chain of all Veri*Factu Documents."))
+
+    def _get_document_dict(self):
+        if not self.json_attachment_base64:
+            return {}
+        self.ensure_one()
+        json_data = b64decode(self.json_attachment_base64)
+        return json.loads(json_data)
+
+    def _get_record_identifier(self):
+        if not self:
+            return False
+        return self._extract_record_identifiers(self._get_document_dict())
+
+    @api.model
+    def _extract_record_identifiers(self, document_dict):
+        """Return a dictionary that includes:
+          * the IDFactura fields
+          * the fields used for the fingerprint generation of this document and the next one
+            (The fingerprint of this record is part of the fingerprint generation of the next record)
+          * the fields used for QR code generation
+          * the fields used for ImporteRectificacion (in case of rectification by substitutuion)
+        """
+        cancellation = 'RegistroAnulacion' in document_dict
+        record_type = 'RegistroAnulacion' if cancellation else 'RegistroAlta'
+        record_type_vals = document_dict[record_type]
+        id_factura = record_type_vals['IDFactura']
+
+        identifiers = {
+            'FechaHoraHusoGenRegistro': record_type_vals['FechaHoraHusoGenRegistro'],
+            'Huella': record_type_vals['Huella'],
+        }
+        if cancellation:
+            identifiers.update({
+                'IDEmisorFactura': id_factura['IDEmisorFacturaAnulada'],
+                'NumSerieFactura': id_factura['NumSerieFacturaAnulada'],
+                'FechaExpedicionFactura': id_factura['FechaExpedicionFacturaAnulada'],
+            })
+        else:
+            identifiers.update({
+                **{key: id_factura[key] for key in ['IDEmisorFactura', 'NumSerieFactura', 'FechaExpedicionFactura']},
+                **{key: record_type_vals[key] for key in ['TipoFactura', 'CuotaTotal', 'ImporteTotal']},
+                'FechaOperacion': record_type_vals.get('FechaOperacion'),  # optional
+            })
+        return identifiers
+
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
     @api.model
     def _format_errors(self, title, errors):
         error = {
@@ -146,6 +210,50 @@ class L10nEsEdiVerifactuDocument(models.Model):
         }
         return self.env['account.move.send']._format_error_html(error)
 
+<<<<<<< HEAD
+=======
+    ####################################################################
+    # Helpers to be used on the records ('account.move' / 'pos.order') #
+    ####################################################################
+
+    def _filter_waiting(self):
+        return self.filtered(lambda doc: not doc.state and doc.json_attachment_base64)
+
+    def _get_last(self, document_type):
+        return self.filtered(lambda doc: doc.document_type == document_type and doc.json_attachment_base64).sorted()[:1]
+
+    def _get_state(self):
+        # Helper method to get the most recent state from a set of documents.
+        # It should only be used on all the documents associated with a move or pos order.
+        last_registered_document = self.filtered(lambda doc: doc.state in ('registered_with_errors', 'accepted')).sorted()[:1]
+        if last_registered_document:
+            cancellation = last_registered_document.document_type == 'cancellation'
+            return 'cancelled' if cancellation else last_registered_document.state
+
+        rejected_document = self.filtered(lambda doc: doc.state == 'rejected')[:1]
+        if rejected_document:
+            return 'rejected'
+
+        return False
+
+    def _get_qr_code_img_url(self):
+        self.ensure_one()
+        record_identifier = self._get_record_identifier()
+        if not record_identifier or self.document_type != 'submission':
+            # We take the values from the record identifier.
+            # And only the 'submission' has all the necessary values ('ImporteTotal').
+            return False
+        endpoint_url = self.company_id._l10n_es_edi_verifactu_get_endpoints()['QR']
+        url_params = url_encode({
+            'nif': record_identifier['IDEmisorFactura'],
+            'numserie': record_identifier['NumSerieFactura'],
+            'fecha': record_identifier['FechaExpedicionFactura'],
+            'importe': record_identifier['ImporteTotal'],
+        })
+        url = url_quote_plus(f"{endpoint_url}?{url_params}")
+        return f'/report/barcode/?barcode_type=QR&value={url}&barLevel=M&width=180&height=180'
+
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
     @api.model
     def _check_record_values(self, vals):
         errors = []
@@ -160,11 +268,26 @@ class L10nEsEdiVerifactuDocument(models.Model):
             errors.append(_("The name of the record is not between 1 and 60 characters long: %(name)s.",
                             name=vals['name']))
 
+<<<<<<< HEAD
         if vals['documents'] and vals['documents']._filter_waiting():
             errors.append(_("We are waiting to send a Veri*Factu record to the AEAT already."))
 
         # We currently do not support cancelling records that are not registered or were registered outside odoo.
         verifactu_registered = vals['verifactu_state'] in ('registered_with_errors', 'accepted')
+=======
+        if not vals['name'] or len(vals['name']) > 60:
+            errors.append(_("The name of the record is not between 1 and 60 characters long: %(name)s.",
+                            name=vals['name']))
+
+        if vals['documents'] and vals['documents']._filter_waiting():
+            errors.append(_("We are waiting to send a Veri*Factu record to the AEAT already."))
+
+        verifactu_registered = vals['verifactu_state'] in ('registered_with_errors', 'accepted')
+        # We currently do not support updating registered records (resending).
+        if not vals['cancellation'] and verifactu_registered:
+            errors.append(_("The record is Veri*Factu registered already."))
+        # We currently do not support cancelling records that are not registered or were registered outside odoo.
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
         if vals['cancellation'] and not verifactu_registered:
             errors.append(_("The cancelled record is not Veri*Factu registered (inside Odoo)."))
 
@@ -194,6 +317,22 @@ class L10nEsEdiVerifactuDocument(models.Model):
         if need_refund_reason and not vals['refund_reason']:
             errors.append(_("The refund reason is not specified."))
 
+<<<<<<< HEAD
+=======
+        simplified_partner = self.env.ref('l10n_es.partner_simplified', raise_if_not_found=False)
+        partner_is_simplified_partner = simplified_partner and vals['partner'] == simplified_partner
+        partner_specified = vals['partner'] and not partner_is_simplified_partner
+        if need_refund_reason and vals['refund_reason'] != 'R5' and not partner_specified:
+            errors.append(_("A refund with Refund Reason %(refund_reason)s needs a partner.",
+                            refund_reason=vals['refund_reason']))
+
+        if not vals['verifactu_tax_type']:
+            errors.append(_("Missing Veri*Factu Taxs Type (Impuesto)."))
+
+        if vals['verifactu_tax_type'] in ('01', '03') and not vals['clave_regimen']:
+            errors.append(_("Missing Veri*Factu Regime Key (ClaveRegimen)."))
+
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
         sujeto_tax_types = self.env['account.tax']._l10n_es_get_sujeto_tax_types()
         ignored_tax_types = ['ignore', 'retencion']
         supported_tax_types = sujeto_tax_types + ignored_tax_types + ['no_sujeto', 'no_sujeto_loc', 'recargo', 'exento']
@@ -235,19 +374,39 @@ class L10nEsEdiVerifactuDocument(models.Model):
 
         return errors
 
+<<<<<<< HEAD
     def _create_for_record(self, record_values, previous_record_identifier=None):
         """Note: In case we succesfully create a JSON we delete all linked documents that failed the JSON creation."""
         document_vals = record_values['document_vals']
 
         if record_values['errors']:
             error_title = _("The Veri*Factu document could not be created")
+=======
+    #####################
+    # Document Creation #
+    #####################
+
+    def _create_for_record(self, record_values, previous_record_identifier=None):
+        """Note: In case we succesfully create a JSON we delete all linked documents that failed the JSON creation."""
+        document_vals = record_values['document_vals']
+        error_title = _("The Veri*Factu document could not be created")
+
+        if record_values['errors']:
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
             document_vals['errors'] = self._format_errors(error_title, record_values['errors'])
         else:
             render_vals = self._render_vals(
                 record_values, previous_record_identifier=previous_record_identifier,
             )
+<<<<<<< HEAD
             # We do not allow generating documents that would change the record identifier (i.e. values in the QR code)
             record_identifier = render_vals['record_identifier']
+=======
+            document_dict = {render_vals['record_type']: render_vals[render_vals['record_type']]}
+
+            # We do not allow generating documents that would change the record identifier (i.e. values in the QR code)
+            record_identifier = self._extract_record_identifiers(document_dict)
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
             old_record_identifier = record_values['record_identifier']
             if old_record_identifier:
                 # A cancellation does not specify 'ImporteTotal'
@@ -265,10 +424,38 @@ class L10nEsEdiVerifactuDocument(models.Model):
                                 key=key, old=old, new=new)
                               for key, (old, new) in changed_identifiers.items()]
                     document_vals['errors'] = self._format_errors(error_title, errors)
+<<<<<<< HEAD
             if not document_vals.get('errors'):
                 document_dict = {render_vals['record_type']: render_vals[render_vals['record_type']]}
                 document_vals.update({
                     'record_identifier': record_identifier,
+=======
+
+            create_message = None
+            try:
+                create_message, _zeep_info = self._get_zeep_registration_xml_operation()
+            except (zeep.exceptions.Error, requests.exceptions.RequestException) as error:
+                # The zeep client creation may cause a networking error
+                errors = [_("Networking error: %s", error)]
+                document_vals['errors'] = self._format_errors(error_title, errors)
+                _logger.error("%s\n%s\n%s", error_title, errors[0], json.dumps(document_dict, indent=4))
+
+            if create_message:
+                batch_dict = self.with_company(record_values['company'])._get_batch_dict([document_dict])
+                try:
+                    _xml_node = create_message(batch_dict['Cabecera'], batch_dict['RegistroFactura'])
+                except zeep.exceptions.ValidationError as error:
+                    errors = [_("Validation error: %s", error)]
+                    document_vals['errors'] = self._format_errors(error_title, errors)
+                    _logger.error("%s\n%s\n%s", error_title, errors[0], json.dumps(batch_dict, indent=4))
+                except zeep.exceptions.Error as error:
+                    errors = [error]
+                    document_vals['errors'] = self._format_errors(error_title, errors)
+                    _logger.error("%s\n%s\n%s", error_title, errors[0], json.dumps(batch_dict, indent=4))
+
+            if not document_vals.get('errors'):
+                document_vals.update({
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
                     'chain_index': record_values['company']._l10n_es_edi_verifactu_get_next_chain_index(),
                     'json_attachment_base64': b64encode(json.dumps(document_dict, indent=4).encode()),
                 })
@@ -316,13 +503,18 @@ class L10nEsEdiVerifactuDocument(models.Model):
                 if lock_error:
                     record_values['errors'].append(lock_error)
                 document = self.env['l10n_es_edi_verifactu.document']._create_for_record(
+<<<<<<< HEAD
                     record_values, previous_record_identifier=previous_document.record_identifier,
+=======
+                    record_values, previous_record_identifier=previous_document._get_record_identifier(),
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
                 )
                 if document.state != 'error':
                     previous_document = document
                 result[record_values['record']] = document
         return result
 
+<<<<<<< HEAD
     @api.model
     def trigger_next_batch(self):
         """
@@ -657,6 +849,11 @@ class L10nEsEdiVerifactuDocument(models.Model):
         for document in self:
             if document.chain_index:
                 raise UserError(_("You cannot delete Veri*Factu Documents that are part of the chain of all Veri*Factu Documents."))
+=======
+    #################
+    # JSON Creation #
+    #################
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
 
     @api.model
     def _format_date_fecha_type(self, date):
@@ -704,6 +901,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
 
         generation_time_string = fields.Datetime.now(timezone('Europe/Madrid')).astimezone(timezone('Europe/Madrid')).isoformat()
 
+<<<<<<< HEAD
         record_type_vals = {}
         record_type_vals.update({
             'IDVersion': VERIFACTU_VERSION,
@@ -720,13 +918,26 @@ class L10nEsEdiVerifactuDocument(models.Model):
             new_render_vals = function(vals)
             record_type_vals.update(new_render_vals)
 
+=======
+        record_type_vals = {
+            'IDVersion': VERIFACTU_VERSION,
+            'FechaHoraHusoGenRegistro': generation_time_string,
+            **self._render_vals_operation(vals),
+            **self._render_vals_previous_submissions(vals),
+            **self._render_vals_monetary_amounts(vals),
+            **self._render_vals_SistemaInformatico(vals),
+        }
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
         render_vals[record_type] = remove_None_and_False(record_type_vals)
 
         self._update_render_vals_with_chaining_info(render_vals)
 
+<<<<<<< HEAD
         record_identifier = self._extract_record_identifiers(render_vals)
         render_vals['record_identifier'] = record_identifier
 
+=======
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
         return render_vals
 
     @api.model
@@ -781,15 +992,28 @@ class L10nEsEdiVerifactuDocument(models.Model):
         elif vals['verifactu_move_type'] == 'correction_substitution':
             tipo_rectificativa = 'S'
             tipo_factura = vals['refund_reason']
+<<<<<<< HEAD
             rectified = rectified_document.record_identifier
+=======
+            rectified = rectified_document._get_record_identifier()
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
             fecha_operacion = rectified['FechaOperacion'] or rectified['FechaExpedicionFactura']
         else:
             # vals['verifactu_move_type'] == 'correction_incremental':
             tipo_rectificativa = 'I'
             tipo_factura = vals['refund_reason']
+<<<<<<< HEAD
             rectified = rectified_document.record_identifier
             fecha_operacion = rectified['FechaOperacion'] or rectified['FechaExpedicionFactura']
 
+=======
+            rectified = rectified_document._get_record_identifier()
+            fecha_operacion = rectified['FechaOperacion'] or rectified['FechaExpedicionFactura']
+
+        # Note: Error [1189]
+        # Si TipoFactura es F1 o F3 o R1 o R2 o R3 o R4 el bloque Destinatarios tiene que estar cumplimentado.
+
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
         render_vals.update({
             'TipoFactura': tipo_factura,
             'TipoRectificativa': tipo_rectificativa,  # may be None
@@ -803,6 +1027,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
         })
 
         if vals['verifactu_move_type'] in ('correction_incremental', 'correction_substitution'):
+<<<<<<< HEAD
             rectified_record_identifier = rectified_document.record_identifier
             render_vals.update({
                 'FacturasRectificadas': [{
@@ -810,6 +1035,14 @@ class L10nEsEdiVerifactuDocument(models.Model):
                         'IDEmisorFactura': rectified_record_identifier['IDEmisorFactura'],
                         'NumSerieFactura': rectified_record_identifier['NumSerieFactura'],
                         'FechaExpedicionFactura': rectified_record_identifier['FechaExpedicionFactura'],
+=======
+            rectified_record_identifier = rectified_document._get_record_identifier()
+            render_vals.update({
+                'FacturasRectificadas': [{
+                    'IDFacturaRectificada': {
+                        key: rectified_record_identifier[key]
+                        for key in ['IDEmisorFactura', 'NumSerieFactura', 'FechaExpedicionFactura']
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
                     }
                 }],
             })
@@ -1014,6 +1247,7 @@ class L10nEsEdiVerifactuDocument(models.Model):
 
         return render_vals
 
+<<<<<<< HEAD
     def _extract_record_identifiers(self, render_vals):
         """Return a dictionary that includes:
           * the IDFactura fields
@@ -1046,6 +1280,8 @@ class L10nEsEdiVerifactuDocument(models.Model):
             })
         return identifiers
 
+=======
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
     @api.model
     def _update_render_vals_with_chaining_info(self, render_vals):
         record_type_vals = render_vals[render_vals['record_type']]
@@ -1059,10 +1295,17 @@ class L10nEsEdiVerifactuDocument(models.Model):
         else:
             encadenamiento = {
                 'RegistroAnterior': {
+<<<<<<< HEAD
                     'IDEmisorFactura': predecessor.get('IDEmisorFactura'),
                     'NumSerieFactura': predecessor.get('NumSerieFactura'),
                     'FechaExpedicionFactura': predecessor.get('FechaExpedicionFactura'),
                     'Huella': predecessor.get('Huella'),
+=======
+                    'IDEmisorFactura': predecessor['IDEmisorFactura'],
+                    'NumSerieFactura': predecessor['NumSerieFactura'],
+                    'FechaExpedicionFactura': predecessor['FechaExpedicionFactura'],
+                    'Huella': predecessor['Huella'],
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
                 }
             }
         # The 'Encadenamiento' info needs to be set already during the `_fingerprint` computation
@@ -1085,27 +1328,37 @@ class L10nEsEdiVerifactuDocument(models.Model):
         registro_anterior = record_type_vals['Encadenamiento'].get('RegistroAnterior')  # does not exist for the first document
         if render_vals['cancellation']:
             fingerprint_values = [
+<<<<<<< HEAD
                 ('IDEmisorFacturaAnulada', id_factura['IDEmisorFacturaAnulada']),
                 ('NumSerieFacturaAnulada', id_factura['NumSerieFacturaAnulada']),
                 ('FechaExpedicionFacturaAnulada', id_factura['FechaExpedicionFacturaAnulada']),
+=======
+                *[(key, id_factura[key]) for key in ['IDEmisorFacturaAnulada', 'NumSerieFacturaAnulada', 'FechaExpedicionFacturaAnulada']],
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
                 ('Huella', registro_anterior['Huella'] if registro_anterior else ''),
                 ('FechaHoraHusoGenRegistro', record_type_vals['FechaHoraHusoGenRegistro']),
             ]
             string = "&".join([f"{field}={value.strip()}" for (field, value) in fingerprint_values])
         else:
             fingerprint_values = [
+<<<<<<< HEAD
                 ('IDEmisorFactura', id_factura['IDEmisorFactura']),
                 ('NumSerieFactura', id_factura['NumSerieFactura']),
                 ('FechaExpedicionFactura', id_factura['FechaExpedicionFactura']),
                 ('TipoFactura', record_type_vals['TipoFactura']),
                 ('CuotaTotal', record_type_vals['CuotaTotal']),
                 ('ImporteTotal', record_type_vals['ImporteTotal']),
+=======
+                *[(key, id_factura[key]) for key in ['IDEmisorFactura', 'NumSerieFactura', 'FechaExpedicionFactura']],
+                *[(key, record_type_vals[key]) for key in ['TipoFactura', 'CuotaTotal', 'ImporteTotal']],
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
                 ('Huella', registro_anterior['Huella'] if registro_anterior else ''),
                 ('FechaHoraHusoGenRegistro', record_type_vals['FechaHoraHusoGenRegistro']),
             ]
             string = "&".join([f"{field}={value.strip()}" for (field, value) in fingerprint_values])
         return _sha256(string)
 
+<<<<<<< HEAD
     def _filter_waiting(self):
         return self.filtered(lambda doc: not doc.state and doc.json_attachment_base64)
 
@@ -1142,3 +1395,374 @@ class L10nEsEdiVerifactuDocument(models.Model):
         })
         url = url_quote_plus(f"{endpoint_url}?{url_params}")
         return f'/report/barcode/?barcode_type=QR&value={url}&barLevel=M&width=180&height=180'
+=======
+    ###########
+    # Sending #
+    ###########
+
+    @api.model
+    def trigger_next_batch(self):
+        """
+        1. Send all waiting documents that we can send
+        2. Trigger the cron again at a later date to send the documents we could not send
+        """
+        unsent_domain = [
+            ('json_attachment_base64', '!=', False),
+            ('state', '=', False),
+        ]
+        documents_per_company = self._read_group(
+            unsent_domain,
+            groupby=['company_id'],
+            aggregates=['id:recordset'],
+        )
+
+        if not documents_per_company:
+            return
+
+        next_trigger_time = None
+        for company, documents in documents_per_company:
+            # Avoid sending a document twice due to concurrent calls to `trigger_next_batch`.
+            # This should also avoid concurrently sending in general since the set of documents
+            # in both calls should overlap. (Since we always include all previously unsent documents.)
+            try:
+                self.env['res.company']._with_locked_records(documents)
+            except UserError:
+                # We will later make sure that we trigger the cron again
+                continue
+
+            # We choose the language since this function may be executed on the cron.
+            langs = documents.create_uid.mapped('lang')
+            lang = 'es_ES' if 'es_ES' in langs else langs[0]
+            # We sort the `documents` to batch them in the order they were chained
+            documents = documents.sorted('chain_index').with_context(lang=lang)
+
+            # Send batches with size BATCH_LIMIT; they are not restricted by the waiting time
+            next_batch = documents[0:BATCH_LIMIT]
+            start_index = 0
+            while len(next_batch) == BATCH_LIMIT:
+                next_batch.with_company(company)._send_as_batch()
+                start_index += BATCH_LIMIT
+                next_batch = documents[start_index:start_index + BATCH_LIMIT]
+            # Now: len(next_batch) < BATCH_LIMIT ; we need to respect the waiting time
+
+            if not next_batch:
+                continue
+
+            next_batch_time = company.l10n_es_edi_verifactu_next_batch_time
+            if not next_batch_time or fields.Datetime.now() >= next_batch_time:
+                next_batch.with_company(company)._send_as_batch()
+            else:
+                # Since we have a `next_batch_time` the `next_trigger_time` will be set to a datetime
+                # We set it to the minimum of all the already encountered `next_batch_time`
+                next_trigger_time = min(next_trigger_time or datetime.max, next_batch_time)
+
+        # In case any of the documents were not successfully sent we trigger the cron again in 60s
+        # (or at the next batch time if the 60s is earlier)
+        for company, documents in documents_per_company:
+            unsent_documents = documents.filtered_domain(unsent_domain)
+            next_batch_time = company.l10n_es_edi_verifactu_next_batch_time
+            if unsent_documents:
+                # Trigger in 60s or at the next batch time (except if there is an earlier trigger already)
+                in_60_seconds = fields.Datetime.now() + timedelta(seconds=60)
+                company_next_trigger_time = max(in_60_seconds, next_batch_time or datetime.min)
+                # Set `next_trigger_time` to the minimum of all the already encountered trigger times
+                next_trigger_time = min(next_trigger_time or datetime.max, company_next_trigger_time)
+
+        if next_trigger_time:
+            cron = self.env.ref('l10n_es_edi_verifactu.cron_verifactu_batch', raise_if_not_found=False)
+            if cron:
+                cron._trigger(at=next_trigger_time)
+
+    @api.model
+    def _get_zeep_operation(self, operation):
+        """The creation of the zeep client may raise (in case of networking issues)."""
+        if operation not in ('registration', 'registration_xml'):
+            raise NotImplementedError(_("Unsupported `operation` '%s'", operation))
+
+        company = self.env.company
+
+        session = requests.Session()
+
+        info = {}
+
+        def response_hook(resp, *args, **kwargs):
+            info['raw_response'] = resp.text
+
+        session.hooks['response'] = response_hook
+
+        settings = zeep.Settings(forbid_entities=False, strict=False)
+        wsdl = company._l10n_es_edi_verifactu_get_endpoints()['wsdl']
+        client = zeep.Client(
+            wsdl['url'], session=session, settings=settings,
+            operation_timeout=60, timeout=60,
+        )
+
+        # Note: using the "certificate" before creating `client` causes an error during the `client` creation
+        session.cert = company.sudo()._l10n_es_edi_verifactu_get_certificate()
+        session.mount('https://', PatchedHTTPAdapter())
+
+        service = client.bind(wsdl['service'], wsdl['port'])
+
+        if operation == 'registration':
+            function = service[wsdl[operation]]
+        else:
+            # operation == 'registration_xml'
+            zeep_client = client._Client__obj  # get the "real" zeep client from the odoo specific wrapper
+            service = zeep_client.bind(wsdl['service'], wsdl['port'])
+
+            def function(*args, **kwargs):
+                return zeep_client.create_message(service, wsdl['registration'], *args, **kwargs)
+
+        return function, info
+
+    @api.model
+    def _get_zeep_registration_operation(self):
+        return self._get_zeep_operation('registration')
+
+    @api.model
+    def _get_zeep_registration_xml_operation(self):
+        return self._get_zeep_operation('registration_xml')
+
+    @api.model
+    def _send_batch(self, batch_dict):
+        info = {
+            'errors': [],
+            'record_info': {},
+        }
+        errors = info['errors']
+        record_info = info['record_info']
+
+        try:
+            register, zeep_info = self._get_zeep_registration_operation()
+        except (zeep.exceptions.Error, requests.exceptions.RequestException) as error:
+            errors.append(_("Networking error:\n%s", error))
+            return info
+
+        try:
+            res = register(batch_dict['Cabecera'], batch_dict['RegistroFactura'])
+            # `res` is of type 'zeep.client.SerialProxy'
+        except requests.exceptions.SSLError:
+            errors.append(_("The SSL certificate could not be validated."))
+        except zeep.exceptions.TransportError as error:
+            certificate_error = "No autorizado. Se ha producido un error al verificar el certificado presentado"
+            if certificate_error in error.message:
+                errors.append(_("The document could not be sent; the access was denied due to a problem with the certificate."))
+            else:
+                errors.append(_("Networking error while sending the document:\n%s", error))
+        except requests.exceptions.RequestException as error:
+            errors.append(_("Networking error while sending the document:\n%s", error))
+        except zeep.exceptions.Fault as soapfault:
+            info['state'] = 'rejected'
+            errors.append(f"[{soapfault.code}] {soapfault.message}")
+        except zeep.exceptions.XMLSyntaxError as error:
+            _logger.error("raw zeep response:\n%s", zeep_info.get('raw_response'))
+            certificate_error = "The root element found is html"
+            if certificate_error in error.message:
+                errors.append(_("The response of the server had the wrong format (HTML instead of XML). It is most likely a problem with the certificate."))
+            else:
+                errors.append(_("Error while sending the batch document:\n%s", error))
+        except zeep.exceptions.ValidationError as error:
+            # TODO: This should not happen
+            error = _("Error while validating the batch document (before sending):\n%s", error)
+            errors.append(error)
+            _logger.error("%s:\n%s", error, batch_dict)
+        except zeep.exceptions.Error as error:
+            _logger.error("raw zeep response:\n%s", zeep_info.get('raw_response'))
+            errors.append(_("Error while sending the batch document:\n%s", error))
+
+        if errors:
+            return info
+
+        received_batch_state = res['EstadoEnvio']
+        batch_state = {
+            'Incorrecto': 'rejected',
+            'ParcialmenteCorrecto': 'registered_with_errors',
+            'Correcto': 'accepted',
+        }[received_batch_state]
+
+        info.update({
+            'response_csv': res['CSV'] if 'CSV' in res else None,  # noqa: SIM401 - `res` is of type 'zeep.client.SerialProxy'
+            'waiting_time_seconds': int(res['TiempoEsperaEnvio']),
+            'state': batch_state,
+        })
+
+        for response_line in res['RespuestaLinea']:
+            record_id = response_line['IDFactura']
+            invoice_issuer = record_id['IDEmisorFactura'].strip()
+            invoice_name = record_id['NumSerieFactura'].strip()
+            record_key = str((invoice_issuer, invoice_name))
+
+            operation_type = response_line['Operacion']['TipoOperacion']
+
+            received_state = response_line['EstadoRegistro']
+            state = {
+                'Incorrecto': 'rejected',
+                'AceptadoConErrores': 'registered_with_errors',
+                'Correcto': 'accepted',
+            }[received_state]
+
+            errors = []
+            if state in ('rejected', 'registered_with_errors'):
+                error_code = response_line['CodigoErrorRegistro']
+                error_description = response_line['DescripcionErrorRegistro']
+                errors.append(f"[{error_code}] {error_description}")
+            record_info[record_key] = {
+                'state': state,
+                'cancellation': operation_type == 'Anulacion',
+                'errors': errors,
+            }
+
+        return info
+
+    def _send_as_batch(self):
+        # Documents in `self` should all belong to `self.env.company`.
+        # For the cron we specifically set the `self.env.company` on some functions we call.
+        sender_company = self.env.company
+
+        batch_errors = self.with_company(sender_company)._send_as_batch_check()
+        if batch_errors:
+            error_title = _("The batch document could not be created")
+            self.errors = self._format_errors(error_title, batch_errors)
+            info = {'errors': batch_errors}
+            return None, info
+
+        # When the document is sent more than 240s after its creation the AEAT registers the document only with an error
+        # See error with code 2004:
+        #   El valor del campo FechaHoraHusoGenRegistro debe ser la fecha actual del sistema de la AEAT,
+        #   admitiéndose un margen de error de: 240 segundos.
+        incident = any(document.create_date > self.env.cr.now() + timedelta(seconds=240) for document in self)
+
+        document_dict_list = [document._get_document_dict() for document in self]
+        batch_dict = self.with_company(sender_company)._get_batch_dict(document_dict_list, incident=incident)
+
+        info = self.with_company(sender_company)._send_batch(batch_dict)
+
+        # Store the information from the response split over the individual documents
+        for document in self:
+            response_info = document._get_response_info(info)
+
+            # The errors have to be formatted (as HTML) before storing them on the document
+            errors_html = False
+            error_list = response_info.get('errors', [])
+            if error_list:
+                error_title = _("Error")
+                if response_info.get('state', False):
+                    error_title = _("The Veri*Factu document contains the following errors according to the AEAT")
+                errors_html = self._format_errors(error_title, error_list)
+            document.errors = errors_html
+
+            # All other values can be stored directly on the document
+            keys = ['response_csv', 'state']
+            for key in keys:
+                new_value = response_info.get(key, False)
+                if new_value or document[key]:
+                    document[key] = new_value
+
+            # To avoid losing data we commit after every document
+            if self.env['account.move']._can_commit():
+                self._cr.commit()
+
+        waiting_time_seconds = info.get('waiting_time_seconds')
+        if waiting_time_seconds:
+            now = fields.Datetime.to_datetime(fields.Datetime.now())
+            next_batch_time = now + timedelta(seconds=waiting_time_seconds)
+            self.env.company.l10n_es_edi_verifactu_next_batch_time = next_batch_time
+
+        self._post_send_hook(info)
+
+        if self.env['account.move']._can_commit():
+            self._cr.commit()
+
+        return batch_dict, info
+
+    @api.model
+    def _send_as_batch_check(self):
+        # The batching / sending may happen after the initial check
+        errors = []
+        company = self.env.company  # sending company
+
+        company_values = company.partner_id._l10n_es_edi_verifactu_get_values()
+        company_NIF = company_values['NIF']
+        if not company_NIF or len(company_NIF) != 9:  # NIFType
+            errors.append(_("The NIF '%(company_NIF)s' of the company is not exactly 9 characters long.",
+                            company_NIF=company_NIF))
+
+        certificate = company.sudo()._l10n_es_edi_verifactu_get_certificate()
+        if not certificate:
+            errors.append(_("There is no certificate configured for Veri*Factu on the company."))
+
+        if company != self.company_id:
+            errors.append(_("Some of the documents do not belong to the active company."))
+
+        if len(self) != len(self._filter_waiting()):
+            errors.append(_("Some of the documents can not be sent. They were sent already or could not be generated correctly."))
+
+        return errors
+
+    @api.model
+    def _get_batch_dict(self, document_dict_list, incident=False):
+        company = self.env.company
+        company_values = company.partner_id._l10n_es_edi_verifactu_get_values()
+
+        batch_dict = {
+          "Cabecera": {
+              "ObligadoEmision": {
+                  "NombreRazon": company_values['NombreRazon'],
+                  "NIF": company_values['NIF'],
+              },
+              "RemisionVoluntaria": {
+                  "Incidencia": 'S' if incident else 'N',
+              },
+          },
+            "RegistroFactura": document_dict_list,
+        }
+
+        return batch_dict
+
+    def _get_response_info(self, info):
+        # `info` is like returned from `_send_batch`
+        self.ensure_one()
+        record_info = info.get('record_info', {})
+
+        response_info = None
+        if not info.get('state') and info['errors']:
+            # Handle case that something went wrong while sending or parsing the respone
+            response_info = {'errors': info['errors']}
+        elif record_info:
+            # We expect an entry for `record_identifier`.
+            # If there is none we "build" one; it indicates a parsing failure.
+            record_key = self._get_record_key()
+            response_info = record_info.get(record_key, None)
+            if response_info is None:
+                response_info = {
+                    'errors': [_("We could not find any information about the record in the linked batch document.")],
+                }
+        else:
+            # I.e. in case of soapfault and access denied there is no `record_info`.
+            # So we just return the global 'state' / 'errors'.
+            response_info = {
+                'state': info['state'],
+                'errors': info['errors'],
+            }
+
+        # Add some information from the batch level in any case.
+        response_info.update({
+            'waiting_time_seconds': info.get('waiting_time_seconds', False),
+            'response_csv': info.get('response_csv', False),
+        })
+
+        return response_info
+
+    def _get_record_key(self):
+        self.ensure_one()
+        record_identifier = self._get_record_identifier()
+        return str((record_identifier['IDEmisorFactura'], record_identifier['NumSerieFactura']))
+
+    def _post_send_hook(self, info):
+        # This function should not raise since it may be called "in the middle" of the sending process
+        for document in self:
+            invoice = document.move_id
+            if invoice.l10n_es_edi_verifactu_state == 'cancelled' and invoice.state != 'cancel':
+                with contextlib.suppress(UserError):
+                    invoice.button_cancel()
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006

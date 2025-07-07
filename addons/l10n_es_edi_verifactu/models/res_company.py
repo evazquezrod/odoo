@@ -38,6 +38,10 @@ class ResCompany(models.Model):
             ('reagyp', "REAGYP (Special Regime for Agriculture, Livestock and Fisheries)"),
             ('recargo', "Recargo de Equivalencia"),
         ],
+<<<<<<< HEAD
+=======
+        help="Leave empty for the normal regimen.",
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
     )
 
     def _l10n_es_edi_verifactu_get_endpoints(self):

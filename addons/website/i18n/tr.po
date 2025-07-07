@@ -1653,6 +1653,8 @@ msgid ""
 "Achieve holistic health with personalized nutritional advice that "
 "complements your workouts, promoting overall well-being."
 msgstr ""
+"Antrenmanlarınızı tamamlayan kişiselleştirilmiş beslenme önerileriyle "
+"bütünsel sağlığa ulaşın ve genel iyilik halinizi destekleyin."
 
 #. module: website
 #: model:ir.model.fields,field_description:website.field_website_rewrite__redirect_type
@@ -2009,7 +2011,7 @@ msgstr "Tüm Web Siteleri"
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_three_columns_menu
 msgid "All You Can Eat"
-msgstr ""
+msgstr "Açık Büfe (Sınırsız Yeme)"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_mega_menu_big_icons_subtitles
@@ -2135,7 +2137,7 @@ msgstr ""
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.new_page_template_landing_3_s_three_columns
 msgid "Amazing Sound Quality"
-msgstr ""
+msgstr "Harika Ses Kalitesi"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_numbers
@@ -2526,7 +2528,7 @@ msgstr "Beef Carpaccio"
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_three_columns_menu
 msgid "Beef Carpaccio, Filet Mignon 8oz and Cheesecake"
-msgstr ""
+msgstr "Dana Carpaccio, 8 oz Fileminyon ve Cheesecake"
 
 #. module: website
 #: model:ir.model.fields.selection,name:website.selection__theme_ir_asset__directive__before
@@ -5438,6 +5440,9 @@ msgid ""
 "He loves to keep his hands full by participating in the development of the "
 "software, marketing, and customer experience strategies."
 msgstr ""
+"Kurucu ve baş vizyoner olan Tony, şirketin arkasındaki itici güçtür. Yazılım"
+" geliştirme, pazarlama ve müşteri deneyimi stratejilerine katılarak kendini "
+"meşgul tutmayı sever."
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.new_page_template_team_s_media_list
@@ -7606,7 +7611,7 @@ msgstr ""
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_three_columns_menu
 msgid "Mediterranean buffet of starters, main dishes and desserts"
-msgstr ""
+msgstr "Başlangıç, ana yemek ve tatlılardan oluşan Akdeniz büfesi"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_alert_options
@@ -8726,6 +8731,8 @@ msgid ""
 "Our experienced fitness coaches design workouts that align with your goals, "
 "fitness level, and preferences."
 msgstr ""
+"Deneyimli fitness antrenörlerimiz, hedeflerinize, kondisyon seviyenize ve "
+"tercihinize uygun egzersiz programları hazırlar."
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.new_page_template_about_s_three_columns
@@ -8734,6 +8741,9 @@ msgid ""
 "driven by a relentless pursuit of innovation and a commitment to exceeding "
 "expectations."
 msgstr ""
+"Misyonumuz, yenilikçiliğe olan durmak bilmeyen tutkumuz ve beklentileri aşma"
+" taahhüdümüz sayesinde dönüştürücü deneyimler yaratmak ve büyümeyi teşvik "
+"etmektir."
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.new_page_template_services_s_image_text_2nd
@@ -8780,6 +8790,9 @@ msgid ""
 "providing exceptional service. They reflect our dedication to integrity, "
 "collaboration, and client satisfaction."
 msgstr ""
+"Değerlerimiz kültürümüzü şekillendirir, kararlarımızı etkiler ve olağanüstü "
+"hizmet sunmamızda bize rehberlik eder. Bu değerler; dürüstlük, iş birliği ve"
+" müşteri memnuniyetine olan bağlılığımızı yansıtır."
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.snippet_options
@@ -10852,6 +10865,9 @@ msgid ""
 "innovative force. Our journey, born in a garage, reflects the power of "
 "passion and hard work."
 msgstr ""
+"Geçmişimize adım atın ve basit bir fikrin yenilikçi bir güce dönüşümüne "
+"tanık olun. Bir garajda başlayan yolculuğumuz, tutku ve sıkı çalışmanın "
+"gücünü yansıtıyor."
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.snippets
@@ -11516,6 +11532,9 @@ msgid ""
 "nutrition guidance, and expert coaching. Elevate your fitness level and "
 "achieve feats you never thought possible."
 msgstr ""
+"Bu koçluk programı; özel olarak güç odaklı antrenmanlar, beslenme rehberliği"
+" ve uzman koçluk hizmetleri sunar. Fitness seviyenizi yükseltin ve hiç "
+"mümkün olmadığını düşündüğünüz başarıları elde edin."
 
 #. module: website
 #: model:ir.model.fields,help:website.field_res_config_settings__favicon
@@ -12414,7 +12433,7 @@ msgstr "Değer"
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_three_columns_menu
 msgid "Vegetable Salad, Beef Burger and Mango Ice Cream"
-msgstr ""
+msgstr "Sebze Salatası, Dana Burger ve Mango Dondurması"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.snippet_options
@@ -12750,6 +12769,8 @@ msgid ""
 "We monitor your progress meticulously, adjusting your plan as needed to "
 "ensure continuous improvement and results."
 msgstr ""
+"İlerlemenizi titizlikle takip ediyor; sürekli iyileştirme ve sonuç odaklı "
+"çalışma için planınızı gerektiğinde ayarlıyoruz."
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.s_mega_menu_cards
@@ -13115,7 +13136,7 @@ msgstr "Web Sitelerini Çevirme"
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.new_page_template_services_0_s_three_columns
 msgid "Weight Loss Transformation"
-msgstr ""
+msgstr "Kilo Verme Dönüşümü"
 
 #. module: website
 #: model_terms:ir.ui.view,arch_db:website.new_page_template_services_s_text_block_2nd

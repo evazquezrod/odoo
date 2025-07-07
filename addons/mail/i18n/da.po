@@ -7,12 +7,12 @@
 # Walther Barnett <walther@gundogpro.dk>, 2023
 # Mads Søndergaard, 2023
 # lhmflexerp <lhm@flexerp.dk>, 2023
-# Sanne Kristensen <sanne@vkdata.dk>, 2024
 # Martin Trigaux, 2024
 # Sammi Iversen <sammi@vkdata.dk>, 2025
 # Mads Søndergaard, 2025
 # Larissa Manderfeld, 2025
 # Mikkel_Justesen, 2025
+# Sanne Kristensen <sanne@vkdata.dk>, 2025
 # Kira Petersen, 2025
 # 
 msgid ""
@@ -5489,7 +5489,7 @@ msgstr "Mail kanal formular"
 #. module: mail
 #: model:ir.model,name:mail.model_mail_composer_mixin
 msgid "Mail Composer Mixin"
-msgstr ""
+msgstr "Mixin til mail-editor"
 
 #. module: mail
 #. odoo-javascript
@@ -5668,7 +5668,7 @@ msgstr ""
 #: code:addons/mail/static/src/core/web/notification_item.xml:0
 #, python-format
 msgid "Mark As Read"
-msgstr ""
+msgstr "Markér som læst"
 
 #. module: mail
 #. odoo-javascript
@@ -5710,7 +5710,7 @@ msgstr "Mærk som To do"
 #: code:addons/mail/static/src/core/common/message_actions.js:0
 #, python-format
 msgid "Mark as Unread"
-msgstr ""
+msgstr "Markér som ulæst"
 
 #. module: mail
 #. odoo-javascript

@@ -1,5 +1,11 @@
 import datetime
+<<<<<<< HEAD
 
+=======
+import json
+
+from base64 import b64encode
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
 from freezegun import freeze_time
 
 from odoo import Command
@@ -343,6 +349,7 @@ class TestL10nEsEdiVerifactuJson(TestL10nEsEdiVerifactuCommon):
         ])
         invoices.action_post()
 
+<<<<<<< HEAD
         previous_record_identifier = {
             'IDEmisorFactura': '59962470K',
             'NumSerieFactura': 'INV/2018/00001',
@@ -355,6 +362,24 @@ class TestL10nEsEdiVerifactuJson(TestL10nEsEdiVerifactuCommon):
             'company_id': self.company.id,
             'document_type': 'submission',
             'record_identifier': previous_record_identifier,
+=======
+        # We create a dummy document for the record identifier only
+        dummy_start_document_dict = {
+            'RegistroAnulacion': {
+                'IDFactura': {
+                    'IDEmisorFacturaAnulada': '59962470K',
+                    'NumSerieFacturaAnulada': 'INV/2018/00001',
+                    'FechaExpedicionFacturaAnulada': '01-01-2018',
+                },
+                'Huella': 'FA5DC48A0640BEB02A05160FD30020D1EA67FC1B400800ECDD9FC785E137C864',
+                'FechaHoraHusoGenRegistro': "  2024-01-01T19:20:30+01:00  ",
+            },
+        }
+        dummy_start_document = self.env['l10n_es_edi_verifactu.document'].sudo().create([{
+            'company_id': self.company.id,
+            'document_type': 'submission',
+            'json_attachment_base64': b64encode(json.dumps(dummy_start_document_dict, indent=4).encode()),
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
         }])
         with self._mock_last_document(dummy_start_document):
             document1_reversed = invoices[0]._l10n_es_edi_verifactu_create_documents()[invoices[0]]

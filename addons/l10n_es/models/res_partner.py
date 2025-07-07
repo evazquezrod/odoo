@@ -6,6 +6,10 @@ class ResPartner(models.Model):
     _inherit = 'res.partner'
 
     def _l10n_es_edi_get_partner_info(self):
+<<<<<<< HEAD
+=======
+        """ Used in SII and Veri*factu"""
+>>>>>>> b9e2768527ab88739b0032dafc28c377ab56b006
         self.ensure_one()
         eu_country_codes = set(self.env.ref('base.europe').country_ids.mapped('code'))
 
