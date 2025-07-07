@@ -32,9 +32,11 @@
             <BuilderSelectItem actionValue="'redirect'" id="'show_redirect_opt'">Redirect</BuilderSelectItem>
             <BuilderSelectItem actionValue="'message'" id="'show_message_opt'">Show Message</BuilderSelectItem>
         </BuilderSelect>
-        <BuilderButton className="'fa fa-fw fa-eye align-self-end toggle-edit-message'" title.translate="Edit Message" id="'message_opt'"
-            t-if="isActiveItem('show_message_opt')" preview="false" action="'toggleEndMessage'"
-        />
+        <BuilderButton t-if="isActiveItem('show_message_opt')"
+                       title.translate="Edit Message"
+                       icon="'fa-eye'"
+                       preview="false"
+                       action="'toggleEndMessage'"/>
     </BuilderRow>
     <BuilderRow label.translate="URL">
         <BuilderUrlPicker dataAttributeAction="'successPage'" default="'/contactus-thank-you'" id="'url_opt'" t-if="isActiveItem('show_redirect_opt')"/>
@@ -63,7 +65,7 @@
                     action="'promptSaveRedirect'" actionParam="field.createAction"
                 />
             </BuilderRow>
-            <!-- TODO className="'o_we_large'" -->
+                <!-- TODO className="'o_we_large'" -->
             <BuilderRow t-if="field.type === 'char'" label="field.string">
                 <BuilderTextInput actionParam="{ fieldName: field.name }" action="'addActionField'" default="''"/>
             </BuilderRow>
@@ -172,19 +174,19 @@
         <BuilderCheckbox attributeAction="'checked'" attributeActionValue="'checked'"
             applyTo="`.col-sm > * > input[type='checkbox']`" preview="false"
         />
-        <!-- TODO used to set both attribute & property -->
+            <!-- TODO used to set both attribute & property -->
         <BuilderTextInput attributeAction="'value'"
             applyTo="`input[type='text']:not(.datetimepicker-input), input[type='email'], input[type='tel'], input[type='url']`"
         />
-        <!-- TODO used to set both attribute & property -->
+            <!-- TODO used to set both attribute & property -->
         <BuilderNumberInput attributeAction="'value'" step="1"
             applyTo="`input[type='number']`"
         />
-        <!-- TODO used to set both attribute & "valueProperty" -->
+            <!-- TODO used to set both attribute & "valueProperty" -->
         <BuilderDateTimePicker type="'datetime'" attributeAction="'value'"
             applyTo="'.s_website_form_datetime input'"
         />
-        <!-- TODO used to set both attribute & "valueProperty" -->
+            <!-- TODO used to set both attribute & "valueProperty" -->
         <BuilderDateTimePicker type="'date'" attributeAction="'value'"
             applyTo="'.s_website_form_date input'"
         />
@@ -231,7 +233,7 @@
     <t t-if="isActiveItem('hidden_if_opt')">
         <div class="d-flex position-relative p-1 px-2 ps-3 hb-row">
             <BuilderSelect id="'hidden_condition_opt'" preview="false">
-                <!-- Load every existing form input -->
+                    <!-- Load every existing form input -->
                 <BuilderSelectItem t-foreach="state.conditionInputs" t-as="input" t-key="input.name"
                     action="'setVisibilityDependency'" actionValue="input.name"
                     t-out="input.textContent"
@@ -248,7 +250,7 @@
             <BuilderSelect t-if="isTextConditionOperatorVisible"
                 id="'hidden_condition_text_opt'" preview="false" dataAttributeAction="'visibilityComparator'"
             >
-                <!-- string comparator possibilities -->
+                    <!-- string comparator possibilities -->
                 <BuilderSelectItem dataAttributeActionValue="'contains'">Contains</BuilderSelectItem>
                 <BuilderSelectItem dataAttributeActionValue="'!contains'">Doesn't contain</BuilderSelectItem>
                 <BuilderSelectItem dataAttributeActionValue="'equal'">Is equal to</BuilderSelectItem>
@@ -259,7 +261,7 @@
             <BuilderSelect t-if="domStateDependency.type === 'number'"
                 id="'hidden_condition_num_opt'" preview="false" dataAttributeAction="'visibilityComparator'"
             >
-                <!-- number comparator possibilities -->
+                    <!-- number comparator possibilities -->
                 <BuilderSelectItem dataAttributeActionValue="'equal'">Is equal to</BuilderSelectItem>
                 <BuilderSelectItem dataAttributeActionValue="'!equal'">Is not equal to</BuilderSelectItem>
                 <BuilderSelectItem dataAttributeActionValue="'greater'">Is greater than</BuilderSelectItem>
@@ -273,7 +275,7 @@
                 id="'hidden_condition_time_comparators_opt'" preview="false"
                 dataAttributeAction="'visibilityComparator'"
             >
-                <!-- date & datetime comparator possibilities -->
+                    <!-- date & datetime comparator possibilities -->
                 <BuilderSelectItem dataAttributeActionValue="'dateEqual'">Is equal to</BuilderSelectItem>
                 <BuilderSelectItem dataAttributeActionValue="'date!equal'">Is not equal to</BuilderSelectItem>
                 <BuilderSelectItem dataAttributeActionValue="'after'">Is after</BuilderSelectItem>
@@ -288,7 +290,7 @@
             <BuilderSelect t-if="domStateDependency.type === 'file'"
                 id="'hidden_condition_file_opt'" preview="false" dataAttributeAction="'visibilityComparator'"
             >
-                <!-- file comparator possibilities -->
+                    <!-- file comparator possibilities -->
                 <BuilderSelectItem dataAttributeActionValue="'fileSet'">Is set</BuilderSelectItem>
                 <BuilderSelectItem dataAttributeActionValue="'!fileSet'">Is not set</BuilderSelectItem>
             </BuilderSelect>
@@ -303,7 +305,7 @@
             <BuilderSelect t-if="state.conditionValueList and (domStateDependency.type === 'checkbox' || domStateDependency.type === 'radio' || domStateDependency.nodeName === 'SELECT')"
                 id="'hidden_condition_no_text_opt'" preview="false" dataAttributeAction="'visibilityCondition'"
             >
-                <!-- checkbox, select, radio possible values -->
+                    <!-- checkbox, select, radio possible values -->
                 <BuilderSelectItem t-foreach="state.conditionValueList" t-as="record" t-key="record.value"
                     dataAttributeActionValue="record.value"
                     t-out="record.textContent"
@@ -312,7 +314,7 @@
             <BuilderSelect t-if="state.conditionValueList and domStateDependency.isRecordField"
                 id="'hidden_condition_record_opt'" preview="false" dataAttributeAction="'visibilityCondition'"
             >
-                <!-- checkbox, select, radio possible values -->
+                    <!-- checkbox, select, radio possible values -->
                 <BuilderSelectItem t-foreach="state.conditionValueList" t-as="record" t-key="record.value"
                     dataAttributeActionValue="record.value"
                     t-out="record.textContent"
