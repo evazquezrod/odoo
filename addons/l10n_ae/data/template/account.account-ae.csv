@@ -72,6 +72,7 @@
 "uae_account_201018","Deferred income","201018","liability_current","False",""
 "uae_account_201019","Accrued Dubai Customs","201019","liability_current","False",""
 "uae_account_201020","VAT Output - Postponed Payment","201020","liability_current","False"
+"uae_account_201021","Accrued Customs","201021","liability_current","False"
 "uae_account_202001","End of Service Provision","202001","liability_non_current","False",""
 "uae_account_202002","Reservations","202002","liability_non_current","False",""
 "uae_account_202003","VAT Payable","202003","liability_payable","True","True"
