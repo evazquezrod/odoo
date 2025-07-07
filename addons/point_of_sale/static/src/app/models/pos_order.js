@@ -287,7 +287,11 @@ export class PosOrder extends Base {
             shippingDate: this.shipping_date && formatDate(DateTime.fromSQL(this.shipping_date)),
             headerData: {
                 ...headerData,
-                trackingNumber: this.tracking_number,
+                trackingNumber:
+                    this.pos_reference?.startsWith("Self-order") ||
+                    this.pos_reference?.startsWith("Kiosk")
+                        ? this.tracking_number
+                        : "",
             },
             screenName: "ReceiptScreen",
         };
