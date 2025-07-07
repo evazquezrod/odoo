@@ -449,3 +449,17 @@ registry.category("web_tour.tours").add("test_down_payment_displayed", {
             }),
         ].flat(),
 });
+
+registry.category("web_tour.tours").add("settle_order_with_different_uom", {
+    steps: () =>
+        [
+            Chrome.startPoS(),
+            Dialog.confirm("Open Register"),
+            PosSale.settleNthOrder(1),
+            ProductScreen.clickPayButton(),
+            PaymentScreen.clickPaymentMethod("Bank"),
+            PaymentScreen.clickValidate(),
+            ReceiptScreen.isShown(),
+            Chrome.clickMenuOption("Orders"),
+        ].flat(),
+});
