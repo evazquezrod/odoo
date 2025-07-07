@@ -37,6 +37,7 @@ const { DateTime, Info } = luxon;
  * @property {number} [rounding=5] the rounding in minutes, pass 0 to show seconds, pass 1 to avoid
  *  rounding minutes without displaying seconds.
  * @property {{ buttons?: any }} [slots]
+ * @property {{ addDateButton?: any }} [slots]
  * @property {"date" | "datetime"} [type]
  * @property {NullableDateTime | NullableDateRange} [value]
  * @property {(date: DateTime) => boolean} [isDateValid]
@@ -302,7 +303,10 @@ export class DateTimePicker extends Component {
         rounding: { type: Number, optional: true },
         slots: {
             type: Object,
-            shape: { buttons: { type: Object, optional: true } },
+            shape: {
+                buttons: { type: Object, optional: true },
+                addDateButton: { type: Object, optional: true },
+            },
             optional: true,
         },
         type: { type: [{ value: "date" }, { value: "datetime" }], optional: true },
@@ -316,6 +320,7 @@ export class DateTimePicker extends Component {
         isDateValid: { type: Function, optional: true },
         dayCellClass: { type: Function, optional: true },
         tz: { type: String, optional: true },
+        state: Object,
     };
 
     static defaultProps = {

@@ -3,19 +3,32 @@
     <t t-name="web.DateTimePickerPopover">
         <DateTimePicker t-props="props.pickerProps">
             <t t-set-slot="buttons">
+                <div class="o_datetime_buttons d-flex gap-2">
+                    <button
+                        class="btn btn-sm btn-secondary"
+                        tabindex="-1"
+                        t-on-click="() => props.pickerProps.range || props.pickerProps.focusedDateIndex ? props.pickerProps.onSelect([false, false]) : props.pickerProps.onSelect(false)"
+                    >
+                        <i class="fa fa-eraser" />
+                    </button>
+                    <button
+                        class="btn btn-sm btn-primary"
+                        tabindex="-1"
+                        t-on-click="props.close"
+                    >
+                        <span>Apply</span>
+                    </button>
+                </div>
+            </t>
+            <t t-set-slot="addDateButton">
+                <!--<t t-set="indexDateValue" t-value="!state.timeValues[0] ? 0 : 1" /> -->
+                <t t-set="indexDateValue" t-value="0" />
                 <button
-                    class="btn btn-sm btn-secondary"
-                    tabindex="-1"
-                    t-on-click="() => props.pickerProps.range || props.pickerProps.focusedDateIndex ? props.pickerProps.onSelect([false, false]) : props.pickerProps.onSelect(false)"
+                    class="o_add_date o_add_start_date btn btn-secondary btn-sm ms-auto"
+                    t-on-click="() => !props.range ? this.addDate(indexDateValue) : this.removeDate()"
+                    t-att-class="{ 'active': props.range }"
                 >
-                    <i class="fa fa-eraser" />
-                </button>
-                <button
-                    class="btn btn-sm btn-primary"
-                    tabindex="-1"
-                    t-on-click="props.close"
-                >
-                    <span>Apply</span>
+                    <i class="fa fa-calendar-plus-o" />
                 </button>
             </t>
         </DateTimePicker>

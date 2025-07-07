@@ -66,9 +66,7 @@
                     showSeconds="props.rounding === 0"
                 />
             </div>
-            <div class="o_datetime_buttons d-flex gap-2">
-                <t t-slot="buttons" />
-            </div>
+            <t t-slot="buttons" />
         </div>
     </t>
 
@@ -128,14 +126,7 @@
                         />
                     </t>
                 </button>
-                <t t-set="indexDateValue" t-value="!state.timeValues[0] ? 0 : 1" />
-                <button
-                    class="o_add_date o_add_start_date btn btn-secondary btn-sm ms-auto"
-                    t-on-click="() => !props.range ? this.addDate(indexDateValue) : this.removeDate()"
-                    t-att-class="{ 'active': props.range }"
-                >
-                    <i class="fa fa-calendar-plus-o" />
-                </button>
+                <t t-slot="addDateButton" />
             </nav>
             <t t-if="state.precision === 'days'">
                 <t t-call="web.DateTimePicker.Days" />
