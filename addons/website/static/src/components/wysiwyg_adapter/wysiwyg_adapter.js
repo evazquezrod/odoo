@@ -101,11 +101,12 @@ export class WysiwygAdapterComponent extends Wysiwyg {
         this.oeStructureSelector = '#wrapwrap .oe_structure[data-oe-xpath][data-oe-id]';
         this.oeFieldSelector = '#wrapwrap [data-oe-field]:not([data-oe-sanitize-prevent-edition])';
         this.oeRecordCoverSelector = "#wrapwrap .o_record_cover_container[data-res-model]";
+        this.owlComponentSelector = "#wrapwrap :not(owl-component)";
         this.oeCoverSelector = `#wrapwrap .s_cover[data-res-model], ${this.oeRecordCoverSelector}`;
         if (this.props.savableSelector) {
             this.savableSelector = this.props.savableSelector;
         } else {
-            this.savableSelector = `${this.oeStructureSelector}, ${this.oeFieldSelector}, ${this.oeCoverSelector}`;
+            this.savableSelector = `${this.oeStructureSelector}, ${this.oeFieldSelector}, ${this.oeCoverSelector}, ${this.owlComponentSelector}`;
         }
         this.pageOptions = {};
         // Disable command palette since LinkTools take over that shortcut
@@ -371,7 +372,7 @@ export class WysiwygAdapterComponent extends Wysiwyg {
             .not('[data-oe-readonly]')
             .not('img[data-oe-field="arch"], br[data-oe-field="arch"], input[data-oe-field="arch"]')
             .not('.oe_snippet_editor')
-            .not('hr, br, input, textarea')
+            .not('hr, br, input, textarea, owl-component')
             .not('[data-oe-sanitize-prevent-edition]')
             .add('.o_editable');
     }
@@ -608,7 +609,7 @@ export class WysiwygAdapterComponent extends Wysiwyg {
     _getContentEditableAreas() {
         const $savableZones = $(this.websiteService.pageDocument).find(this.savableSelector);
         const $editableSavableZones = $savableZones
-            .not('input, [data-oe-readonly], ' +
+            .not('input, [data-oe-readonly], ' + "owl-component, " +
                  '[data-oe-type="monetary"], [data-oe-many2one-id], [data-oe-field="arch"]:empty')
             .filter((_, el) => {
                 // The whole record cover is considered editable by the editor,
